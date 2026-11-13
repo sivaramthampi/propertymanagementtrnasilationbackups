@@ -1,0 +1,1927 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Import Processor</title>
+    <style>
+        /* --- CORE STYLES --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f4f7fa; 
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: #ffffff; 
+            border-radius: 12px; 
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1); 
+            overflow: hidden; 
+            min-height: 600px;
+        }
+
+        /* --- HEADER & STAGES --- */
+        .header {
+            background: #172554; /* Navy Blue */
+            color: white;
+            padding: 30px 40px;
+            border-radius: 12px 12px 0 0;
+            position: relative; 
+            padding-bottom: 70px; 
+        }
+        .header h1 { 
+            font-size: 28px; 
+            font-weight: 800; 
+            margin-bottom: 5px; 
+        }
+        .header p {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 15px;
+        }
+        
+        .stage-line-wrapper {
+            position: absolute; 
+            top: 72px; 
+            left: 40px;
+            right: 40px;
+            display: flex;
+            width: calc(100% - 80px); 
+            z-index: 1;
+        }
+        .stage-line {
+            height: 3px;
+            background: #e5e7eb;
+            flex-grow: 1;
+            margin-top: 18px; 
+            position: relative;
+        }
+
+        .stage-indicator { 
+            position: absolute; 
+            left: 40px;
+            right: 40px;
+            bottom: -35px; 
+            display: flex; 
+            justify-content: space-between; 
+            z-index: 5;
+            width: calc(100% - 80px);
+        }
+        .stage-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 25%;
+            position: relative;
+        }
+        .stage-dot { 
+            width: 38px; 
+            height: 38px; 
+            border-radius: 50%; 
+            background: #e5e7eb; 
+            color: #4b5563; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-weight: 700;
+            font-size: 16px;
+            border: 2px solid #e5e7eb;
+            transition: all 0.3s;
+        }
+        .stage-dot.active { 
+            background: #3b82f6; 
+            color: white; 
+            border-color: #3b82f6;
+            transform: scale(1.05);
+        }
+        .stage-dot.complete {
+            background: #10b981; 
+            color: white;
+            border-color: #10b981;
+        }
+        .stage-dot.complete::after { content: '✓'; }
+        .stage-dot.complete span { display: none; }
+        .stage-name {
+            margin-top: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #6b7280;
+            text-align: center;
+        }
+        .stage-dot.active + .stage-name { color: #3b82f6; }
+
+        /* --- LOOKUP STYLES --- */
+        .lookup-wrapper { position: relative; width: 100%; }
+        .lookup-button-wrapper { 
+            display: flex; 
+            align-items: center; 
+            border: 1px solid #d1d5db; 
+            border-radius: 8px;
+            background: white;
+            transition: border-color 0.2s;
+        }
+        .lookup-button-wrapper:focus-within {
+             border-color: #3b82f6; 
+             box-shadow: 0 0 0 2px #eff6ff;
+        }
+        
+        .lookup-input {
+            flex-grow: 1;
+            padding: 8px 10px; 
+            border: none; 
+            border-radius: 8px 0 0 8px; 
+            font-size: 14px;
+            background: transparent;
+            outline: none;
+        }
+        .lookup-input.has-value { font-weight: 600; }
+        .lookup-input[readonly] { background: #f9fafb; cursor: default; }
+
+        .lookup-btn {
+            width: 32px; 
+            height: 32px;
+            padding: 0;
+            border: none;
+            background: #3b82f6; 
+            color: white;
+            border-radius: 0 8px 8px 0;
+            cursor: pointer;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0; 
+        }
+        .lookup-btn:hover { background: #2563eb; }
+        .lookup-btn[disabled] { background: #9ca3af; cursor: not-allowed; }
+
+        .lookup-results {
+            position: absolute;
+            top: auto;
+            bottom: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.2); 
+            z-index: 1000;
+            max-height: 168px;
+            overflow-y: auto;
+            display: none;
+            margin-top: 4px; 
+        }
+        .drpbtm{
+            top: 100% !important;
+            bottom: auto !important;
+        }
+        .lookup-results.active { display: block; }
+        .lookup-item {
+            padding: 8px 12px; 
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 13px;
+        }
+        .lookup-item:hover { background: #e0f2fe; color: #1e40af; }
+        .lookup-item-main { font-weight: 700; }
+        .lookup-item-sub { font-size: 11px; color: #666; }
+
+        /* --- CONTENT & STAGE STYLES --- */
+        .content { padding: 40px; padding-top: 80px; }
+        .stage { display: none; }
+        .stage.active { display: block; animation: fadeIn 0.4s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .upload-area {
+            border: 3px dashed #3b82f6; 
+            border-radius: 16px; 
+            padding: 60px;
+            text-align: center;
+            background: #f8fafc; 
+            transition: 0.3s;
+        }
+        .upload-area:hover { transform: translateY(-2px); border-color: #2563eb; }
+        
+        /* --- BUTTONS --- */
+        .btn { padding: 12px 28px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.3s; }
+        .btn-primary { background: #3b82f6; color: white; }
+        .btn-secondary { background: white; border: 1px solid #d1d5db; color: #4b5563; margin-right: 10px; }
+        .btn-success { background: #10b981; color: white; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-add { background: #3b82f6; color: white; margin-bottom: 20px; }
+        .btn-save-draft { 
+            background: #95d5b2; 
+            color: #1b4332; 
+            padding: 8px 18px; 
+            font-size: 13px; 
+            font-weight: 700;
+        }
+        .btn-save-draft:hover { background: #74c69d; }
+        .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+
+        /* --- TABLE & INPUTS --- */
+        .payment-group { 
+            border: 1px solid #e5e7eb; margin-bottom: 24px; border-radius: 12px;
+
+            /* overflow: hidden;  */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); 
+            transition: all 0.2s; background: #ffffff;
+        }
+        .payment-group:hover { box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12); }
+
+        .payment-header {
+            background: #f9fafb; padding: 18px 25px; border-bottom: 1px solid #e5e7eb;
+            display: grid; 
+            grid-template-columns: 1.2fr 0.8fr 1.2fr 1fr auto auto; 
+            gap: 20px; align-items: center;
+        }
+        .payment-header label { 
+            font-size: 11px; font-weight: 700; color: #172554; display: block; margin-bottom: 4px;
+        }
+
+        .items-table { width: 100%; border-collapse: collapse; }
+        .items-table th {
+            background: #eef2ff; color: #374151; font-size: 13px; font-weight: 700;
+            text-transform: uppercase; padding: 12px; text-align: left;
+        }
+        .items-table td { 
+            padding: 10px 12px; border-bottom: 1px solid #f3f4f6; vertical-align: middle; 
+            font-size: 14px; color: #374151;
+        }
+        
+        input[type="text"], input[type="number"], input[type="date"] {
+            width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px;
+        }
+        input[readonly] { background: #f9fafb; cursor: default; }
+
+        .currency-input-wrap { display: flex; align-items: center; position: relative; }
+        .currency-symbol { 
+            position: absolute; left: 10px; font-weight: 600; color: #666; font-size: 14px; pointer-events: none;
+        }
+        .currency-input-wrap input { padding-left: 30px; }
+        
+        .delete-btn { 
+            background: #ef4444; color: white; padding: 8px 18px; 
+            border-radius: 8px; border: none; font-size: 13px; cursor: pointer; font-weight: 700;
+        }
+
+        /* --- OVERVIEW SUMMARY STYLES --- */
+        .import-overview {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr); 
+            gap: 20px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+        .overview-box {
+            text-align: center;
+        }
+        .overview-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .overview-value {
+            font-size: 20px;
+            font-weight: 800;
+            color: #1e293b;
+        }
+        .val-eur { color: #2563eb; }
+        .val-pln { color: #7c3aed; }
+
+        .summary-card { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 15px; padding: 20px; }
+        .summary-row { 
+            display: grid; grid-template-columns: 1fr 2fr 1fr 1fr 1fr 1fr; 
+            gap: 15px; padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-size: 13px; 
+        }
+        
+        .single-total { font-size: 16px; font-weight: 700; }
+        .tag-eur { color: #2563eb; background: #eff6ff; padding: 2px 8px; border-radius: 4px; }
+        .tag-pln { color: #7c3aed; background: #f5f3ff; padding: 2px 8px; border-radius: 4px; }
+
+        /* --- MODAL --- */
+        #loadingOverlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.7); z-index: 9999;
+            display: none; align-items: center; justify-content: center;
+        }
+        
+        #modalOverlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.5); z-index: 10000;
+            display: none; align-items: center; justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+        
+        .custom-modal {
+            background: white; width: 450px; padding: 30px;
+            border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+            transform: scale(0.9); opacity: 0; transition: all 0.3s;
+        }
+        .custom-modal.visible { transform: scale(1); opacity: 1; }
+        .modal-icon { font-size: 48px; margin-bottom: 15px; display: block; }
+        .modal-title { font-size: 20px; color: #333; margin-bottom: 10px; font-weight: 700; }
+        
+        .modal-msg { 
+            color: #000000; 
+            font-size: 15px; 
+            margin-bottom: 25px; 
+            line-height: 1.5; 
+            white-space: pre-line; 
+            text-align: center; 
+        }
+        
+        .modal-actions { display: flex; justify-content: center; gap: 10px; }
+        .modal-actions button { min-width: 100px; }
+
+    </style>
+</head>
+<body>
+    <div id="loadingOverlay">
+        <div style="background: white; padding: 40px; border-radius: 16px; text-align: center;">
+            <div style="font-size: 40px; margin-bottom: 15px;">⏳</div>
+            <h3 id="loadingText" style="color: #333;">Processing...</h3>
+        </div>
+    </div>
+
+    <div id="modalOverlay">
+        <div class="custom-modal" id="customModalBox">
+            <span class="modal-icon" id="modalIcon">⚠️</span>
+            <h3 class="modal-title" id="modalTitle">Confirm Action</h3>
+            <p class="modal-msg" id="modalMsg">Are you sure you want to proceed?</p>
+            <div class="modal-actions" id="modalActions"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>Import Payments</h1>
+            
+            <div class="stage-line-wrapper">
+                <div class="stage-line" id="line1"></div>
+                <div class="stage-line" id="line2"></div>
+                <div class="stage-line" id="line3"></div>
+            </div>
+
+            <div class="stage-indicator">
+                <div class="stage-item">
+                    <div class="stage-dot active" id="dot1"><span>1</span></div>
+                    <div class="stage-name">Upload XML</div>
+                </div>
+                <div class="stage-item">
+                    <div class="stage-dot" id="dot2"><span>2</span></div>
+                    <div class="stage-name">Review & Edit</div>
+                </div>
+                <div class="stage-item">
+                    <div class="stage-dot" id="dot3"><span>3</span></div>
+                    <div class="stage-name">Final Review</div>
+                </div>
+                <div class="stage-item">
+                    <div class="stage-dot" id="dot4"><span>4</span></div>
+                    <div class="stage-name">Success</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="stage active" id="stage1">
+                <h2>Step 1: Upload Payment XML</h2>
+                <div class="upload-area" id="uploadArea">
+                    <div style="font-size: 50px; margin-bottom: 15px;">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M7 16H5C3.34315 16 2 14.6569 2 14C2 12.3431 3.34315 11 5 11C5.04481 11 5.08931 11.001 5.13346 11.0029C5.5607 7.61504 8.47352 5 12 5C15.5265 5 18.4393 7.61504 18.8665 11.0029C18.9107 11.001 18.9552 11 19 11C20.6569 11 22 12.3431 22 14C22 15.6569 20.6569 17 19 17H17" stroke="#172554" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M12 12V21" stroke="#172554" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M9 15L12 12L15 15" stroke="#172554" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+                    </div>
+                    <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">Select XML File</button>
+                    <input type="file" id="fileInput" accept=".xml" onchange="handleFileSelect(event)" style="display:none">
+                    <p style="margin-top: 15px; color: #666;">Creates Draft Records in Dataverse</p>
+                </div>
+            </div>
+
+            <div class="stage" id="stage2">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <h2>Step 2: Review & Edit Payments</h2>
+                    <button class="btn btn-add" onclick="addNewPaymentGroup()">+ New Payment</button>
+                </div>
+                
+
+                    <div class="import-overview" style="margin-bottom:20px;">
+                        <div class="overview-box">
+                            <div class="overview-label">Total Payments</div>
+                            <div class="overview-value" id="stage2TotalPayments">0</div>
+                        </div>
+                        <div class="overview-box">
+                            <div class="overview-label">Total Lines</div>
+                            <div class="overview-value" id="stage2TotalLines">0</div>
+                        </div>
+                        <div class="overview-box">
+                            <div class="overview-label">Total EUR</div>
+                            <div class="overview-value val-eur" id="stage2TotalEur">€ 0.00</div>
+                        </div>
+                        <div class="overview-box">
+                            <div class="overview-label">Total PLN</div>
+                            <div class="overview-value val-pln" id="stage2TotalPln">zł 0.00</div>
+                        </div>
+                    </div>
+
+
+                <div id="tableBody"></div>
+
+                <div class="actions" style="margin-top:30px; display:flex; justify-content:space-between;">
+                    <button class="btn btn-secondary" onclick="confirmRestart()">Discard & Restart</button>
+                    <button class="btn btn-primary" onclick="attemptGoToStage3()">Review Summary &rarr;</button>
+                </div>
+            </div>
+
+            <div class="stage" id="stage3">
+                <h2>Step 3: Final Review</h2>
+                <p style="color: #666; margin-bottom: 20px;">Submitting will approve records and update invoices.</p>
+                <div id="summaryContent"></div>
+                <div class="actions" style="margin-top:30px; display:flex; justify-content:space-between;">
+                    <button class="btn btn-secondary" onclick="goToStage(2)">&larr; Back to Edit</button>
+                    <button class="btn btn-success" onclick="submitFinalData()">✓ Submit & Approve</button>
+                </div>
+            </div>
+
+            <div class="stage" id="stage4">
+                <div style="text-align: center; padding: 40px;">
+                    <div style="font-size: 80px; color: #10b981;">✓</div>
+                    <h2>Import Successful!</h2>
+                    <p>Records have been approved and Invoices updated.</p>
+                    <button class="btn btn-primary" style="margin-top:20px;" onclick="closeWindow()">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- GLOBAL STATE ---
+        let invoiceData = []; 
+        let currentFileBase64 = null;
+        let currentFileName = "";
+        let sharePointUrl = ""; 
+        
+        let spBaseUrl = null;
+        let FLOW_URL = null;
+
+
+        const TABLE_REAL_HEADER = "array_paymentreceipt";
+        const TABLE_REAL_LINE = "array_paymentline";
+        const TABLE_TEMP_HEADER = "array_importpaymentreceipt";
+        const TABLE_TEMP_LINE = "array_importpaymentlines";
+
+        // --- Detect system language ---
+        const userLangId = parent.Xrm.Utility.getGlobalContext().userSettings.languageId;
+        const isPolish = userLangId === 1045;
+        //const isPolish = false;
+
+        const STATUS_DRAFT = 126330000;
+        const STATUS_APPROVED = 126330001;
+        //    const FLOW_URL = "https://fa76306dd87de6ecb55d258887c7ad.52.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/e3a1bbeca6e34189b4645a29d9e7a63c/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=x_tmaelKVHqLS-MB_mrVUPm5dBK5uldLQjOl7BALatI"
+        // --- HELPERS ---
+        function getSymbol(isoCode) {
+            if(!isoCode) return '';
+            const code = isoCode.toUpperCase();
+            if (code === 'EUR') return '€';
+            if (code === 'PLN' || code === 'ZL' || code === 'ZŁ') return 'zł';
+            if (code === 'USD') return '$'; // Added USD
+
+            return code;
+        }
+
+        function calculateTotals(items, currencyCode) {
+            if (!currencyCode) return { single: 0, code: '', symbol: '' };
+            const code = currencyCode.toUpperCase();
+            let total = 0;
+            items.forEach(i => {
+                const itemCode = (i.currencyName || 'PLN').toUpperCase();
+                if(itemCode === code) total += i.amount;
+            });
+            return { single: total, code: code, symbol: getSymbol(code) };
+        }
+
+        // --- UTILS ---
+        function showModal(title, msg, type = 'alert', confirmBtnText = 'Confirm', confirmBtnClass = 'btn-primary') {
+            return new Promise((resolve) => {
+                const overlay = document.getElementById('modalOverlay');
+                const box = document.getElementById('customModalBox');
+                const titleEl = document.getElementById('modalTitle');
+                const msgEl = document.getElementById('modalMsg');
+                const actionsEl = document.getElementById('modalActions');
+                const iconEl = document.getElementById('modalIcon');
+
+                titleEl.textContent = title;
+                msgEl.textContent = msg; 
+                
+                if(type === 'error') iconEl.textContent = '❌';
+                else if(type === 'success') iconEl.textContent = '✓';
+                else iconEl.textContent = '⚠️';
+
+                actionsEl.innerHTML = '';
+                
+                if (type === 'confirm') {
+                    const btnCancel = document.createElement('button');
+                    btnCancel.className = 'btn btn-secondary';
+                    btnCancel.type = 'button';
+                    btnCancel.textContent = 'Cancel';
+                    btnCancel.onclick = () => { close(); resolve(false); };
+                    actionsEl.appendChild(btnCancel);
+
+                    const btnConfirm = document.createElement('button');
+                    btnConfirm.className = `btn ${confirmBtnClass}`;
+                    btnConfirm.type = 'button';
+                    btnConfirm.textContent = confirmBtnText;
+                    btnConfirm.onclick = () => { close(); resolve(true); };
+                    actionsEl.appendChild(btnConfirm);
+                } else {
+                    const btnOk = document.createElement('button');
+                    btnOk.className = 'btn btn-primary';
+                    btnOk.type = 'button';
+                    btnOk.textContent = 'OK';
+                    btnOk.onclick = () => { close(); resolve(true); };
+                    actionsEl.appendChild(btnOk);
+                }
+
+                overlay.style.display = 'flex';
+                setTimeout(() => box.classList.add('visible'), 10);
+
+                function close() {
+                    box.classList.remove('visible');
+                    setTimeout(() => { overlay.style.display = 'none'; }, 300);
+                }
+            });
+        }
+
+        async function showConfirm(title, msg, btnText = "Yes, Do It", btnClass = "btn-primary") {
+            return await showModal(title, msg, 'confirm', btnText, btnClass);
+        }
+        async function showAlert(title, msg) { return await showModal(title, msg, 'alert'); }
+        async function showError(msg) { return await showModal('Error', msg, 'error'); }
+
+        function showLoading(msg) {
+            document.getElementById('loadingText').innerText = msg;
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+        function closeWindow() {
+           window.close();
+        }
+        function goToStage(n) {
+            document.querySelectorAll('.stage').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.stage-dot').forEach(d => {
+                const num = parseInt(d.querySelector('span')?.textContent);
+                d.classList.remove('active');
+                d.classList.remove('complete');
+                if (num < n) d.classList.add('complete'); 
+            });
+            const nextStage = document.getElementById(`stage${n}`);
+            if (nextStage) nextStage.classList.add('active');
+            const nextDot = document.getElementById(`dot${n}`);
+            if (nextDot) nextDot.classList.add('active');
+            if(n === 3) populateSummary();
+        }
+
+        // --- PROCESSING ---
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const timestamp = new Date().getTime();
+            const nameWithoutExt = file.name.replace(/\.[^/.]+$/, ""); 
+            const uniqueName = `${nameWithoutExt}_${timestamp}.xml`;
+
+            currentFileName = uniqueName;
+
+            if (!spBaseUrl) {
+                console.error("SharePoint base URL not initialized.");
+                return;
+            }
+
+            //    sharePointUrl = `https://newbridge2.sharepoint.com/sites/GreenmanPolandDev/Shared%20Documents/Invoice%20Payments/${uniqueName}`;
+
+            //sharePointUrl = `${spBaseUrl}/${uniqueName}`;
+            sharePointUrl = `${spBaseUrl}/Shared%20Documents/Invoice%20Payments/${uniqueName}`;
+
+            console.log(sharePointUrl);
+
+            const reader = new FileReader();
+            reader.readAsDataURL(file); 
+            reader.onload = function () {
+                currentFileBase64 = reader.result.split(',')[1]; 
+                const textReader = new FileReader();
+                textReader.readAsText(file);
+                textReader.onload = async (e) => {    await processXML(e.target.result, currentFileName, currentFileBase64); 
+};
+
+                
+            };
+        }
+        
+        function triggerPowerAutomate(fileName, fileBase64) {
+            const payload = { fileName: fileName, fileBase64: fileBase64 };
+            fetch(FLOW_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).catch(err => console.error("Flow trigger failed:", err));
+        }
+
+        async function processXML(xmlText, fileName, fileBase64) {
+            showLoading(isPolish 
+                ? "Parsowanie XML i tworzenie wersji roboczych..." 
+                : "Parsing XML & Creating Draft Records..."
+            );
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+            // Check for XML parsing errors
+            const parserError = xmlDoc.getElementsByTagName('parsererror');
+            if (parserError.length > 0) {
+                hideLoading();
+                await showError("Invalid XML format: Please check the XML structure.");
+                return;
+            }
+
+            const payments = xmlDoc.getElementsByTagName('payment');
+
+            if (payments.length === 0) {
+                hideLoading();
+                await showError("No payments found in XML file.");
+                return;
+            }
+
+            // ✅ GLOBAL VALIDATION:
+            // At least ONE payment must have document number OR payment date
+            let hasValidPayment = false;
+
+            for (let payment of payments) {
+                const docNum = payment.getElementsByTagName('document_number')[0]?.textContent?.trim();
+                const pDate = payment.getElementsByTagName('payment_date')[0]?.textContent?.trim();
+
+                if (docNum || pDate) {
+                    hasValidPayment = true;
+                    break;
+                }
+            }
+
+            if (!hasValidPayment) {
+                hideLoading();
+                await showError(
+                    "XML must contain at least one payment."
+                );
+                return;
+            }
+
+            invoiceData = [];
+            
+            try {
+                for (let payment of payments) {
+                    const docNum = payment.getElementsByTagName('document_number')[0]?.textContent || '';
+                    const pDate = payment.getElementsByTagName('payment_date')[0]?.textContent || new Date().toISOString().split('T')[0];
+
+                    // ✅ NEW: Check if payment already exists in both tables
+                    const tempExisting = await parent.Xrm.WebApi.retrieveMultipleRecords(
+                        "array_importpaymentreceipt", 
+                        `?$select=array_importpaymentreceiptid,array_accountingpaymentid,array_approvalstatus&$filter=array_accountingpaymentid eq '${docNum}'`
+                    );
+                    
+                    const realExisting = await parent.Xrm.WebApi.retrieveMultipleRecords(
+                        "array_paymentreceipt", 
+                        `?$select=array_paymentreceiptid,array_accountingpaymentid,array_approvalstatus&$filter=array_accountingpaymentid eq '${docNum}'`
+                    );
+
+                    // ✅ NEW: Handle existing payments based on approval status
+                    let shouldSkip = false;
+
+                    // Check Real table for approved payments
+                    for (let existing of realExisting.entities) {
+                        const approvalStatus = existing["array_approvalstatus"];
+                        
+                        if (approvalStatus !== STATUS_DRAFT) {
+                            // Approved payment - skip it
+                            console.log(`Skipping approved payment: ${docNum}`);
+                            shouldSkip = true;
+                            break;
+                        } else {
+                            // Draft payment - delete and recreate
+                            console.log(`Deleting existing draft payment (Real): ${docNum}`);
+                            await parent.Xrm.WebApi.deleteRecord("array_paymentreceipt", existing["array_paymentreceiptid"]);
+                        }
+                    }
+
+                    // Check Temp table for existing payments
+                    for (let existing of tempExisting.entities) {
+                        const approvalStatus = existing["array_approvalstatus"];
+                        
+                        if (approvalStatus !== STATUS_DRAFT) {
+                            // Approved payment - skip it
+                            console.log(`Skipping approved payment (Temp): ${docNum}`);
+                            shouldSkip = true;
+                            break;
+                        } else {
+                            // Draft payment - delete and recreate
+                            console.log(`Deleting existing draft payment (Temp): ${docNum}`);
+                            await parent.Xrm.WebApi.deleteRecord("array_importpaymentreceipt", existing["array_importpaymentreceiptid"]);
+                        }
+                    }
+
+                    // Skip processing if payment is approved
+                    if (shouldSkip) {
+                        continue;
+                    }
+
+
+                    
+                    const items = payment.getElementsByTagName('item');
+                    let itemsList = [];
+                    
+                    let paymentCurrencyCode = null; 
+                    let paymentCurrencyId = null; 
+                    let calculatedXmlTotal = 0; // Fix 3: Calculate total before header creation
+
+
+
+
+
+                    
+                    // First Pass: Validate Currency and Calculate Total
+                    for(let item of items) {
+                        const currCode = (item.getElementsByTagName('currency')[0]?.textContent || 'PLN').toUpperCase();
+                        const amt = parseFloat(item.getElementsByTagName('amount')[0]?.textContent || 0);
+                        
+                        if (!paymentCurrencyCode) paymentCurrencyCode = currCode;
+                        
+                        if (currCode !== paymentCurrencyCode) {
+                            throw new Error(`XML Payment '${docNum}' contains multiple currencies (${paymentCurrencyCode} and ${currCode}). Single currency per payment is required.`);
+                        }
+                        calculatedXmlTotal += amt; // Add to total
+                    }
+                    
+                    // Fetch currency ID
+                    if(paymentCurrencyCode) {
+                        const curRes = await parent.Xrm.WebApi.retrieveMultipleRecords("transactioncurrency", `?$select=transactioncurrencyid,isocurrencycode&$filter=isocurrencycode eq '${paymentCurrencyCode}'`);
+                        if(curRes.entities.length > 0) {
+                            paymentCurrencyId = curRes.entities[0].transactioncurrencyid; 
+                            paymentCurrencyCode = curRes.entities[0].isocurrencycode;
+                        }
+                    }
+
+                    // Fix 3: Use the pre-calculated total for the Header creation
+                    const realHeaderData = {
+                        "array_accountingpaymentid": docNum,
+                        "array_paymentdate": pDate,
+                        "array_approvalstatus": STATUS_DRAFT,
+                        "array_xmlfile": sharePointUrl,
+                        "array_paymenttotal": paymentCurrencyCode === 'EUR' ? calculatedXmlTotal : 0, 
+                        "array_paymenttotalz": paymentCurrencyCode !== 'EUR' ? calculatedXmlTotal : 0 
+                    };
+                    const realHeader = await parent.Xrm.WebApi.createRecord(TABLE_REAL_HEADER, realHeaderData);
+
+                    const tempHeaderData = { 
+                        "array_accountingpaymentid": docNum, 
+                        "array_xmlfile": sharePointUrl,
+                        "array_paymenttotal": paymentCurrencyCode === 'EUR' ? calculatedXmlTotal : 0,
+                        "array_paymenttotalz": paymentCurrencyCode !== 'EUR' ? calculatedXmlTotal : 0,
+                        "array_paymentdate": pDate,
+
+                    };
+                    const tempHeader = await parent.Xrm.WebApi.createRecord(TABLE_TEMP_HEADER, tempHeaderData);
+
+                    // Second Pass: Process Items and Link Invoices
+                    for (let item of items) {
+                        const amt = parseFloat(item.getElementsByTagName('amount')[0]?.textContent || 0);
+                        const invNum = item.getElementsByTagName('invoice_number')[0]?.textContent || '';
+                        const desc = item.getElementsByTagName('description')[0]?.textContent || '';
+                        const currCode = paymentCurrencyCode; // XML item currency confirmed to match payment group
+
+                        let invoiceId = null, currencyId = null, invoiceName = invNum, currencyName = currCode;
+                        let invTotal = 0, invPaid = 0, invRem = 0, leaseId = null, leaseName = null;
+                        let invoiceCurrencyId = null, invoiceCurrencyName = null;
+                        let invoiceTypeName = null; // Fix 2: Invoice Type Variable
+                        let customerId = null, customerType = null;
+
+                        if(invNum) {
+                            const currencyFilter = paymentCurrencyId ? ` and _transactioncurrencyid_value eq '${paymentCurrencyId}'` : '';
+                            // Fix 2: Added _array_invoicetype_value to select
+                            const invRes = await parent.Xrm.WebApi.retrieveMultipleRecords("invoice", `?$select=invoiceid,array_invoiceno,totalamount,array_amountpaid,array_remainingamount,_array_leaseagreement_value,_transactioncurrencyid_value,_array_invoicetype_value,_customerid_value&$filter=array_invoiceno eq '${invNum}'${currencyFilter}`);
+                            
+                            if(invRes.entities.length > 0) {
+                                const rec = invRes.entities[0];
+                                invoiceId = rec.invoiceid; invoiceName = rec.array_invoiceno;
+                                invTotal = rec.totalamount; invPaid = rec.array_amountpaid; invRem = rec.array_remainingamount;
+                                leaseId = rec["_array_leaseagreement_value"] || null;
+                                leaseName = rec["_array_leaseagreement_value@OData.Community.Display.V1.FormattedValue"] || null;
+                                invoiceCurrencyId = rec["_transactioncurrencyid_value"] || null;
+                                invoiceCurrencyName = rec["_transactioncurrencyid_value@OData.Community.Display.V1.FormattedValue"] || '-';
+                                // Fix 2: Capture Invoice Type Name
+                                invoiceTypeName = rec["_array_invoicetype_value@OData.Community.Display.V1.FormattedValue"] || '-';
+                                customerId = rec["_customerid_value"] || null;
+                                customerType = rec["_customerid_value@Microsoft.Dynamics.CRM.lookuplogicalname"] || null;
+                            }
+                        }
+                        
+                        currencyId = paymentCurrencyId;
+                        currencyName = paymentCurrencyCode;
+
+                        const realLineData = {
+                            "array_amountpaid": amt,
+                            "array_paymentid": docNum,
+                            "array_paymentdate": pDate, 
+                            "array_approvalstatus": STATUS_DRAFT, 
+                            "array_PaymentReceipt@odata.bind": `/${TABLE_REAL_HEADER}s(${realHeader.id})`,
+                            "array_description" : desc,
+                            "array_originalremainingamount": invoiceId ? (invRem || 0) : null  // ✅ ADD THIS
+
+                        };
+                        if(invoiceId) realLineData["array_Invoice@odata.bind"] = `/invoices(${invoiceId})`;
+                        if(currencyId) realLineData["transactioncurrencyid@odata.bind"] = `/transactioncurrencies(${currencyId})`;
+
+                        // ✅ ADD THIS
+                        if (leaseId)
+                            realLineData["array_LeaseAgreement@odata.bind"] = `/array_leaseagreements(${leaseId})`;
+
+                        const realLine = await parent.Xrm.WebApi.createRecord(TABLE_REAL_LINE, realLineData);
+
+
+                        // ADD THIS: Create Temp Line Record
+                        const tempLineData = {
+                            "array_amountpaid": amt,
+                            "array_paymentid": docNum,
+                            "array_paymentdate": pDate,
+                            "array_approvalstatus": STATUS_DRAFT, 
+                            
+                            "array_PaymentReceipt@odata.bind": `/${TABLE_TEMP_HEADER}s(${tempHeader.id})`,
+                             
+                            "array_description" : desc ,
+                            "array_originalremainingamount": invoiceId ? (invRem || 0) : null  // ✅ ADD THIS
+
+
+
+                            // "array_xmlfile": sharePointUrl
+                        };
+                        if(invoiceId) tempLineData["array_Invoice@odata.bind"] = `/invoices(${invoiceId})`;
+                        if(currencyId) tempLineData["transactioncurrencyid@odata.bind"] = `/transactioncurrencies(${currencyId})`;
+                        
+                        // ✅ ADD THIS
+                        if (leaseId)
+                            tempLineData["array_LeaseAgreement@odata.bind"] = `/array_leaseagreements(${leaseId})`;
+
+                        await parent.Xrm.WebApi.createRecord(TABLE_TEMP_LINE, tempLineData);
+
+                        
+                        itemsList.push({
+                            realLineId: realLine.id,
+                            invoiceId: invoiceId, invoiceName: invoiceName,
+                            invoiceCurrencyId: invoiceCurrencyId, 
+                            invoiceCurrencyName: invoiceCurrencyName,
+                            invoiceTypeName: invoiceTypeName, // Fix 2: Add to item object
+                            currencyId: currencyId, currencyName: currencyName, 
+                            amount: amt, description: desc,
+                            invTotal: invTotal, invPaid: invPaid, invRem: invRem,
+                            leaseId: leaseId, leaseName: leaseName,
+                            customerId: customerId, customerType: customerType
+                        });
+                    }
+                    
+                    invoiceData.push({
+                        realHeaderId: realHeader.id, docNum: docNum, date: pDate, items: itemsList,
+                        paymentCurrencyId: paymentCurrencyId, paymentCurrencyName: paymentCurrencyCode 
+                    });
+                }
+                hideLoading();
+
+                // Only render Step 2 if there are draft payments to show
+                if (invoiceData.length > 0) {
+                    renderStep2();
+                    goToStage(2);
+                    triggerPowerAutomate(fileName, fileBase64);
+                } else {
+                    await showError("All payments in this file have already been approved. No draft payments to display.");
+                }
+
+            } catch (e) {
+                hideLoading();
+                await showError("Error processing XML: " + e.message);
+                console.error(e);
+            }
+        }
+
+        // --- UI RENDERING ---
+
+        function renderPaymentHeader(pIdx, payment) {
+            const isCurrencySet = payment.paymentCurrencyId !== null;
+            const isEditable = !isCurrencySet && payment.items.length === 0;
+            const totals = calculateTotals(payment.items, payment.paymentCurrencyName);
+            const currencyTagClass = totals.code === 'EUR' ? 'tag-eur' : (totals.code === 'PLN' ? 'tag-pln' : 'tag-eur');
+
+            return `
+                <div class="payment-header">
+                    <div>
+                        <label>PAYMENT ID</label>
+                        <input type="text" value="${payment.docNum}" onchange="updateHeader(${pIdx}, 'docNum', this.value)">
+                    </div>
+                    <div>
+                        <label>DATE</label>
+                        <input type="date" value="${payment.date}" onchange="updateHeader(${pIdx}, 'date', this.value)">
+                    </div>
+                    <div>
+                        <label>PAYMENT CURRENCY</label>
+                        <div class="lookup-wrapper">
+                            <div class="lookup-button-wrapper">
+                                <input type="text" class="lookup-input ${isCurrencySet ? 'has-value' : ''}" 
+                                    value="${payment.paymentCurrencyName || ''}" placeholder="Select Currency..."
+                                    onkeyup="${isEditable ? `lookupSearch(this, 'currency', ${pIdx}, -1)` : ''}"
+                                    onfocus="${isEditable ? `lookupSearch(this, 'currency', ${pIdx}, -1)` : ''}"
+                                    ${isEditable ? '' : 'readonly'}>
+                                <button class="lookup-btn" 
+                                    onclick="lookupSearch(this.previousElementSibling, 'currency', ${pIdx}, -1, true)"
+                                    ${isEditable ? '' : 'disabled'}>🔍</button>
+                            </div>
+                            <div class="lookup-results drpbtm"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <label>TOTAL</label>
+                        <div class="single-total">
+                            <span class="${currencyTagClass}">
+                                ${totals.symbol} ${totals.single.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                        </div>
+                    </div>
+                    <button class="btn btn-save-draft" onclick="savePaymentGroup(${pIdx})">💾 Save Draft</button>
+                    <button class="delete-btn" onclick="window.deletePayment(${pIdx})">Delete Payment</button>
+                </div>
+            `;
+        }
+
+        function renderStep2() {
+            const container = document.getElementById('tableBody');
+            container.innerHTML = '';
+
+                let totalPayments = invoiceData.length;
+                let totalLines = 0;
+                let grandTotalEur = 0;
+                let grandTotalPln = 0;
+                
+                invoiceData.forEach(p => {
+                    totalLines += p.items.length;
+                    const t = calculateTotals(p.items, p.paymentCurrencyName);
+                    if (t.code === 'EUR') grandTotalEur += t.single;
+                    if (t.code === 'PLN') grandTotalPln += t.single;
+                });
+
+                document.getElementById('stage2TotalPayments').textContent = totalPayments;
+                document.getElementById('stage2TotalLines').textContent = totalLines;
+                document.getElementById('stage2TotalEur').textContent = `€ ${grandTotalEur.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                document.getElementById('stage2TotalPln').textContent = `zł ${grandTotalPln.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+
+
+
+
+
+            invoiceData.forEach((payment, pIdx) => {
+                
+                const headerHtml = renderPaymentHeader(pIdx, payment);
+
+                // Fix 2: Added "Invoice Type" column header
+                const html = `
+                <div class="payment-group">
+                    ${headerHtml}
+                    <table class="items-table">
+                        <thead>
+                            <tr style="vertical-align: bottom;">
+                                <th style="width:15%">Invoice</th>
+                                <th style="width:10%">Invoice Type</th> 
+                                <th style="width:14%">Lease Agreement</th>
+                                <th style="width:9%">Invoice Total</th>
+                                <th style="width:8%">Currency</th> 
+                                <th style="width:12%">Amount</th>
+                                <th style="width:11%">Remaining</th>
+                                <th style="width:10%">Description</th> 
+                                <th style="width:5%"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-${pIdx}"></tbody>
+                    </table>
+                    <div style="padding:10px;">
+                        <button class="btn btn-secondary" style="font-size:12px; padding:6px 12px;" 
+                            onclick="addLine(${pIdx})"
+                            ${payment.paymentCurrencyId ? '' : 'disabled'}>+ Add Line</button>
+                        <span style="font-size:12px; color:red; margin-left:10px; ${payment.paymentCurrencyId ? 'display:none;' : ''}">
+                            Select Payment Currency before adding lines.
+                        </span>
+                    </div>
+                </div>`;
+                container.insertAdjacentHTML('beforeend', html);
+                payment.items.forEach((item, iIdx) => { renderLineRow(pIdx, iIdx, item); });
+            });
+        }
+
+        function renderLineRow(pIdx, iIdx, item) {
+            const tbody = document.getElementById(`tbody-${pIdx}`);
+            const currentInvRem = item.invRem || 0; 
+            const diff = currentInvRem - item.amount;
+            const diffColor = diff < 0 ? 'red' : (diff === 0 ? '#10b981' : 'orange');
+            const symbol = getSymbol(item.currencyName); 
+
+            // Fix 2: Added column for Invoice Type
+            const tr = document.createElement('tr');
+            tr.id = `row-${pIdx}-${iIdx}`;
+            tr.innerHTML = `
+                <td>
+                    <div class="lookup-wrapper">
+                        <div class="lookup-button-wrapper">
+                            <input type="text" class="lookup-input ${item.invoiceId ? 'has-value' : ''}" 
+                                value="${item.invoiceName || ''}" placeholder="Search Invoice..."
+                                onkeyup="lookupSearch(this, 'invoice', ${pIdx}, ${iIdx})"
+                                onfocus="lookupSearch(this, 'invoice', ${pIdx}, ${iIdx})">
+                            <button class="lookup-btn" onclick="lookupSearch(this.previousElementSibling, 'invoice', ${pIdx}, ${iIdx}, true)">🔍</button>
+                        </div>
+                        <div class="lookup-results"></div>
+                    </div>
+                </td>
+                <td><span style="font-size:13px; color:#555;">${item.invoiceTypeName || '-'}</span></td>
+                <td><span style="font-size:13px;">${item.leaseName || '-'}</span></td>
+                <td>
+                    <span style="font-weight:bold;">
+                        ${(item.invTotal || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                </td>
+                <td>
+                    <div class="lookup-wrapper">
+                        <div class="lookup-button-wrapper">
+                            <input type="text" class="lookup-input has-value" 
+                                value="${item.currencyName || '-'}"
+                                readonly>  </div>
+                        <div class="lookup-results"></div>
+                    </div>
+                </td>
+                <td>
+            <div class="currency-input-wrap">
+                    <span class="currency-symbol">${symbol}</span>
+                    <input 
+                        type="number" 
+                        step="0.01"
+                        value="${item.amount !== null && item.amount !== undefined && item.amount !== '' 
+                            ? parseFloat(item.amount).toFixed(2) 
+                            : ''}"
+                        onchange="updateLine(${pIdx}, ${iIdx}, 'amount', this.value)"
+                        onblur="
+                            if (this.value !== '') {
+                                this.value = parseFloat(this.value).toFixed(2);
+                            }
+                        "
+                    >
+                </div>
+                </td>
+                <td>
+
+                <div style="font-size:12px; color:#6b7280;">
+                    Original: ${currentInvRem.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
+                <div style="font-weight:bold; color:${diffColor}">
+                    Final: ${diff.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
+
+                </td>
+                <td><input type="text" value="${item.description}" onchange="updateLine(${pIdx}, ${iIdx}, 'description', this.value)"></td>
+                <td><button class="delete-btn" onclick="window.deleteLine(${pIdx}, ${iIdx})">X</button></td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        // --- LOOKUP ---
+        let searchTimeout;
+        async function lookupSearch(input, type, pIdx, iIdx, isButton = false) {
+            const payment = invoiceData[pIdx];
+            const resultsDiv = input.parentElement.parentElement.querySelector('.lookup-results');
+            const query = input.value;
+            clearTimeout(searchTimeout);
+            
+            if(!query && !isButton) { resultsDiv.classList.remove('active'); return; }
+            
+            if(type === 'invoice' && !payment.paymentCurrencyId) {
+                await showAlert(
+                    isPolish ? "Nie można wyszukać" : "Cannot Search",
+                    isPolish
+                        ? "Proszę najpierw wybrać **Walutę Płatności**."
+                        : "Please select a **Payment Currency** first."
+                );
+                return;
+            }
+
+            const executeSearch = async () => {
+                resultsDiv.innerHTML = '<div class="lookup-item">Searching...</div>';
+                resultsDiv.classList.add('active');
+                try {
+                    let fetchXml = "", entity = "", displayField = "";
+                    
+                    if(type === 'invoice') {
+                        entity = "invoices"; 
+                        displayField = "array_invoiceno";
+                        
+                        //    let filters = ["statecode eq 0"];
+                        let filters = [
+                            "(statuscode eq 1 or statuscode eq 4 or statuscode eq 100002)",
+                            "(statecode eq 0 or statecode eq 2)"
+                        ];            
+                        if(payment.paymentCurrencyId) {
+                            filters.push(`_transactioncurrencyid_value eq ${payment.paymentCurrencyId}`);
+                        }
+                        if(query) {
+                            filters.push(`contains(array_invoiceno,'${query}')`);
+                        }
+                        
+                        const filterString = filters.join(' and ');
+                        // Fix 2: Added _array_invoicetype_value
+                        fetchXml = `?$select=array_invoiceno,invoiceid,totalamount,array_remainingamount,array_amountpaid,_array_leaseagreement_value,_transactioncurrencyid_value,_array_invoicetype_value,_customerid_value&$filter=${filterString}&$top=20`; // Increased top slightly                        
+                    } else { 
+                        entity = "transactioncurrencies";
+                        displayField = "isocurrencycode";
+                        let filterString = "";
+                        if(query) {
+                            filterString = `&$filter=contains(isocurrencycode,'${query}') or contains(currencyname,'${query}')`;
+                        }
+                        fetchXml = `?$select=isocurrencycode,currencyname,transactioncurrencyid${filterString}&$top=10`;
+                    }
+
+                    console.log(`Fetching ${entity}`);
+                    const results = await parent.Xrm.WebApi.retrieveMultipleRecords(entity === "invoices" ? "invoice" : "transactioncurrency", fetchXml);
+                    
+                    resultsDiv.innerHTML = '';
+                    
+                    // Fix 1: Filter out already selected invoices
+                    let displayEntities = results.entities;
+                    if(type === 'invoice') {
+                        // Gather all used IDs
+                        const usedInvoiceIds = new Set();
+                        invoiceData.forEach(p => p.items.forEach(item => {
+                             if(item.invoiceId) usedInvoiceIds.add(item.invoiceId);
+                        }));
+                        
+                        // Filter entities
+                        displayEntities = results.entities.filter(rec => !usedInvoiceIds.has(rec.invoiceid));
+                    }
+
+                    if(displayEntities.length === 0) {
+                        resultsDiv.innerHTML = '<div class="lookup-item">No results found (or already selected)</div>';
+                    } else {
+                        displayEntities.forEach(rec => {
+                            const div = document.createElement('div');
+                            div.className = 'lookup-item';
+                            let subText = "";
+                            
+                            if(type === 'invoice') {
+                                const leaseName = rec["_array_leaseagreement_value@OData.Community.Display.V1.FormattedValue"] || 'N/A';
+                                subText = `Total: ${rec.totalamount?.toFixed(2) || 0} | Rem: ${rec.array_remainingamount?.toFixed(2) || 0} | Lease: ${leaseName}`;
+                            } else {
+                                subText = rec.currencyname;
+                            }
+
+                            div.innerHTML = `<div class="lookup-item-main">${rec[displayField]}</div><div class="lookup-item-sub">${subText}</div>`;
+                            div.onclick = () => {
+                                input.value = rec[displayField];
+                                input.classList.add('has-value');
+                                resultsDiv.classList.remove('active');
+                                
+                                if(type === 'invoice') {
+                                    invoiceData[pIdx].items[iIdx].invoiceId = rec.invoiceid;
+                                    invoiceData[pIdx].items[iIdx].invoiceName = rec.array_invoiceno;
+                                    invoiceData[pIdx].items[iIdx].invTotal = rec.totalamount || 0;
+                                    invoiceData[pIdx].items[iIdx].invRem = rec.array_remainingamount || 0;
+                                    invoiceData[pIdx].items[iIdx].invPaid = rec.array_amountpaid || 0;
+                                    invoiceData[pIdx].items[iIdx].leaseId = rec["_array_leaseagreement_value"] || null;
+                                    invoiceData[pIdx].items[iIdx].leaseName = rec["_array_leaseagreement_value@OData.Community.Display.V1.FormattedValue"] || null;
+                                    invoiceData[pIdx].items[iIdx].invoiceCurrencyId = rec["_transactioncurrencyid_value"] || null;
+                                    invoiceData[pIdx].items[iIdx].invoiceCurrencyName = rec["_transactioncurrencyid_value@OData.Community.Display.V1.FormattedValue"] || '-';
+                                    
+                                    // Fix 2: Store Invoice Type Name
+                                    invoiceData[pIdx].items[iIdx].invoiceTypeName = rec["_array_invoicetype_value@OData.Community.Display.V1.FormattedValue"] || '-';
+
+                                    invoiceData[pIdx].items[iIdx].currencyId = payment.paymentCurrencyId;
+                                    invoiceData[pIdx].items[iIdx].currencyName = payment.paymentCurrencyName;
+                                    invoiceData[pIdx].items[iIdx].customerId = rec["_customerid_value"] || null;
+                                    invoiceData[pIdx].items[iIdx].customerType = rec["_customerid_value@Microsoft.Dynamics.CRM.lookuplogicalname"] || null;
+                                    
+                                    renderStep2(); 
+                                } else { 
+                                    // Currency lookup
+                                    invoiceData[pIdx].paymentCurrencyId = rec.transactioncurrencyid;
+                                    invoiceData[pIdx].paymentCurrencyName = rec.isocurrencycode;
+
+                                    invoiceData[pIdx].items.forEach(item => {
+                                        item.currencyId = rec.transactioncurrencyid;
+                                        item.currencyName = rec.isocurrencycode;
+                                    });
+                                    renderStep2(); 
+                                }
+                            };
+                            resultsDiv.appendChild(div);
+                        });
+                    }
+                    
+                    // Close dropdown on outside click
+                    document.addEventListener('click', function close(e) {
+                        if(!input.contains(e.target) && !resultsDiv.contains(e.target)) {
+                            resultsDiv.classList.remove('active');
+                            document.removeEventListener('click', close);
+                        }
+                    });
+                    
+                } catch(e) {
+                    console.error('Lookup search error:', e);
+                    resultsDiv.innerHTML = '<div class="lookup-item" style="color:red">Error fetching data</div>';
+                }
+            };
+            
+            if (isButton || query) {
+                if (isButton && !query) {
+                    executeSearch(); 
+                } else {
+                    searchTimeout = setTimeout(executeSearch, 400); 
+                }
+            }
+        }
+
+        // --- UPDATES ---
+        function updateHeader(pIdx, field, val) { invoiceData[pIdx][field] = val; }
+        function updateLine(pIdx, iIdx, field, val) {
+            if(field === 'amount') val = parseFloat(val) || 0;
+            invoiceData[pIdx].items[iIdx][field] = val;
+            renderStep2();
+        }
+        function addLine(pIdx) {
+            const payment = invoiceData[pIdx];
+            if(!payment.paymentCurrencyId) {
+                    showAlert(
+                        isPolish ? "Nie można dodać linii" : "Cannot Add Line",
+                        isPolish
+                            ? "Proszę najpierw wybrać **Walutę Płatności** dla tej płatności."
+                            : "Please select a **Payment Currency** for this payment first."
+                    );
+                    return;
+            }
+
+            invoiceData[pIdx].items.push({
+                realLineId: null, invoiceId: null, currencyId: payment.paymentCurrencyId, 
+                invoiceCurrencyId: null, invoiceCurrencyName: null,
+                invoiceTypeName: null, // Fix 2: Init null
+                currencyName: payment.paymentCurrencyName,
+                amount: 0, description: '', invTotal: 0, invPaid: 0, invRem: 0, leaseId: null, leaseName: null
+            });
+            renderStep2();
+        }
+        function addNewPaymentGroup() {
+            invoiceData.unshift({
+                realHeaderId: null, docNum: 'New Payment', date: new Date().toISOString().split('T')[0],
+                items: [],
+                paymentCurrencyId: null,
+                paymentCurrencyName: null
+            });
+            renderStep2();
+        }
+
+async function attemptGoToStage3() {
+    if (!invoiceData || invoiceData.length === 0) {
+        await showError(
+            isPolish
+                ? "Przed kontynuowaniem należy utworzyć co najmniej jeden dowód wpłaty."
+                : "At least one Payment Receipt must be created before proceeding."
+        );
+        return;
+    }
+
+    let errorMap = new Map();
+    
+    invoiceData.forEach((payment, pIdx) => {
+        const paymentCurrencyId = payment.paymentCurrencyId;
+
+        // Check if payment has no lines
+        if(payment.items.length === 0) {
+            if(!errorMap.has(payment.docNum)) errorMap.set(payment.docNum, []);
+            errorMap.get(payment.docNum).push(
+                isPolish
+                    ? "**Brak linii płatności** | Ta płatność musi zawierać co najmniej jedną linię."
+                    : "**No Payment Lines** | This payment must have at least one line item."
+            );
+        }                
+        
+        payment.items.forEach((item, iIdx) => {
+            if(item.invoiceId) {
+                if(item.invoiceCurrencyId && item.invoiceCurrencyId !== paymentCurrencyId) {
+                    if(!errorMap.has(payment.docNum)) errorMap.set(payment.docNum, []);
+                    const lineErr = isPolish
+                        ? `Linia ${iIdx + 1}: **Niezgodność waluty faktury** | Waluta faktury – ${item.invoiceCurrencyName || '?'}`
+                        : `Line ${iIdx + 1}: **Invoice Currency Mismatch** | Invoice Currency - ${item.invoiceCurrencyName || '?'}`;
+                    errorMap.get(payment.docNum).push(lineErr);
+                }
+            } else {
+                if(!errorMap.has(payment.docNum)) errorMap.set(payment.docNum, []); // ✅ FIXED
+                const lineErr = isPolish
+                    ? `Linia ${iIdx + 1}: **Brak faktury** | Proszę wybrać prawidłową fakturę.`
+                    : `Line ${iIdx + 1}: **Invoice Missing** | Please select a valid invoice.`;
+                errorMap.get(payment.docNum).push(lineErr);
+            }
+            
+            if (!item.currencyId) {
+                if(!errorMap.has(payment.docNum)) errorMap.set(payment.docNum, []); // ✅ FIXED
+                const lineErr = isPolish
+                    ? `Linia ${iIdx + 1}: **Brak waluty płatności** | Proszę wybrać walutę płatności dla tej grupy.`
+                    : `Line ${iIdx + 1}: **Payment Currency Missing** | Please select a payment currency for this group.`;
+                errorMap.get(payment.docNum).push(lineErr);
+            }
+        });
+    });
+
+    if(errorMap.size > 0) {
+        let msg = isPolish
+            ? "W danych płatności wykryto następujące problemy:\n\n"
+            : "The following issues were found in the payment data:\n\n";
+        errorMap.forEach((lines, docNum) => {
+            msg += `Payment '${docNum}'\n`;
+            lines.forEach(line => msg += `  • ${line}\n`);
+            msg += `\n`;
+        });
+        await showError(msg);
+    } else {
+        goToStage(3);
+    }
+}
+
+        // --- SAVING ---
+        async function savePaymentGroup(pIdx) {
+            const payment = invoiceData[pIdx];
+            if (!payment.paymentCurrencyId) {
+                    await showAlert(
+                        isPolish
+                            ? "Nie można zapisać wersji roboczej"
+                            : "Cannot Save Draft",
+                        isPolish
+                            ? "Proszę wybrać **Walutę Płatności** dla tej płatności."
+                            : "Please select a **Payment Currency** for this payment."
+                    );
+                 return;
+            }
+                showLoading(
+                    isPolish
+                        ? `Zapisywanie wersji roboczej dla ${payment.docNum}...`
+                        : `Saving Draft for ${payment.docNum}...`
+                );
+                try {
+                const totals = calculateTotals(payment.items, payment.paymentCurrencyName);
+
+                let headerId = payment.realHeaderId;
+                const headerPayload = {
+                    "array_accountingpaymentid": payment.docNum, 
+                    "array_paymentdate": payment.date,
+                    "array_approvalstatus": STATUS_DRAFT,
+                    "array_paymenttotal": totals.code === 'EUR' ? totals.single : 0, 
+                    "array_paymenttotalz": totals.code === 'PLN' ? totals.single : 0,
+                    "array_xmlfile": sharePointUrl || ""
+
+                };
+
+                if(headerId) await parent.Xrm.WebApi.updateRecord(TABLE_REAL_HEADER, headerId, headerPayload);
+                else {
+                    const res = await parent.Xrm.WebApi.createRecord(TABLE_REAL_HEADER, headerPayload);
+                    headerId = res.id; payment.realHeaderId = headerId; 
+                }
+
+                for(let item of payment.items) {
+                    const linePayload = {
+                        "array_amountpaid": item.amount, 
+                        "array_paymentid": payment.docNum, 
+                        "array_paymentdate": payment.date, 
+
+                        "array_approvalstatus": STATUS_DRAFT,
+                        "array_PaymentReceipt@odata.bind": `/${TABLE_REAL_HEADER}s(${headerId})`,
+
+                        "array_description": item.description,
+                        "array_originalremainingamount": item.invoiceId ? (item.invRem || 0) : null  // ✅ ADD THIS
+
+
+
+                    };
+                    if(payment.paymentCurrencyId) linePayload["transactioncurrencyid@odata.bind"] = `/transactioncurrencies(${payment.paymentCurrencyId})`;
+                    if(item.invoiceId) linePayload["array_Invoice@odata.bind"] = `/invoices(${item.invoiceId})`;
+
+                    // ✅ ADD THIS
+                    if(item.leaseId)
+                        linePayload["array_LeaseAgreement@odata.bind"] = `/array_leaseagreements(${item.leaseId})`;
+
+                    if(item.customerId && item.customerType === 'account') {
+                        linePayload["array_TenantLookup_account@odata.bind"] = `/accounts(${item.customerId})`;
+                    } else if(item.customerId && item.customerType === 'contact') {
+                        linePayload["array_TenantLookup_contact@odata.bind"] = `/contacts(${item.customerId})`;
+                    }
+
+                    if(item.realLineId) await parent.Xrm.WebApi.updateRecord(TABLE_REAL_LINE, item.realLineId, linePayload);
+                    else {
+                        const res = await parent.Xrm.WebApi.createRecord(TABLE_REAL_LINE, linePayload);
+                        item.realLineId = res.id; 
+                    }
+                }
+                hideLoading();
+                await showAlert(
+                            isPolish ? "Sukces" : "Success",
+                            isPolish
+                                ? `Płatność ${payment.docNum} zapisana jako wersja robocza.`
+                                : `Payment ${payment.docNum} saved as Draft.`
+                        );
+                            renderStep2(); 
+            } catch(e) {
+                hideLoading();
+                await showError("Error saving draft: " + e.message);
+                console.error(e);
+            }
+        }
+        
+        async function deleteLine(pIdx, iIdx) {
+                const confirmTitle = isPolish
+                    ? "Usunąć linię?"
+                    : "Delete Line?";
+
+                const confirmMsg = isPolish
+                    ? "Ta linia płatności zostanie usunięta z systemu. Czy jesteś pewien?"
+                    : "This Payment Line will be deleted from the system. Are you sure?";
+
+                const confirmBtn = isPolish
+                    ? "Tak, usuń"
+                    : "Yes, Delete";
+
+                const loadingMsg = isPolish
+                    ? "Usuwanie linii..."
+                    : "Deleting line...";
+
+                const errorPrefix = isPolish
+                    ? "Błąd podczas usuwania linii: "
+                    : "Error deleting line: ";
+
+                if (await showConfirm(confirmTitle, confirmMsg, confirmBtn, "btn-danger")) {
+                const item = invoiceData[pIdx].items[iIdx];
+                    showLoading(loadingMsg);
+                try {
+                    if(item.realLineId) {
+                        await parent.Xrm.WebApi.deleteRecord(TABLE_REAL_LINE, item.realLineId);
+                    }
+                    invoiceData[pIdx].items.splice(iIdx, 1);
+                    renderStep2();
+                    hideLoading();
+                } catch (e) {
+                    hideLoading();
+                        await showError(errorPrefix + e.message);
+                }
+            }
+        }
+        window.deleteLine = deleteLine;
+
+        async function deletePayment(pIdx) {
+                const confirmTitle = isPolish
+                    ? "Usunąć płatność?"
+                    : "Delete Payment?";
+
+                const confirmMsg = isPolish
+                    ? "Ta płatność i wszystkie powiązane linie zostaną usunięte z systemu. Czy jesteś pewien?"
+                    : "This payment and all associated lines will be deleted from the system. Are you sure?";
+
+                const confirmBtn = isPolish
+                    ? "Tak, usuń"
+                    : "Yes, Delete";
+
+                const loadingMsg = isPolish
+                    ? "Usuwanie płatności..."
+                    : "Deleting payment...";
+
+                const errorPrefix = isPolish
+                    ? "Błąd podczas usuwania płatności: "
+                    : "Error deleting payment: ";
+
+                if (await showConfirm(confirmTitle, confirmMsg, confirmBtn, "btn-danger")) {
+                const p = invoiceData[pIdx];
+                showLoading(loadingMsg);
+                try {
+                    for(const item of p.items) {
+                        if(item.realLineId) {
+                            try { await parent.Xrm.WebApi.deleteRecord(TABLE_REAL_LINE, item.realLineId); } catch(e){ console.warn("Line delete failed", e); }
+                        }
+                    }
+                    if(p.realHeaderId) {
+                        await parent.Xrm.WebApi.deleteRecord(TABLE_REAL_HEADER, p.realHeaderId);
+                    }
+                    invoiceData.splice(pIdx, 1);
+                    renderStep2();
+                    hideLoading();
+                } catch (e) {
+                    hideLoading();
+                        await showError(errorPrefix + e.message);
+                }
+            }
+        }
+        window.deletePayment = deletePayment;
+
+        // --- STEP 3 SUMMARY & FINAL SUBMIT ---
+        function populateSummary() {
+            const div = document.getElementById('summaryContent');
+            let html = '';
+            
+            let totalPayments = invoiceData.length;
+            let totalLines = 0;
+            let grandTotalEur = 0;
+            let grandTotalPln = 0;
+            
+            invoiceData.forEach(p => {
+                totalLines += p.items.length;
+                const t = calculateTotals(p.items, p.paymentCurrencyName);
+                if (t.code === 'EUR') grandTotalEur += t.single;
+                if (t.code === 'PLN') grandTotalPln += t.single;
+            });
+
+            const formattedEur = grandTotalEur.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            const formattedPln = grandTotalPln.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            const symbolEur = getSymbol('EUR');
+            const symbolPln = getSymbol('PLN');
+
+            html += `
+            <div class="import-overview">
+                <div class="overview-box">
+                    <div class="overview-label">Total Payments</div>
+                    <div class="overview-value">${totalPayments}</div>
+                </div>
+                <div class="overview-box">
+                    <div class="overview-label">Total Lines</div>
+                    <div class="overview-value">${totalLines}</div>
+                </div>
+                <div class="overview-box">
+                    <div class="overview-label">Total EUR</div>
+                    <div class="overview-value val-eur">${symbolEur} ${formattedEur}</div>
+                </div>
+                <div class="overview-box">
+                    <div class="overview-label">Total PLN</div>
+                    <div class="overview-value val-pln">${symbolPln} ${formattedPln}</div>
+                </div>
+            </div>`;
+            
+            invoiceData.forEach(p => {
+                const t = calculateTotals(p.items, p.paymentCurrencyName);
+                const currencyTagClass = t.code === 'EUR' ? 'tag-eur' : (t.code === 'PLN' ? 'tag-pln' : 'tag-eur');
+                const symbol = getSymbol(t.code);
+
+                html += `
+                <div class="summary-card">
+                    <h3>ID: ${p.docNum} 
+                        <span style="float:right;" class="single-total">
+                            <span class="${currencyTagClass}" style="font-size:14px; margin-right:10px;">
+                                ${symbol} ${t.single.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${t.code})
+                            </span>
+
+                        </span>
+                    </h3>
+                    <p style="font-size: 13px; color: #64748b; margin-top: 4px; font-weight: 600;">Payment Date: ${p.date}</p>
+                    
+                    <div style="margin-top:10px; border-top:1px solid #eee;">
+                        <div class="summary-row" style="font-weight:bold; background:#f9fafb;">
+                            <div>Invoice</div><div>Lease Agreement</div><div>Invoice Total</div><div>Currency</div><div>Amount Paid</div><div>Final Remaining</div>
+                        </div>`;
+                p.items.forEach(i => {
+                    const diff = i.invRem - i.amount;
+                    const sym = getSymbol(i.currencyName);
+                    html += `
+                        <div class="summary-row">
+                            <div>${i.invoiceName || '-'}</div>
+                            <div>${i.leaseName || '-'}</div>
+                            <div>${(i.invTotal || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                            <div>${i.currencyName || '-'}</div>
+                            <div>${sym} ${i.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                            <div style="font-weight:bold">
+                                ${diff.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                        </div>`;
+                });
+                html += `</div></div>`;
+            });
+            div.innerHTML = html;
+        }
+
+        async function submitFinalData() {
+            const confirmed = await showConfirm(
+                isPolish ? "Przesłać i zatwierdzić?" : "Submit & Approve?",
+                isPolish
+                    ? "Ta akcja zatwierdzi wszystkie Pokwitowania Płatności i zaktualizuje salda faktur. Proszę potwierdzić."
+                    : "This action will approve all Payment Receipts and update Invoice balances. Please Confirm",
+                isPolish ? "Tak, prześlij" : "Yes, Submit",
+                "btn-success"
+            );
+            if(!confirmed) return;
+                showLoading(
+                    isPolish
+                        ? "Synchronizacja danych i zatwierdzanie..."
+                        : "Synchronizing Data & Approving..."
+                );            try {
+                for(let payment of invoiceData) {
+                    let headerId = payment.realHeaderId;
+                    const t = calculateTotals(payment.items, payment.paymentCurrencyName);
+
+                    const headerPayload = {
+                        "array_accountingpaymentid": payment.docNum, 
+                        "array_paymentdate": payment.date,
+                        "array_approvalstatus": STATUS_APPROVED, 
+                        "array_paymenttotal": t.code === 'EUR' ? t.single : 0,
+                        "array_paymenttotalz": t.code === 'PLN' ? t.single : 0,
+                        "array_xmlfile": sharePointUrl || "",
+                        "statecode": 1
+                        // "statuscode": 2
+
+                    };
+                    
+                    if(headerId) await parent.Xrm.WebApi.updateRecord(TABLE_REAL_HEADER, headerId, headerPayload);
+                    else {
+                        const res = await parent.Xrm.WebApi.createRecord(TABLE_REAL_HEADER, headerPayload);
+                        headerId = res.id; 
+                    }
+
+                    for(let item of payment.items) {
+                        const linePayload = {
+                            "array_amountpaid": item.amount, 
+                            "array_paymentid": payment.docNum, 
+                            "array_paymentdate": payment.date, 
+                            "array_approvalstatus": STATUS_APPROVED, 
+                            "array_PaymentReceipt@odata.bind": `/${TABLE_REAL_HEADER}s(${headerId})`,
+                            "array_description": item.description,
+                            "array_originalremainingamount": item.invoiceId ? (item.invRem || 0) : null  // ✅ ADD THIS
+
+
+                        };
+                        
+                        if(payment.paymentCurrencyId) linePayload["transactioncurrencyid@odata.bind"] = `/transactioncurrencies(${payment.paymentCurrencyId})`;
+                        if(item.invoiceId) linePayload["array_Invoice@odata.bind"] = `/invoices(${item.invoiceId})`;
+                        if(item.leaseId) linePayload["array_LeaseAgreement@odata.bind"] = `/array_leaseagreements(${item.leaseId})`;
+
+                        if(item.customerId && item.customerType === 'account') {
+                            linePayload["array_TenantLookup_account@odata.bind"] = `/accounts(${item.customerId})`;
+                        } else if(item.customerId && item.customerType === 'contact') {
+                            linePayload["array_TenantLookup_contact@odata.bind"] = `/contacts(${item.customerId})`;
+                        }
+
+                        if(item.realLineId) await parent.Xrm.WebApi.updateRecord(TABLE_REAL_LINE, item.realLineId, linePayload);
+                        else await parent.Xrm.WebApi.createRecord(TABLE_REAL_LINE, linePayload);
+
+                        if(item.invoiceId) {
+                            const rawRem = item.invRem || 0;
+                            const overpaid = item.amount - rawRem;
+                            const isOverpaid = overpaid > 0.001;
+
+                            const newPaid = (item.invPaid || 0) + item.amount; 
+                            let newRem = rawRem - item.amount;
+                            
+                            if (newRem < 0) newRem = 0;
+    
+                            const invUpdate = { 
+                                "array_amountpaid": newPaid, 
+                                "array_remainingamount": newRem 
+                            };
+
+                            if (newRem <= 0) {
+                                invUpdate["statecode"] = 2;
+                                invUpdate["statuscode"] = 100001; 
+                            } else {
+                                invUpdate["statecode"] = 2; 
+                                invUpdate["statuscode"] = 100002;
+                            }
+
+                            await parent.Xrm.WebApi.updateRecord("invoice", item.invoiceId, invUpdate);
+
+                            // ✅ CREDIT LINE for overpayment
+                            if (isOverpaid) {
+                                const creditLinePayload = {
+                                    "array_name": null,
+                                    "array_amountpaid": overpaid,
+                                    "array_paymentdate": payment.date,
+                                    "array_paymentlinetype": 590930000,
+                                    "array_description": item.description,
+                                    "array_paymentid": payment.docNum,
+                                    "array_transactiontype": 590930001,
+                                    "array_approvalstatus": STATUS_APPROVED,
+                                    "array_Invoice@odata.bind": `/invoices(${item.invoiceId})`,
+                                    "array_PaymentReceipt@odata.bind": `/${TABLE_REAL_HEADER}s(${headerId})`
+                                };
+
+                                if (payment.paymentCurrencyId) {
+                                    creditLinePayload["transactioncurrencyid@odata.bind"] = `/transactioncurrencies(${payment.paymentCurrencyId})`;
+                                }
+
+                                if (item.leaseId) {
+                                    creditLinePayload["array_LeaseAgreement@odata.bind"] = `/array_leaseagreements(${item.leaseId})`;
+                                }
+
+                                if(item.customerId && item.customerType === 'account') {
+                                    creditLinePayload["array_TenantLookup_account@odata.bind"] = `/accounts(${item.customerId})`;
+                                } else if(item.customerId && item.customerType === 'contact') {
+                                    creditLinePayload["array_TenantLookup_contact@odata.bind"] = `/contacts(${item.customerId})`;
+                                }
+
+                                await parent.Xrm.WebApi.createRecord(TABLE_REAL_LINE, creditLinePayload);
+                            }
+                        }
+                    }
+                }
+                hideLoading();
+                goToStage(4);
+            } catch(e) {
+                hideLoading();
+                await showError("Error during submission: " + e.message);
+                console.error(e);
+            }
+        }
+
+        
+
+            async function confirmRestart() {
+                const title = isPolish
+                    ? "Rozpocząć ponownie?"
+                    : "Restart Process?";
+
+                const message = isPolish
+                    ? "Spowoduje to odrzucenie wszystkich niezapisanych zmian i przeładowanie strony."
+                    : "This will discard all unsaved changes and reload the page.";
+
+                const confirmText = isPolish
+                    ? "Rozpocznij ponownie"
+                    : "Restart";
+
+                if (await showConfirm(title, message, confirmText, "btn-secondary")) {
+                    location.reload();
+                }
+            }
+
+// --- Translation object ---
+const translations = {
+    "Processing...": "Przetwarzanie...",
+    "Confirm Action": "Potwierdź Akcję",
+    "Step 1: Upload Bank Statement" : "Krok 1: Prześlij Wyciąg Bankowy",
+    "Import Payments":"Import Płatności",
+    "Select STA File":"Wybierz Plik STA",
+    "Creates Draft Records in Dataverse":"Tworzy Wersje Robocze w Dataverse",
+    "Are you sure you want to proceed?": "Czy na pewno chcesz kontynuować?",
+    "Upload Bank Statement": "Prześlij Wyciąg Bankowy",
+    "Review & Edit": "Przegląd i Edycja",
+    "Final Review": "Ostateczny Przegląd",
+    "Success": "Sukces",
+    "+ New Payment": "+ Nowa Płatność",
+    "Discard & Restart": "Odrzuć i Rozpocznij Ponownie",
+    "Review Summary": "Przejrzyj Podsumowanie",
+    "Back to Edit": "Powrót do Edycji",
+    "Submit & Approve": "Zatwierdź i Zaakceptuj",
+    "Save Draft": "Zapisz Wersję Roboczą",
+    "+ Add Line": "+ Dodaj Linię",
+    "Delete Payment": "Usuń Płatność",
+    "Close": "Zamknij",
+    "Step 1: Upload Payment XML" : "Krok 1: Prześlij Plik XML Płatności",
+    "Upload XML":"Prześlij XML",
+
+    "Parsing MT940 & Creating Draft Records...": "Parsowanie MT940 i Tworzenie Wersji Roboczych...",
+    "Step 2: Review & Edit Payments": "Krok 2: Przegląd i Edycja Płatności",
+    "Total Payments": "Łącznie Płatności",
+    "Total Lines": "Łącznie Linii",
+    "Total EUR": "Łącznie EUR",
+    "Total PLN": "Łącznie PLN",
+    "⚠️ The selected invoice does not exist. Please choose a valid invoice.": "⚠️ Wybrana faktura nie istnieje. Proszę wybrać prawidłową fakturę.",
+    "⚠️ Please select an invoice.": "⚠️ Proszę wybrać fakturę.",
+    "Step 3: Final Review": "Krok 3: Ostateczny Przegląd",
+    "Submitting will approve records and update invoices.": "Przesłanie zatwierdzi rekordy i zaktualizuje faktury.",
+    "💾 Save Draft": "💾 Zapisz Wersję Roboczą",
+    "Review Summary →": "Przejrzyj Podsumowanie →",
+    "← Back to Edit": "← Powrót do Edycji",
+    "✓ Submit & Approve": "✓ Prześlij i Zatwierdź",
+    "Invoice": "Faktura",
+    "Lease Agreement": "Umowa Najmu",
+    "Invoice Total": "Suma Faktury",
+    "Currency": "Waluta",
+    "Amount Paid": "Kwota Zapłacona",
+    "Final Remaining": "Końcowe Saldo",
+    "Invoice Type": "Typ Faktury",
+    "Amount": "Kwota",
+    "Remaining": "Pozostało",
+    "Description": "Opis",
+    "PAYMENT ID": "ID PŁATNOŚCI",
+    "DATE": "DATA",
+    "PAYMENT CURRENCY": "WALUTA PŁATNOŚCI",
+    "TOTAL": "SUMA",
+    "Rent": "Czynsz",
+    "Import Successful!": "Import zakończony sukcesem!",
+    "Records have been approved and Invoices updated.": "Rekordy zostały zatwierdzone, a faktury zaktualizowane.",
+    "Select XML File": "Wybierz Plik XML"
+};
+
+const input = document.getElementById("invoiceSearchInput");
+if (isPolish && input) {
+    input.placeholder = "Szukaj faktury";
+}
+
+function decodeHTMLEntities(text) {
+    const txt = document.createElement("textarea");
+    txt.innerHTML = text;
+    return txt.value;
+}
+
+function translateElement(el) {
+    if (!isPolish || !el) return;
+
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null, false);
+    let node;
+    while (node = walker.nextNode()) {
+        const trimmed = decodeHTMLEntities(node.nodeValue.trim());
+        if (translations[trimmed]) {
+            node.nodeValue = translations[trimmed];
+        }
+    }
+}
+
+// --- Initial translation of all existing elements ---
+document.querySelectorAll("*").forEach(translateElement);
+
+// --- Observe DOM changes for new elements ---
+const observer = new MutationObserver(mutations => {
+    mutations.forEach(mutation => {
+        mutation.addedNodes.forEach(node => {
+            if (node.nodeType === 1) { // element node
+                translateElement(node);
+                node.querySelectorAll("*").forEach(translateElement);
+            }
+        });
+    });
+});
+
+observer.observe(document.body, { childList: true, subtree: true });
+
+async function getEnvironmentVariable(schemaName) {
+    const fetchXml = `
+        <fetch top="1">
+            <entity name="environmentvariablevalue">
+                <attribute name="value" />
+                <link-entity name="environmentvariabledefinition"
+                             from="environmentvariabledefinitionid"
+                             to="environmentvariabledefinitionid"
+                             link-type="inner">
+                    <filter>
+                        <condition attribute="schemaname" operator="eq" value="${schemaName}" />
+                    </filter>
+                </link-entity>
+            </entity>
+        </fetch>
+    `;
+
+    const encodedFetchXml = encodeURIComponent(fetchXml);
+    const result = await parent.Xrm.WebApi.retrieveMultipleRecords(
+        "environmentvariablevalue",
+        `?fetchXml=${encodedFetchXml}`
+    );
+
+    if (result.entities.length > 0) {
+        return result.entities[0].value;
+    }
+
+    return null;
+}
+
+
+async function initializeEnvironmentVariables() {
+    try {
+        //spBaseUrl = await getEnvironmentVariable("array_SharePointBaseURL");
+        spBaseUrl = await getEnvironmentVariable("array_SharePointURL");
+
+        FLOW_URL = await getEnvironmentVariable("array_PaymentReceiptFlowURL"); 
+        console.log("ENV :",FLOW_URL,spBaseUrl);
+
+        if (!spBaseUrl) {
+            console.error("SharePoint Base URL env var not found.");
+        }
+
+        if (!FLOW_URL) {
+            console.error("Flow URL env var not found.");
+        }
+
+    } catch (error) {
+        console.error("Error loading environment variables:", error);
+    }
+}
+
+
+
+document.addEventListener("DOMContentLoaded", function () {
+    initializeEnvironmentVariables();
+});
+
+    </script>
+</body>
+</html>

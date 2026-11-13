@@ -1,0 +1,2297 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Collateral Calculation Rules &amp; Configuration</title>
+<style>
+:root {
+  --blue:#1C6BD4;   --blue-l:#EBF3FF; --blue-mid:#BBDBFF; --blue-dk:#0D4A9E;
+  --red:#B91C1C;    --red-l:#FEF2F2;
+  --amber:#B45309;  --amber-l:#FEF3C7; --amber-mid:#FDE68A;
+  --green:#047857;  --green-l:#ECFDF5; --green-mid:#A7F3D0;
+  --bg:#F3F5F9;     --surf:#FFFFFF;
+  --border:rgba(0,0,0,0.08); --border-m:rgba(0,0,0,0.14);
+  --text:#111827;   --sub:#4B5563;    --hint:#9CA3AF;
+  --radius:12px; --radius-sm:8px; --radius-xs:6px;
+  --shadow:0 1px 3px rgba(16,24,40,0.06);
+  --shadow-lg:0 24px 60px rgba(0,0,0,0.22);
+  --font:'Inter','Segoe UI',system-ui,-apple-system,BlinkMacSystemFont,Roboto,sans-serif;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:var(--font); background:var(--bg); color:var(--text); line-height:1.55; padding:24px 24px 96px; font-size:14px; }
+.page-wrap { max-width:860px; margin:0 auto; }
+
+/* ---- Section shell with numbered step header ---- */
+.form-section { background:var(--surf); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:16px; overflow:hidden; box-shadow:var(--shadow); position:relative; transition:opacity .2s ease; }
+.section-content { padding:22px; }
+.step-head { display:flex; align-items:flex-start; gap:12px; margin-bottom:18px; }
+.step-num { flex-shrink:0; width:26px; height:26px; border-radius:50%; background:var(--blue); color:#fff; font-size:13px; font-weight:800; display:flex; align-items:center; justify-content:center; margin-top:1px; }
+.step-head.done .step-num { background:var(--green); }
+.step-head-text { flex:1; }
+.section-title { font-size:15px; font-weight:800; color:var(--text); margin:0; letter-spacing:-.01em; }
+.section-description { font-size:12.5px; color:var(--sub); margin:3px 0 0; }
+.section-head-actions { margin-left:auto; }
+
+/* ---- Locked overlay for gated sections ---- */
+.form-section.locked { opacity:.55; pointer-events:none; user-select:none; }
+.form-section.locked::after {
+  content:"🔒 Select a lease agreement first"; position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  background:rgba(243,245,249,.35); font-size:12.5px; font-weight:700; color:var(--sub);
+  pointer-events:none; border-radius:var(--radius);
+}
+
+.form-group { display:flex; flex-direction:column; gap:6px; margin-bottom:16px; }
+.form-group:last-child { margin-bottom:0; }
+label { font-size:11.5px; font-weight:700; color:var(--sub); letter-spacing:.04em; text-transform:uppercase; }
+label.required::after { content:" *"; color:var(--red); font-weight:700; }
+.field-help { font-size:11.5px; color:var(--hint); font-weight:500; text-transform:none; letter-spacing:0; margin-top:-2px; }
+input[type="number"], input[type="text"], select {
+  width:100%; font-size:14px; font-family:inherit; padding:10px 12px;
+  border:1.5px solid var(--border-m); border-radius:var(--radius-sm);
+  background:var(--surf); color:var(--text); outline:none; transition:border-color .15s, box-shadow .15s;
+}
+input:focus, select:focus { border-color:var(--blue); box-shadow:0 0 0 3px var(--blue-l); }
+select { cursor:pointer; }
+
+.btn, .btn-add-large, .btn-primary, .btn-secondary {
+  font-family:inherit; font-size:13px; font-weight:600; padding:9px 16px;
+  border-radius:var(--radius-sm); cursor:pointer; border:1px solid transparent;
+  display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  white-space:nowrap; transition:filter .15s, background .15s;
+}
+.btn-primary { background:var(--blue); border-color:var(--blue); color:#fff; }
+.btn-primary:hover { filter:brightness(1.06); }
+.btn-secondary { background:#F1F5F9; border-color:#CBD5E1; color:#475569; }
+.btn-secondary:hover { background:#E7EDF4; }
+.btn-add-large { background:var(--blue); border-color:var(--blue); color:#fff; font-weight:700; }
+.btn-add-large:hover { filter:brightness(1.06); }
+.btn-add-large > span:first-child { font-size:16px; line-height:1; margin-top:-1px; }
+.btn:disabled, .btn-add-large:disabled, .btn-primary:disabled { opacity:.5; cursor:not-allowed; filter:none; }
+
+.tag { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; letter-spacing:.02em; padding:3px 10px; border-radius:100px; white-space:nowrap; }
+.tag-blue { background:var(--blue-l); color:var(--blue-dk); }
+.tag-amber { background:var(--amber-l); color:var(--amber); }
+.tag-green { background:var(--green-l); color:var(--green); }
+
+.context-value { font-size:13.5px; color:var(--text); padding:10px 12px; background:#F8FAFC; border:1.5px solid var(--border); border-radius:var(--radius-sm); }
+.context-value .muted { color:var(--hint); font-size:11.5px; }
+
+.inline-hint { display:none; margin-top:14px; padding:12px 14px; border-radius:var(--radius-sm); font-size:12.5px; line-height:1.55; border:1px solid transparent; }
+.hint-blue { background:var(--blue-l); border-color:var(--blue-mid); color:var(--blue-dk); }
+.hint-amber { background:var(--amber-l); border-color:var(--amber-mid); color:var(--amber); }
+
+/* persistent guidance line inside a step */
+.step-note { display:flex; gap:8px; align-items:flex-start; margin-top:2px; margin-bottom:16px; padding:10px 12px; background:var(--blue-l); border:1px solid var(--blue-mid); border-radius:var(--radius-sm); font-size:12px; color:var(--blue-dk); line-height:1.5; }
+.step-note .i { flex-shrink:0; font-weight:800; }
+
+.charges-table-wrapper { border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; background:var(--surf); }
+.charges-table { width:100%; border-collapse:collapse; font-size:13px; }
+.charges-table thead th { text-align:left; font-size:10.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--blue-dk); padding:10px 14px; background:var(--blue-l); border-bottom:1px solid var(--blue-mid); white-space:nowrap; }
+.charges-table tbody td { padding:11px 14px; color:var(--text); vertical-align:middle; border-bottom:1px solid var(--border); }
+.charges-table tbody tr:last-child td { border-bottom:none; }
+.charges-table tbody tr:hover { background:#FAFBFC; }
+.record-actions { display:flex; gap:8px; align-items:center; }
+.action-edit, .action-delete { width:30px; height:30px; border-radius:var(--radius-xs); display:inline-flex; align-items:center; justify-content:center; cursor:pointer; border:none; background:transparent; color:var(--sub); }
+.action-edit:hover { background:var(--blue-l); color:var(--blue); }
+.action-delete:hover { background:var(--red-l); color:var(--red); }
+
+.empty-state { text-align:center; padding:34px 16px; color:var(--hint); }
+.empty-icon { font-size:30px; opacity:.35; display:block; margin-bottom:10px; }
+.empty-state p { font-size:12.5px; color:var(--hint); margin:0; }
+.empty-hint { font-size:11.5px; color:var(--hint); }
+
+.modal { position:fixed; inset:0; z-index:9000; background:rgba(15,23,42,.45); display:none; align-items:center; justify-content:center; padding:24px; }
+.modal.active { display:flex; }
+.modal-content { background:var(--surf); border-radius:16px; width:640px; max-width:94vw; max-height:88vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:var(--shadow-lg); }
+.modal-header { padding:18px 24px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:12px; flex-shrink:0; }
+.modal-title { font-size:17px; font-weight:800; color:var(--text); margin:0; }
+.modal-close { width:32px; height:32px; border-radius:50%; background:#F1F2F4; border:none; cursor:pointer; color:var(--sub); font-size:18px; line-height:1; display:flex; align-items:center; justify-content:center; }
+.modal-close:hover { background:#E4E6EA; }
+.modal-body { padding:22px 24px; overflow-y:auto; flex:1; min-height:0; }
+.modal-footer { padding:14px 24px; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:flex-end; gap:8px; flex-shrink:0; background:#FAFBFC; }
+#deleteConfirmModal .modal-content { width:420px; }
+
+/* ---- Sticky save bar with loud dirty state ---- */
+.save-bar { position:fixed; left:0; right:0; bottom:0; z-index:8000; background:var(--surf); border-top:1px solid var(--border-m); box-shadow:0 -4px 20px rgba(16,24,40,.06); }
+.save-bar-inner { max-width:860px; margin:0 auto; padding:12px 24px; display:flex; align-items:center; gap:14px; }
+.save-status { display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:600; color:var(--hint); }
+.save-status .dot { width:9px; height:9px; border-radius:50%; background:var(--hint); flex-shrink:0; }
+.save-bar.dirty { background:var(--amber-l); border-top-color:var(--amber-mid); }
+.save-bar.dirty .save-status { color:var(--amber); }
+.save-bar.dirty .save-status .dot { background:var(--amber); box-shadow:0 0 0 4px rgba(180,83,9,.15); }
+.save-bar.saved .save-status { color:var(--green); }
+.save-bar.saved .save-status .dot { background:var(--green); }
+.save-bar-spacer { flex:1; }
+
+.notification { position:fixed; top:20px; right:20px; z-index:99999; min-width:240px; max-width:380px; padding:13px 18px; border-radius:10px; font-size:13px; font-weight:600; line-height:1.4; color:#fff; box-shadow:0 10px 30px rgba(17,24,39,.18),0 2px 6px rgba(17,24,39,.12); animation:toastIn .28s cubic-bezier(.21,1.02,.73,1) both; }
+@keyframes toastIn { from{opacity:0;transform:translateX(120%);} to{opacity:1;transform:translateX(0);} }
+@keyframes slideOut { from{opacity:1;transform:translateX(0);} to{opacity:0;transform:translateX(120%);} }
+
+@media (max-width:560px){
+  body{ padding:16px 14px 96px; }
+  .save-bar-inner{ padding:10px 14px; }
+  .modal{ padding:12px; }
+}
+
+/* ── Tighter, cleaner spacing overrides ─────────────────────────────── */
+body{padding:16px 20px 72px !important}
+.form-section{margin-bottom:12px !important}
+.section-content{padding:16px 18px !important}
+.empty-state{padding:18px 16px !important}
+.empty-icon{font-size:24px;margin-bottom:6px !important}
+.step-head{margin-bottom:12px !important}
+.form-group{margin-bottom:12px !important}
+
+
+/* ── Full-width, edge-to-edge content ────────────────────────────────── */
+.page-wrap{max-width:none !important;margin:0 !important;width:100%}
+.save-bar-inner{max-width:none !important}
+body{background:#fff !important;padding:16px 24px 72px !important}
+
+</style>
+</head>
+<body>
+<div class="page-wrap">
+
+<!-- ===== STEP 1: Lease Agreement (fallback lookup) ===== -->
+<div class="form-section" id="leaseAgreementFallbackGroup" style="display:block;">
+    <div class="section-content">
+        <div class="step-head" id="leaseStepHead">
+            <div class="step-num">1</div>
+            <div class="step-head-text">
+                <h2 class="section-title">Lease Agreement</h2>
+                <p class="section-description">Search and select a lease to load its collateral rules &amp; configurations. Everything below unlocks once a lease is chosen.</p>
+            </div>
+        </div>
+
+        <!-- Selected state -->
+        <div id="leaseSelectedWrap" style="display:none; align-items:center; gap:10px;">
+            <span class="tag tag-green" id="leaseSelectedLabel" style="font-size:12.5px; padding:6px 13px;"></span>
+            <button class="btn btn-secondary" type="button" onclick="clearSelectedLease()">Change</button>
+        </div>
+
+        <!-- Search state -->
+        <div id="leaseSearchWrap" class="form-group" style="position:relative; margin-bottom:0;">
+            <label class="required">Lease Agreement</label>
+            <input type="text" id="leaseSearchBox" autocomplete="off" placeholder="Type to search lease agreements...">
+            <div id="leaseSearchResults" style="display:none; position:absolute; top:100%; left:0; right:0; z-index:50; margin-top:4px; background:var(--surf); border:1px solid var(--border-m); border-radius:var(--radius-sm); box-shadow:var(--shadow-lg); max-height:240px; overflow-y:auto;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== STEP 2: Collateral Calculation Rule ===== -->
+<div class="form-section" id="rulesSection">
+    <div class="section-content">
+        <div class="step-head">
+            <div class="step-num">2</div>
+            <div class="step-head-text">
+                <h2 class="section-title">Collateral Calculation Rule</h2>
+                <p class="section-description">Set the multiplier coefficient and the charge types this rule applies to.</p>
+            </div>
+            <div class="section-head-actions">
+                <button class="btn-add-large" id="addRuleBtn" onclick="openCollateralRuleModal()" style="display:none;">
+                    <span>+</span> Add Rule
+                </button>
+            </div>
+        </div>
+
+        <!-- CREATE mode: multi-rule table (hidden by JS in single-rule mode) -->
+        <div id="collateralRulesContainer" style="display:none;">
+      <div class="empty-state">
+        <span class="empty-icon">📋</span>
+        <p>No rules added yet</p>
+        <p class="empty-hint">Click "Add Rule" to create a collateral calculation rule</p>
+      </div></div>
+
+        <!-- EDIT mode: single host rule, inline editing -->
+        <div id="collateralRuleInlineEdit" style="display:block;">
+            <div class="form-group">
+                <label class="required">Coefficient (Multiplier)</label>
+                <span class="field-help">Whole number the charge amounts are multiplied by.</span>
+                <input type="number" id="inlineCoefficient" min="0" step="1" placeholder="e.g. 3" oninput="onInlineCoefficientChange()">
+            </div>
+
+            <div class="form-group">
+                <label class="required">Charge Type(s) for this Rule</label>
+                <span class="field-help">Pick a charge type and click Add. Repeat to include several.</span>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <select id="inlineChargeTypeSelect" style="flex:1;"><option value="" selected="selected">-- Select Charge Type --</option></select>
+                    <button class="btn btn-primary" type="button" onclick="addChargeTypeToHostRule()" style="white-space:nowrap;">Add</button>
+                </div>
+            </div>
+
+            <div class="charges-table-wrapper" style="margin-top:8px;">
+                <table class="charges-table">
+                    <thead>
+                        <tr><th>Charge Type</th><th style="text-align:center;width:90px;">Action</th></tr>
+                    </thead>
+                    <tbody id="inlineChargeTypesList"><tr><td colspan="2" class="empty-state" style="padding:18px;">No charge types added yet</td></tr></tbody>
+                </table>
+            </div>
+
+            <div class="inline-hint" id="ruleDuplicateHint" style="display:none;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== STEP 3: Collateral Configuration ===== -->
+<div class="form-section" id="configSection">
+    <div class="section-content">
+        <div class="step-head">
+            <div class="step-num">3</div>
+            <div class="step-head-text">
+                <h2 class="section-title">Collateral Configuration</h2>
+                <p class="section-description">Collateral types accepted for the rule above. The rule and its configurations are saved together in Step 4.</p>
+            </div>
+            <div class="section-head-actions">
+                <button class="btn-add-large" onclick="openCollateralConfigModal()">
+                    <span>+</span> Add Configuration
+                </button>
+            </div>
+        </div>
+        <div id="collateralConfigContainer">
+      <div class="empty-state">
+        <span class="empty-icon">🔒</span>
+        <p>No configurations added yet</p>
+        <p class="empty-hint">Click "Add Configuration" to create a collateral configuration</p>
+      </div></div>
+    </div>
+</div>
+</div><!-- /page-wrap -->
+
+<!-- ===== STEP 4: Sticky save bar (loud dirty state) ===== -->
+<div class="save-bar" id="collateralSaveBar">
+    <div class="save-bar-inner">
+        <div class="save-status" id="collateralSaveStatus">
+            <span class="dot"></span>
+            <span id="collateralSaveStatusText">No changes yet</span>
+        </div>
+        <div class="save-bar-spacer"></div>
+        <!-- Custom save button removed: use the standard D365 Save (top bar).
+             The status text still reflects unsaved/saved state. -->
+    </div>
+</div>
+
+<!-- Collateral Rule Modal (used only in multi-rule / add-rule path) -->
+<div class="modal" id="collateralRuleModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title" id="collateralRuleModalTitle">Add Collateral Calculation Rule</h3>
+            <button class="modal-close" onclick="closeModal('collateralRuleModal')">×</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="collateralRuleEditId">
+            <div class="form-group">
+                <label class="required">Coefficient (Multiplier)</label>
+                <input type="number" id="collateralRuleCoefficient" min="0" step="1" placeholder="e.g. 3">
+            </div>
+            <div class="form-group">
+                <label class="required">Charge Type(s) for this Rule</label>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <select id="collateralChargeTypeSelect" style="flex:1;"><option value="" selected="selected">-- Select Charge Type --</option></select>
+                    <button class="btn btn-primary" type="button" onclick="addChargeTypeToRule()" style="white-space:nowrap;">Add</button>
+                </div>
+            </div>
+            <div style="margin-top:14px;">
+                <label style="font-size:11.5px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;display:block;">Selected Charge Types</label>
+                <div class="charges-table-wrapper">
+                    <table class="charges-table">
+                        <thead>
+                            <tr><th>Charge Type</th><th style="text-align:center;width:90px;">Action</th></tr>
+                        </thead>
+                        <tbody id="collateralRuleChargeTypesList">
+                            <tr><td colspan="2" class="empty-state" style="padding:18px;">No charge types added yet</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('collateralRuleModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="saveCollateralRule()">Save Rule</button>
+        </div>
+    </div>
+</div>
+
+<!-- Collateral Configuration Modal -->
+<div class="modal" id="collateralConfigModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title" id="collateralConfigModalTitle">Add Collateral Configuration</h3>
+            <button class="modal-close" onclick="closeModal('collateralConfigModal')">×</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="collateralConfigEditId">
+            <div class="form-group">
+                <label>Rule</label>
+                <div id="collateralConfigRuleContext" class="context-value">Coefficient: —
+       <span class="muted">&nbsp;· created when you save</span></div>
+            </div>
+            <div class="form-group">
+                <label class="required">Collateral Type</label>
+                <select id="collateralConfigTypeSelect">
+                    <option value="" selected="selected">-- Select Type --</option>
+                    <option value="126330000">Bank Guarantee</option>
+                    <option value="126330001">Liab. Insurance</option>
+                    <option value="126330002">Notary deed 777 p. 4 KPC</option>
+                    <option value="126330004">Property insurance</option>
+                    <option value="126330005">Corporate Guarantee</option>
+                    <option value="126330006">Notary deed 777 p. 5 KPC</option>
+                    <option value="126330007">Deposit</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('collateralConfigModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="saveCollateralConfig()">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal" id="deleteConfirmModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title" id="deleteConfirmTitle">Confirm Delete</h3>
+            <button class="modal-close" onclick="closeDeleteConfirm()">×</button>
+        </div>
+        <div class="modal-body">
+            <p id="deleteConfirmMessage" style="font-size:13.5px;color:var(--sub);"></p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeDeleteConfirm()">Cancel</button>
+            <button class="btn btn-primary" style="background:var(--red);border-color:var(--red);" onclick="confirmDelete()">Delete</button>
+        </div>
+    </div>
+</div>
+<script>
+/* ============================================================================
+   SHARED DEPENDENCY STUBS
+   Lightweight versions of helpers this feature relies on elsewhere in
+   array_LeaseCreationUIJS.js. Swap for real implementations when wiring
+   this resource back into the main app.
+   ============================================================================ */
+
+/* ----------------------------------------------------------------------------
+   Resolve the REAL Xrm.WebApi at call time. In a model-driven web resource the
+   resource runs in its own iframe where `Xrm` is often undefined on `self`,
+   while the real Xrm lives on window.parent / window.top. Binding at parse time
+   (typeof Xrm) locks in the stub forever and silently no-ops every WebApi call.
+   ---------------------------------------------------------------------------- */
+function resolveRealXrm() {
+  const candidates = [];
+  const push = (w) => { try { if (w && w.Xrm && w.Xrm.WebApi) candidates.push(w.Xrm); } catch (e) {} };
+  push(window);
+  try { push(window.parent); } catch (e) {}
+  try { push(window.parent && window.parent.parent); } catch (e) {}
+  try { push(window.top); } catch (e) {}
+  return candidates.length ? candidates[0] : null;
+}
+
+const _stubWebApi = {
+  createRecord: async (entityName, record) => {
+    console.warn(`[stub] createRecord("${entityName}")`, record);
+    return { id: "stub-" + Date.now() + "-" + Math.random().toString(36).substr(2, 5) };
+  },
+  updateRecord: async (entityName, id, record) => {
+    console.warn(`[stub] updateRecord("${entityName}", "${id}")`, record); return {};
+  },
+  deleteRecord: async (entityName, id) => {
+    console.warn(`[stub] deleteRecord("${entityName}", "${id}")`); return {};
+  },
+  retrieveMultipleRecords: async (entityName, options) => {
+    console.warn(`[stub] retrieveMultipleRecords("${entityName}", "${options}")`); return { entities: [] };
+  },
+  retrieveRecord: async (entityName, id, options) => {
+    console.warn(`[stub] retrieveRecord("${entityName}", "${id}", "${options}")`);
+    return { array_collateralcalculationruleid: id, array_coefficient: 0 };
+  }
+};
+
+// Proxy that resolves the real WebApi on every call; stub only as last resort.
+const XrmContext = {
+  get WebApi() {
+    const xrm = resolveRealXrm();
+    return xrm ? xrm.WebApi : _stubWebApi;
+  }
+};
+
+// Dummy charge types are used ONLY for standalone preview (no real Xrm in any frame).
+// Inside Dynamics they are replaced by loadChargeTypes() reading array_chargetype.
+window.chargeTypes = window.chargeTypes || (!resolveRealXrm() ? [
+  { array_chargetypeid: "ct-rent", array_name: "Base Rent" },
+  { array_chargetypeid: "ct-service", array_name: "Service Charge" },
+  { array_chargetypeid: "ct-marketing", array_name: "Marketing Fee" },
+] : []);
+
+function escapeHtml(text) {
+  if (!text) return "";
+  const map = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" };
+  return String(text).replace(/[&<>"']/g, (m) => map[m]);
+}
+
+function closeModal(modalId) {
+  document.getElementById(modalId).classList.remove("active");
+  document.body.style.overflow = "auto";
+  clearModalInputs(modalId);
+}
+function clearModalInputs(modalId) {
+  const modal = document.getElementById(modalId);
+  modal.querySelectorAll("input, select, textarea").forEach((input) => {
+    if (input.type === "checkbox") {
+      input.checked = false;
+    } else if (input.id !== "tenantSearchBox") {
+      input.value = "";
+    }
+  });
+}
+
+function showNotification(message, type = "info") {
+  const colors = { success: "#48bb78", error: "#f56565", warning: "#ed8936", info: "#667eea" };
+  const notification = document.createElement("div");
+  notification.className = "notification";
+  notification.style.background = colors[type];
+  notification.textContent = message;
+  document.body.appendChild(notification);
+
+  const restack = () => {
+    let top = 20;
+    document.querySelectorAll(".notification").forEach((n) => {
+      n.style.top = top + "px";
+      top += n.offsetHeight + 12;
+    });
+  };
+  restack();
+
+  setTimeout(() => {
+    notification.style.animation = "slideOut 0.3s ease-out";
+    setTimeout(() => { notification.remove(); restack(); }, 300);
+  }, 3000);
+}
+
+let deleteConfirmCallback = null;
+function showDeleteConfirm(title, message, onConfirm) {
+  const modal = document.getElementById("deleteConfirmModal");
+  if (!modal) { console.error("Delete confirmation modal not found!"); return; }
+  document.getElementById("deleteConfirmTitle").textContent = title;
+  document.getElementById("deleteConfirmMessage").textContent = message;
+  deleteConfirmCallback = onConfirm;
+  modal.classList.add("active");
+  document.body.style.overflow = "hidden";
+}
+function closeDeleteConfirm() {
+  const modal = document.getElementById("deleteConfirmModal");
+  if (!modal) return;
+  modal.classList.remove("active");
+  document.body.style.overflow = "auto";
+  deleteConfirmCallback = null;
+}
+function confirmDelete() {
+  if (deleteConfirmCallback) {
+    try { deleteConfirmCallback(); } catch (error) { console.error("Error executing delete callback:", error); }
+  }
+  closeDeleteConfirm();
+}
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    const activeModal = document.querySelector(".modal.active");
+    if (activeModal) closeModal(activeModal.id);
+  }
+});
+
+/* ============================================================================
+   COLLATERAL CALCULATION RULE & CONFIGURATION — CORE FEATURE
+   ============================================================================ */
+
+let collateralRules = [];
+let collateralConfigs = [];
+let currentRuleChargeTypes = [];
+let formContext = null;
+let currentLeaseAgreementId = null;
+let leaseSearchTimer = null;
+
+// Hybrid mode state
+let formMode = "create";      // "create" (Scenario B) | "edit" (Scenario A)
+let hostRuleId = null;        // in edit mode, the opened array_collateralcalculationrule id
+let activeLeaseId = null;     // lease agreement the configs/rules belong to
+let leaseRules = [];          // ALL active rules under the lease (duplicate detection)
+let currentLeaseAgreementLabel = ""; // label of a lease picked via the fallback search
+
+/* True when this web resource is embedded on the Collateral Calculation Rule
+   form itself — i.e. the form's own record IS the rule being edited.
+
+   This is the normal deployment. It matters because the PLATFORM creates the
+   rule record on save; creating one here as well is what produced two rule
+   records for a single save. */
+function isHostedOnRuleForm() {
+  return !!(formContext && formContext.data &&
+            typeof formContext.data.save === "function");
+}
+
+// Factory for a blank inline rule (create mode target)
+function makeEmptyRule() {
+  return {
+    id: "rule_new_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5),
+    dataverseId: null,
+    coefficient: "",
+    ruleName: "",
+    chargeTypes: []
+  };
+}
+
+/* Primary ("Name") column of the two child tables. Both are blank in Dataverse
+   today because nothing ever wrote them, which renders empty in lookups,
+   subgrids and Advanced Find.
+
+   VERIFY these logical names in the maker portal (Tables > Columns) if the
+   publisher prefix differs — a wrong name is tolerated (see saveWithOptionalName)
+   but the column will silently stay blank. */
+const RULE_CHARGE_NAME_FIELD = "array_name";
+const CONFIG_NAME_FIELD = "array_name";
+
+const COLLATERAL_TYPE_LABELS = {
+  126330000: "Bank Guarantee",
+  126330001: "Liab. Insurance",
+  126330002: "Notary deed 777 p. 4 KPC",
+  126330004: "Property insurance",
+  126330005: "Corporate Guarantee",
+  126330006: "Notary deed 777 p. 5 KPC",
+  126330007: "Deposit",
+};
+
+function openCollateralRuleModal(editId = null) {
+  document.getElementById("collateralRuleEditId").value = "";
+  document.getElementById("collateralRuleCoefficient").value = "";
+  currentRuleChargeTypes = [];
+
+  populateCollateralChargeTypeDropdown();
+
+  if (editId) {
+    const rule = collateralRules.find((r) => r.id === editId);
+    if (rule) {
+      document.getElementById("collateralRuleEditId").value = rule.id;
+      document.getElementById("collateralRuleCoefficient").value = rule.coefficient;
+      currentRuleChargeTypes = rule.chargeTypes.map((ct) => ({ ...ct }));
+      document.getElementById("collateralRuleModalTitle").textContent =
+        "Edit Collateral Calculation Rule";
+    }
+  } else {
+    document.getElementById("collateralRuleModalTitle").textContent =
+      "Add Collateral Calculation Rule";
+  }
+
+  renderRuleChargeTypesList();
+  document.getElementById("collateralRuleModal").classList.add("active");
+  document.body.style.overflow = "hidden";
+}
+
+function populateCollateralChargeTypeDropdown() {
+  const select = document.getElementById("collateralChargeTypeSelect");
+  if (select) {
+    select.innerHTML = '<option value="">-- Select Charge Type --</option>';
+    const types = window.chargeTypes || [];
+    types.forEach((ct) => {
+      const option = document.createElement("option");
+      option.value = ct.array_chargetypeid;
+      option.textContent = ct.array_name;
+      select.appendChild(option);
+    });
+  }
+  // Inline (edit-mode) dropdown shares the same source list
+  const inlineSelect = document.getElementById("inlineChargeTypeSelect");
+  if (inlineSelect) {
+    inlineSelect.innerHTML = '<option value="">-- Select Charge Type --</option>';
+    const types = window.chargeTypes || [];
+    types.forEach((ct) => {
+      const option = document.createElement("option");
+      option.value = ct.array_chargetypeid;
+      option.textContent = ct.array_name;
+      inlineSelect.appendChild(option);
+    });
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   EDIT MODE (Scenario A) — single host rule edited inline on the page.
+   The host rule is always collateralRules[0] in edit mode.
+   ---------------------------------------------------------------------------- */
+function getHostRule() {
+  // Single-rule inline editor is used in BOTH modes now.
+  return collateralRules[0] || null;
+}
+
+function onInlineCoefficientChange() {
+  const rule = getHostRule();
+  if (!rule) return;
+  const raw = document.getElementById("inlineCoefficient").value;
+  const val = parseInt(raw, 10);
+  rule.coefficient = (raw === "" || isNaN(val)) ? "" : val;
+  // Configs parented to this rule show its live label — keep them in step
+  refreshConfigRuleLabels();
+}
+
+// The on-page rule is a selectable config parent, so its label (and whether it
+// is selectable at all) changes as the user types. Refresh both consumers.
+function refreshConfigRuleLabels() {
+  renderConfigRuleContext();
+  renderCollateralConfigs();
+  renderRuleDuplicateHint();
+}
+
+function addChargeTypeToHostRule() {
+  const rule = getHostRule();
+  if (!rule) return;
+  const select = document.getElementById("inlineChargeTypeSelect");
+  const chargeTypeId = select.value;
+  const chargeTypeName = select.options[select.selectedIndex]?.text || "";
+
+  if (!chargeTypeId) { showNotification("Please select a charge type", "warning"); return; }
+  if (rule.chargeTypes.some((ct) => ct.chargeTypeId === chargeTypeId)) {
+    showNotification("This charge type is already added", "warning"); return;
+  }
+
+  rule.chargeTypes.push({
+    id: "ct_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5),
+    dataverseId: null,
+    chargeTypeId,
+    chargeTypeName,
+  });
+  select.value = "";
+  renderInlineChargeTypes();
+  refreshConfigRuleLabels();
+}
+
+function removeChargeTypeFromHostRule(tempId) {
+  const rule = getHostRule();
+  if (!rule) return;
+  rule.chargeTypes = rule.chargeTypes.filter((ct) => ct.id !== tempId);
+  renderInlineChargeTypes();
+  refreshConfigRuleLabels();
+}
+
+function renderInlineChargeTypes() {
+  const tbody = document.getElementById("inlineChargeTypesList");
+  if (!tbody) return;
+  const rule = getHostRule();
+  const list = rule ? rule.chargeTypes : [];
+
+  if (list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="2" class="empty-state" style="padding:18px;">No charge types added yet</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = list.map((ct) => `
+    <tr>
+      <td>${escapeHtml(ct.chargeTypeName)}</td>
+      <td style="text-align:center;">
+        <button class="action-delete" onclick="removeChargeTypeFromHostRule('${ct.id}')" title="Remove">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+        </button>
+      </td>
+    </tr>`).join("");
+}
+
+// Sync the inline edit panel from the host rule (used after load)
+function renderHostRuleInline() {
+  const rule = getHostRule();
+  const coeffInput = document.getElementById("inlineCoefficient");
+  if (coeffInput) coeffInput.value = (rule && rule.coefficient !== "" && rule.coefficient != null) ? rule.coefficient : "";
+  renderInlineChargeTypes();
+}
+
+// Single-rule inline editor for both modes. Multi-rule table + Add Rule button
+// are always hidden; only the lease fallback visibility differs by mode.
+function applyFormModeUI() {
+  const addBtn = document.getElementById("addRuleBtn");
+  const multiTable = document.getElementById("collateralRulesContainer");
+  const inlinePanel = document.getElementById("collateralRuleInlineEdit");
+  const fallbackGroup = document.getElementById("leaseAgreementFallbackGroup");
+
+  if (addBtn) addBtn.style.display = "none";
+  if (multiTable) multiTable.style.display = "none";
+  if (inlinePanel) inlinePanel.style.display = "block";
+
+  if (formMode === "edit" && fallbackGroup) {
+    fallbackGroup.style.display = "none"; // lease fixed on host
+  }
+}
+
+function addChargeTypeToRule() {
+  const select = document.getElementById("collateralChargeTypeSelect");
+  const chargeTypeId = select.value;
+  const chargeTypeName = select.options[select.selectedIndex]?.text || "";
+
+  if (!chargeTypeId) {
+    showNotification("Please select a charge type", "warning");
+    return;
+  }
+
+  if (currentRuleChargeTypes.some((ct) => ct.chargeTypeId === chargeTypeId)) {
+    showNotification("This charge type is already added", "warning");
+    return;
+  }
+
+  currentRuleChargeTypes.push({
+    id: "ct_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5),
+    dataverseId: null, // Explicitly track Dataverse presence
+    chargeTypeId,
+    chargeTypeName,
+  });
+
+  select.value = "";
+  renderRuleChargeTypesList();
+}
+
+function removeChargeTypeFromRule(tempId) {
+  currentRuleChargeTypes = currentRuleChargeTypes.filter(
+    (ct) => ct.id !== tempId,
+  );
+  renderRuleChargeTypesList();
+}
+
+function renderRuleChargeTypesList() {
+  const tbody = document.getElementById("collateralRuleChargeTypesList");
+  if (!tbody) return;
+
+  if (currentRuleChargeTypes.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="2" style="padding:14px;text-align:center;color:#94a3b8;font-size:13px;">No charge types added yet</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = currentRuleChargeTypes
+    .map(
+      (ct) => `
+    <tr style="border-bottom:1px solid #f1f5f9;">
+      <td style="padding:10px 14px;font-size:13px;color:#1a202c;">${escapeHtml(ct.chargeTypeName)}</td>
+      <td style="padding:10px 14px;text-align:center;">
+        <button onclick="removeChargeTypeFromRule('${ct.id}')" style="background:none;border:none;color:#e53e3e;cursor:pointer;font-size:16px;line-height:1;" title="Remove">&#x2715;</button>
+      </td>
+    </tr>`
+    )
+    .join("");
+}
+
+function saveCollateralRule() {
+  const rawCoefficient = document.getElementById("collateralRuleCoefficient").value;
+  const coefficient = parseInt(rawCoefficient, 10);
+
+  if (rawCoefficient === "" || isNaN(coefficient) || coefficient < 0) {
+    showNotification("Please enter a valid whole number for coefficient", "warning");
+    return;
+  }
+
+  if (currentRuleChargeTypes.length === 0) {
+    showNotification("Please add at least one charge type", "warning");
+    return;
+  }
+
+  const editId = document.getElementById("collateralRuleEditId").value;
+
+  if (editId) {
+    const idx = collateralRules.findIndex((r) => r.id === editId);
+    if (idx !== -1) {
+      collateralRules[idx] = {
+        ...collateralRules[idx],
+        coefficient,
+        chargeTypes: currentRuleChargeTypes.map((ct) => ({ ...ct })),
+      };
+    }
+  } else {
+    collateralRules.push({
+      id: "rule_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5),
+      coefficient,
+      chargeTypes: currentRuleChargeTypes.map((ct) => ({ ...ct })),
+      dataverseId: null,
+    });
+  }
+
+  document.getElementById("collateralRuleModal").classList.remove("active");
+  document.body.style.overflow = "auto";
+  renderCollateralRules();
+  refreshConfigRuleLabels();
+}
+
+function deleteCollateralRule(ruleId) {
+  showDeleteConfirm(
+    "Remove Collateral Rule",
+    "Remove this collateral rule? Any configurations linked to it will also be removed.",
+    () => {
+      collateralRules = collateralRules.filter((r) => r.id !== ruleId);
+      collateralConfigs = collateralConfigs.filter((c) => c.ruleId !== ruleId);
+      renderCollateralRules();
+      renderCollateralConfigs();
+    },
+  );
+}
+
+function renderCollateralRules() {
+  const container = document.getElementById("collateralRulesContainer");
+  if (!container) return;
+
+  if (collateralRules.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <span class="empty-icon">&#x1F4CB;</span>
+        <p>No rules added yet</p>
+        <p class="empty-hint">Click "Add Rule" to create a collateral calculation rule</p>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="charges-table-wrapper">
+      <table class="charges-table">
+        <thead>
+          <tr>
+            <th>Coefficient</th>
+            <th>Charge Types</th>
+            <th style="text-align:center;width:90px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${collateralRules
+            .map(
+              (rule) => `
+            <tr>
+              <td style="font-weight:700;color:var(--blue);">${escapeHtml(String(rule.coefficient))}</td>
+              <td>
+                ${rule.chargeTypes
+                  .map(
+                    (ct) =>
+                      `<span class="tag tag-blue" style="margin:2px 4px 2px 0;">${escapeHtml(ct.chargeTypeName)}</span>`,
+                  )
+                  .join("")}
+              </td>
+              <td style="text-align:center;white-space:nowrap;">
+                <span class="record-actions" style="justify-content:center;">
+                  <button class="action-edit" onclick="openCollateralRuleModal('${rule.id}')" title="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                  <button class="action-delete" onclick="deleteCollateralRule('${rule.id}')" title="Delete"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg></button>
+                </span>
+              </td>
+            </tr>`
+            )
+            .join("")}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+/* ----------------------------------------------------------------------------
+   CONFIG PARENT RULE RESOLUTION
+   A configuration always belongs to the rule on THIS form. On a new rule that
+   record does not exist yet, so the configuration carries the in-memory rule id
+   and its real GUID is resolved at save time (syncConfigs), after the rule row
+   has been created.
+   ---------------------------------------------------------------------------- */
+
+// Live label for the on-page rule — recomputed on render so editing the
+// coefficient / charge types never leaves a stale name behind. Same format as
+// describeLeaseRule so labels read consistently wherever a rule is named.
+function getLocalRuleLabel(rule) {
+  if (!rule) return "";
+  if (rule.ruleName) return rule.ruleName;
+  const coeff = (rule.coefficient === "" || rule.coefficient == null) ? "—" : rule.coefficient;
+  const names = (rule.chargeTypes || []).map((ct) => ct.chargeTypeName).filter(Boolean).join(", ");
+  return `Coefficient: ${coeff}${names ? " — " + names : ""}`;
+}
+
+// A local rule is only a valid config parent once it can actually be saved.
+function isLocalRuleUsable(rule) {
+  if (!rule) return false;
+  const coeff = parseInt(rule.coefficient, 10);
+  return !isNaN(coeff) && coeff >= 0 && (rule.chargeTypes || []).length > 0;
+}
+
+// Dataverse GUID of a config's parent rule, or null if not resolvable yet
+function resolveConfigParentRuleId(config) {
+  if (config.ruleDataverseId) return config.ruleDataverseId;
+  if (config.ruleId) {
+    const local = collateralRules.find((r) => r.id === config.ruleId);
+    if (local && local.dataverseId) return local.dataverseId;
+  }
+  return null;
+}
+
+// Config still waiting on its parent rule to be created in Dataverse
+function isConfigParentUnsaved(config) {
+  return !config.ruleDataverseId && !!config.ruleId &&
+         !(collateralRules.find((r) => r.id === config.ruleId) || {}).dataverseId;
+}
+
+
+/* ----------------------------------------------------------------------------
+   DUPLICATE RULE DETECTION
+   A rule is "the same" when the coefficient AND the exact set of charge types
+   match a rule already saved under this lease. On save the existing rule is
+   reused rather than creating a second identical record.
+   ---------------------------------------------------------------------------- */
+
+// Order-independent, case-insensitive key for a set of charge type ids
+function chargeTypeSetKey(ids) {
+  return (ids || [])
+    .filter(Boolean)
+    .map((id) => String(id).replace(/[{}]/g, "").toLowerCase())
+    .sort()
+    .join("|");
+}
+
+// The lease rule this on-page rule duplicates, or null. Never matches itself.
+function findMatchingLeaseRule(rule) {
+  if (!rule) return null;
+  const coeff = parseInt(rule.coefficient, 10);
+  if (isNaN(coeff)) return null;
+
+  const uiKey = chargeTypeSetKey((rule.chargeTypes || []).map((ct) => ct.chargeTypeId));
+  if (!uiKey) return null; // no charge types entered yet — nothing to compare
+
+  return leaseRules.find((lr) =>
+    lr.dataverseId !== rule.dataverseId &&
+    parseInt(lr.coefficient, 10) === coeff &&
+    chargeTypeSetKey((lr.charges || []).map((c) => c.chargeTypeId)) === uiKey
+  ) || null;
+}
+
+function describeLeaseRule(lr) {
+  if (!lr) return "";
+  const names = (lr.chargeNames || []).join(", ");
+  return lr.ruleName || `Coefficient: ${lr.coefficient}${names ? " — " + names : ""}`;
+}
+
+// Point the on-page rule at an existing lease rule instead of creating a new
+// record. Charge rows are adopted by their Dataverse ids so the charge sync
+// becomes a no-op instead of deleting and recreating identical rows.
+function adoptExistingLeaseRule(rule, leaseRule) {
+  rule.dataverseId = leaseRule.dataverseId;
+  rule.ruleName = leaseRule.ruleName || rule.ruleName;
+  (rule.chargeTypes || []).forEach((ct) => {
+    const existing = (leaseRule.charges || []).find(
+      (c) => chargeTypeSetKey([c.chargeTypeId]) === chargeTypeSetKey([ct.chargeTypeId])
+    );
+    if (existing) ct.dataverseId = existing.dataverseId;
+  });
+}
+
+// Inline banner: tells the user BEFORE saving that this rule already exists.
+function renderRuleDuplicateHint() {
+  const box = document.getElementById("ruleDuplicateHint");
+  if (!box) return;
+  const rule = getHostRule();
+  const match = findMatchingLeaseRule(rule);
+
+  if (!match) { box.style.display = "none"; box.innerHTML = ""; return; }
+
+  // On the rule's own form the platform creates the record regardless, so the
+  // existing rule cannot be reused — this can only warn.
+  const canReuse = !rule.dataverseId && !isHostedOnRuleForm();
+  box.className = "inline-hint " + (canReuse ? "hint-blue" : "hint-amber");
+  box.innerHTML = canReuse
+    ? `<strong>This rule already exists.</strong> &ldquo;${escapeHtml(describeLeaseRule(match))}&rdquo; is already saved on this lease.
+       Saving will reuse it &mdash; no duplicate rule is created, and the configurations below will link to it.`
+    : `<strong>This rule already exists.</strong> &ldquo;${escapeHtml(describeLeaseRule(match))}&rdquo; is already active on this lease with the
+       same coefficient and charge types. Saving creates a second one, and both will apply &mdash; close this form
+       and edit the existing rule instead if that is not what you want.`;
+  box.style.display = "block";
+}
+
+function openCollateralConfigModal(editId = null) {
+  const localRule = getHostRule();
+
+  // Configurations belong to the rule on this form, so that rule must exist
+  // (edit mode) or be complete enough to be created (create mode).
+  if (!localRule || (!localRule.dataverseId && !isLocalRuleUsable(localRule))) {
+    showNotification(
+      "Enter a coefficient and at least one charge type in the rule above first",
+      "warning"
+    );
+    return;
+  }
+
+  document.getElementById("collateralConfigEditId").value = "";
+  document.getElementById("collateralConfigTypeSelect").value = "";
+
+  renderConfigRuleContext();
+
+  if (editId) {
+    const config = collateralConfigs.find((c) => c.id === editId);
+    if (config) {
+      document.getElementById("collateralConfigEditId").value = config.id;
+      document.getElementById("collateralConfigTypeSelect").value = config.collateralType;
+      document.getElementById("collateralConfigModalTitle").textContent =
+        "Edit Collateral Configuration";
+    }
+  } else {
+    document.getElementById("collateralConfigModalTitle").textContent =
+      "Add Collateral Configuration";
+  }
+
+  document.getElementById("collateralConfigModal").classList.add("active");
+  document.body.style.overflow = "hidden";
+}
+
+// Fixed rule context inside the configuration modal — replaces the old rule
+// picker. There is nothing to choose: a configuration always belongs to the
+// rule on this form.
+function renderConfigRuleContext() {
+  const box = document.getElementById("collateralConfigRuleContext");
+  if (!box) return;
+  const rule = getHostRule();
+  if (!rule) { box.textContent = "—"; return; }
+
+  // Already a Dataverse record — the label alone says everything.
+  if (rule.dataverseId) {
+    box.innerHTML = escapeHtml(getLocalRuleLabel(rule) || "This rule");
+    return;
+  }
+
+  // Not saved yet. Reuse of an existing rule is only possible when this page is
+  // NOT the rule's own form — otherwise the platform creates the record anyway.
+  const match = findMatchingLeaseRule(rule);
+  box.innerHTML = (match && !isHostedOnRuleForm())
+    ? `${escapeHtml(describeLeaseRule(match))}
+       <span class="muted">&nbsp;&middot; existing rule &mdash; will be reused, not duplicated</span>`
+    : `${escapeHtml(getLocalRuleLabel(rule) || "This rule")}
+       <span class="muted">&nbsp;&middot; created when you save</span>`;
+}
+
+function saveCollateralConfig() {
+  const collateralType = document.getElementById("collateralConfigTypeSelect").value;
+
+  if (!collateralType) {
+    showNotification("Please select a collateral type", "warning");
+    return;
+  }
+
+  // The parent is always the rule on this form.
+  const rule = getHostRule();
+  if (!rule || (!rule.dataverseId && !isLocalRuleUsable(rule))) {
+    showNotification(
+      "Complete the rule above (coefficient + charge type) first",
+      "warning"
+    );
+    return;
+  }
+
+  const editId = document.getElementById("collateralConfigEditId").value;
+  const typeValue = parseInt(collateralType, 10);
+
+  // The same collateral type twice on one rule is never meaningful — block it
+  // here rather than letting Dataverse accumulate duplicate configuration rows.
+  const duplicate = collateralConfigs.find(
+    (c) => c.id !== editId && c.collateralType === typeValue
+  );
+  if (duplicate) {
+    showNotification("This collateral type is already configured for this rule", "warning");
+    return;
+  }
+
+  const configData = {
+    ruleId: rule.id,
+    ruleDataverseId: rule.dataverseId || null,
+    ruleName: getLocalRuleLabel(rule),
+    collateralType: typeValue,
+    collateralTypeName: COLLATERAL_TYPE_LABELS[typeValue] || "Unknown",
+  };
+
+  if (editId) {
+    const idx = collateralConfigs.findIndex((c) => c.id === editId);
+    if (idx !== -1) {
+      collateralConfigs[idx] = { ...collateralConfigs[idx], ...configData };
+    }
+  } else {
+    collateralConfigs.push({
+      id: "cfg_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5),
+      dataverseId: null,
+      ...configData,
+    });
+  }
+
+  document.getElementById("collateralConfigModal").classList.remove("active");
+  document.body.style.overflow = "auto";
+  renderCollateralConfigs();
+}
+
+function deleteCollateralConfig(configId) {
+  showDeleteConfirm(
+    "Remove Configuration",
+    "Remove this collateral configuration?",
+    () => {
+      collateralConfigs = collateralConfigs.filter((c) => c.id !== configId);
+      renderCollateralConfigs();
+    },
+  );
+}
+
+function renderCollateralConfigs() {
+  const container = document.getElementById("collateralConfigContainer");
+  if (!container) return;
+
+  if (collateralConfigs.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <span class="empty-icon">&#x1F512;</span>
+        <p>No configurations added yet</p>
+        <p class="empty-hint">Click "Add Configuration" to create a collateral configuration</p>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="charges-table-wrapper">
+      <table class="charges-table">
+        <thead>
+          <tr>
+            <!-- No Rule column: every row belongs to the rule on this form -->
+            <th>Collateral Type</th>
+            <th style="text-align:center;width:90px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${collateralConfigs
+            .map(
+              (config) => `
+            <tr>
+              <td>
+                <span class="tag tag-blue">${escapeHtml(config.collateralTypeName)}</span>
+                ${isConfigParentUnsaved(config) ? '<span class="tag tag-amber" style="margin-left:6px;">Not saved</span>' : ""}
+              </td>
+              <td style="text-align:center;white-space:nowrap;">
+                <span class="record-actions" style="justify-content:center;">
+                  <button class="action-edit" onclick="openCollateralConfigModal('${config.id}')" title="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                  <button class="action-delete" onclick="deleteCollateralConfig('${config.id}')" title="Delete"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg></button>
+                </span>
+              </td>
+            </tr>`
+            )
+            .join("")}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+/* ============================================================================
+   NEW: LOAD EXISTING DATA FROM DATAVERSE
+   Call this externally when your form loads an existing lease agreement
+   e.g. await loadExistingCollateralData("YOUR_LEASE_GUID");
+   ============================================================================ */
+async function loadExistingCollateralData(leaseAgreementId) {
+  // Reset state so switching contexts never shows stale rows
+  collateralRules = [];
+  collateralConfigs = [];
+
+  try {
+    let rulesRes;
+
+    if (formMode === "edit") {
+      // SCENARIO A: the opened record IS the single host rule. Load it by id.
+      if (!hostRuleId) { renderAll(); return; }
+      const hostRule = await XrmContext.WebApi.retrieveRecord(
+        "array_collateralcalculationrule",
+        hostRuleId,
+        "?$select=array_collateralcalculationruleid,array_coefficient,array_ruleid"
+      );
+      rulesRes = { entities: [hostRule] };
+    } else {
+      // SCENARIO B: load all rules under the lease agreement
+      if (!leaseAgreementId) { renderAll(); return; }
+      rulesRes = await XrmContext.WebApi.retrieveMultipleRecords(
+        "array_collateralcalculationrule",
+        `?$select=array_collateralcalculationruleid,array_coefficient,array_ruleid&$filter=_array_leaseagreement_value eq '${leaseAgreementId}'`
+      );
+    }
+
+    if (!rulesRes || rulesRes.entities.length === 0) {
+      console.log("loadExistingCollateralData: 0 rules");
+      renderAll();
+      return;
+    }
+    console.log(`loadExistingCollateralData: ${rulesRes.entities.length} rule(s)`);
+
+    const ruleIds = rulesRes.entities.map(r => r.array_collateralcalculationruleid);
+    const ruleFilter = ruleIds.map(id => `_array_rule_value eq '${id}'`).join(" or ");
+
+    // 2. Fetch related Charge Types for all rules
+    let chargesRes = { entities: [] };
+    if (ruleIds.length > 0) {
+      chargesRes = await XrmContext.WebApi.retrieveMultipleRecords(
+        "array_collateralrulecharge",
+        `?$select=array_collateralrulechargeid,_array_chargetype_value,_array_rule_value&$filter=${ruleFilter}`
+      );
+    }
+
+    // 4. Reconstruct the UI State (collateralRules array)
+    collateralRules = rulesRes.entities.map(r => {
+      const dbRuleId = r.array_collateralcalculationruleid;
+      const ruleChargesDb = chargesRes.entities.filter(c => c["_array_rule_value"] === dbRuleId);
+      const mappedCharges = ruleChargesDb.map(c => {
+        const ctId = c["_array_chargetype_value"];
+        const ctObj = (window.chargeTypes || []).find(type => type.array_chargetypeid === ctId);
+        return {
+          id: "ct_db_" + c.array_collateralrulechargeid,
+          dataverseId: c.array_collateralrulechargeid,
+          chargeTypeId: ctId,
+          chargeTypeName: ctObj ? ctObj.array_name : "Unknown"
+        };
+      });
+      return {
+        id: "rule_db_" + dbRuleId,
+        dataverseId: dbRuleId,
+        coefficient: r.array_coefficient,
+        ruleName: r.array_ruleid || "",
+        chargeTypes: mappedCharges
+      };
+    });
+
+    // 5. Configurations are loaded separately, scoped to this rule (loadConfigsForRule).
+    renderAll();
+
+  } catch (err) {
+    console.error("Error loading existing collateral data:", err);
+    showNotification("Failed to load collateral data (check console)", "error");
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   Read ALL rules under a lease, with their charge-type rows, mapped to the
+   leaseRules shape. Pure read: assigns nothing, so each caller decides what to
+   do with the result.
+   ---------------------------------------------------------------------------- */
+async function fetchLeaseRules(leaseId) {
+  if (!leaseId) return [];
+
+  // 1. ACTIVE rules under the lease only. A deactivated rule must not be
+  //    offered for reuse — the duplicate check would otherwise attach new
+  //    configurations to a rule that is no longer in play.
+  const ruleQuery = (activeOnly) =>
+    `?$select=array_collateralcalculationruleid,array_coefficient,array_ruleid` +
+    `&$filter=_array_leaseagreement_value eq '${leaseId}'` +
+    (activeOnly ? ` and statecode eq 0` : ``);
+
+  let rulesRes;
+  try {
+    rulesRes = await XrmContext.WebApi.retrieveMultipleRecords(
+      "array_collateralcalculationrule", ruleQuery(true)
+    );
+  } catch (err) {
+    // Table without a statecode column — fall back rather than break the load.
+    console.warn("fetchLeaseRules: statecode filter rejected, retrying unfiltered:", err);
+    rulesRes = await XrmContext.WebApi.retrieveMultipleRecords(
+      "array_collateralcalculationrule", ruleQuery(false)
+    );
+  }
+  const ruleIds = rulesRes.entities.map(r => r.array_collateralcalculationruleid);
+
+  // 2. Charge types for those rules (dropdown label + duplicate matching)
+  let chargesRes = { entities: [] };
+  if (ruleIds.length > 0) {
+    const ruleFilter = ruleIds.map(id => `_array_rule_value eq '${id}'`).join(" or ");
+    chargesRes = await XrmContext.WebApi.retrieveMultipleRecords(
+      "array_collateralrulecharge",
+      `?$select=array_collateralrulechargeid,_array_chargetype_value,_array_rule_value&$filter=${ruleFilter}`
+    );
+  }
+
+  // Charge-type IDs are kept, not just labels, so an identical rule can be
+  // recognised; the charge-row IDs let a reused rule adopt its existing rows.
+  return rulesRes.entities.map(r => {
+    const dbRuleId = r.array_collateralcalculationruleid;
+    const charges = chargesRes.entities
+      .filter(c => c["_array_rule_value"] === dbRuleId)
+      .map(c => {
+        const ctId = c["_array_chargetype_value"];
+        const ctObj = (window.chargeTypes || []).find(t => t.array_chargetypeid === ctId);
+        return {
+          dataverseId: c.array_collateralrulechargeid,
+          chargeTypeId: ctId,
+          chargeTypeName: ctObj ? ctObj.array_name : "Unknown"
+        };
+      });
+    return {
+      dataverseId: dbRuleId,
+      ruleName: r.array_ruleid || "",
+      coefficient: r.array_coefficient,
+      charges,
+      chargeNames: charges.map(c => c.chargeTypeName)
+    };
+  });
+}
+
+/* ----------------------------------------------------------------------------
+   Re-read ONLY the lease's rules, immediately before a save decides whether to
+   create a new rule. leaseRules is otherwise a snapshot taken when the form
+   opened, so a rule added by someone else (or in another tab) since then would
+   go unmatched and a duplicate would be created.
+
+   Touches leaseRules only — never collateralConfigs, which holds the rows the
+   user has just entered and is in the middle of saving.
+   ---------------------------------------------------------------------------- */
+async function refreshLeaseRulesSnapshot(leaseId) {
+  if (!leaseId) return;
+  try {
+    leaseRules = await fetchLeaseRules(leaseId);
+    console.log(`refreshLeaseRulesSnapshot: re-read ${leaseRules.length} rule(s) before save`);
+  } catch (err) {
+    // Non-fatal — fall back to the page-load snapshot rather than blocking the save.
+    console.warn("refreshLeaseRulesSnapshot failed; using page-load snapshot:", err);
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   Load the lease's rules for DUPLICATE DETECTION ONLY.
+
+   These rules are never displayed and never edited here — they exist so a new
+   rule with the same coefficient and charge types can be recognised and reused
+   instead of duplicated. Configurations are NOT loaded from this list; see
+   loadConfigsForRule.
+   ---------------------------------------------------------------------------- */
+async function loadLeaseRules(leaseId) {
+  leaseRules = [];
+  if (!leaseId) { renderAll(); return; }
+  activeLeaseId = leaseId;
+
+  try {
+    leaseRules = await fetchLeaseRules(leaseId);
+    console.log(`loadLeaseRules: ${leaseRules.length} rule(s) on lease (duplicate check)`);
+    renderAll();
+  } catch (err) {
+    console.error("Error loading lease rules:", err);
+    showNotification("Failed to load lease rules (check console)", "error");
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   Load the configurations belonging to ONE rule — the rule on this form.
+
+   Scoped deliberately: this form edits one rule, so it must neither display nor
+   delete configurations owned by other rules on the same lease. syncConfigs
+   uses the same single-rule scope when deleting.
+   ---------------------------------------------------------------------------- */
+async function loadConfigsForRule(ruleDvId) {
+  collateralConfigs = [];
+  if (!ruleDvId) { renderAll(); return; }
+
+  try {
+    const configsRes = await XrmContext.WebApi.retrieveMultipleRecords(
+      "array_collateralconfiguration",
+      `?$select=array_collateralconfigurationid,array_type,_array_rule_value&$filter=_array_rule_value eq '${ruleDvId}'`
+    );
+
+    const localRule = getHostRule();
+    collateralConfigs = configsRes.entities.map(c => {
+      const colType = c.array_type;
+      return {
+        id: "cfg_db_" + c.array_collateralconfigurationid,
+        dataverseId: c.array_collateralconfigurationid,
+        ruleId: localRule ? localRule.id : null,   // in-memory link to the on-page rule
+        ruleDataverseId: c["_array_rule_value"],   // authoritative parent link
+        ruleName: localRule ? getLocalRuleLabel(localRule) : "",
+        collateralType: colType,
+        collateralTypeName: COLLATERAL_TYPE_LABELS[colType] || "Unknown"
+      };
+    });
+    console.log(`loadConfigsForRule: ${collateralConfigs.length} config(s) for rule ${ruleDvId}`);
+
+    renderAll();
+  } catch (err) {
+    console.error("Error loading configurations for rule:", err);
+    showNotification("Failed to load configurations (check console)", "error");
+  }
+}
+
+// Render everything according to mode
+function renderAll() {
+  renderHostRuleInline();
+  renderCollateralConfigs();
+  renderConfigRuleContext();
+  renderRuleDuplicateHint();
+}
+
+/* ============================================================================
+   UPDATED: SAVE TO DATAVERSE (Handles Create, Update, and Delete)
+   Call this on your form's main save button.
+   ============================================================================ */
+async function saveCollateralData(leaseAgreementId) {
+  try {
+    if (formMode === "edit") {
+      return await saveEditMode();
+    }
+    return await saveCreateMode(leaseAgreementId);
+  } catch (err) {
+    console.error("Error saving collateral data:", err);
+    throw err; // bubble up to caller (in-page button / form save handler)
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   EDIT MODE SAVE (Scenario A) — single host rule already exists.
+   Update coefficient, sync charges + configs against hostRuleId.
+   ---------------------------------------------------------------------------- */
+async function saveEditMode() {
+  const rule = getHostRule();
+  if (!rule || !hostRuleId) {
+    showNotification("No host rule to save", "error");
+    return;
+  }
+
+  // Validate
+  const coeff = parseInt(rule.coefficient, 10);
+  if (rule.coefficient === "" || isNaN(coeff) || coeff < 0) {
+    showNotification("Enter a valid whole number for coefficient", "warning");
+    throw new Error("validation: coefficient");
+  }
+  if (!rule.chargeTypes || rule.chargeTypes.length === 0) {
+    showNotification("Add at least one charge type", "warning");
+    throw new Error("validation: chargeTypes");
+  }
+
+  // 1. Update host coefficient (field is not on the form -> WebApi only)
+  await XrmContext.WebApi.updateRecord("array_collateralcalculationrule", hostRuleId, {
+    array_coefficient: coeff
+  });
+  rule.dataverseId = hostRuleId;
+
+  // 2. Sync charge types for the host rule
+  await syncChargeTypesForRule(rule, hostRuleId);
+
+  // Keep leaseRules accurate even when the lease lookup is empty on this form
+  registerRuleAsLeaseRule(rule);
+
+  // 3. Sync configurations (lease-wide)
+  await syncConfigs();
+
+  console.log("Edit-mode save complete for host rule", hostRuleId);
+  showNotification("Collateral data saved", "success");
+
+  // The host record already exists, so it is never "reused" — but if it has
+  // been edited into an exact copy of another rule on the same lease, say so.
+  const twin = findMatchingLeaseRule(rule);
+  if (twin) {
+    showNotification(
+      `Note: this rule now matches ${describeLeaseRule(twin)} on the same lease`,
+      "warning"
+    );
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   CREATE MODE SAVE — ONE optional new rule under the lease + lease-wide configs.
+   The single inline rule is created only if the user filled it. Never deletes or
+   modifies other rules already attached to the lease.
+   ---------------------------------------------------------------------------- */
+async function saveCreateMode(leaseAgreementId) {
+  leaseAgreementId = leaseAgreementId || getLeaseAgreementId();
+  if (!leaseAgreementId) {
+    showNotification("Select a lease agreement before saving", "warning");
+    throw new Error("validation: no lease");
+  }
+
+  const rule = collateralRules[0];
+  const coeff = rule ? parseInt(rule.coefficient, 10) : NaN;
+  const hasCoeff = rule && rule.coefficient !== "" && !isNaN(coeff);
+  const hasCharges = rule && rule.chargeTypes && rule.chargeTypes.length > 0;
+
+  // Configurations may be parented to the on-page rule before it exists in
+  // Dataverse. If any are, the rule is no longer optional — skipping it would
+  // silently orphan those configurations.
+  const configsNeedLocalRule = !!rule && collateralConfigs.some(
+    (c) => !c.ruleDataverseId && c.ruleId === rule.id
+  );
+  const ruleStarted = hasCoeff || hasCharges || configsNeedLocalRule;
+
+  if (ruleStarted) {
+    // If the user began a rule, it must be complete before saving.
+    if (!hasCoeff || coeff < 0) {
+      showNotification("Enter a valid whole number for coefficient", "warning");
+      throw new Error("validation: coefficient");
+    }
+    if (!hasCharges) {
+      showNotification("Add at least one charge type to the rule", "warning");
+      throw new Error("validation: chargeTypes");
+    }
+
+    let dvRuleId = rule.dataverseId;
+    if (dvRuleId) {
+      await XrmContext.WebApi.updateRecord("array_collateralcalculationrule", dvRuleId, {
+        array_coefficient: coeff
+      });
+    } else if (isHostedOnRuleForm()) {
+      // Hosted on the rule form: the PLATFORM creates the rule when the form is
+      // saved. Save the form and adopt that record — never createRecord here,
+      // or the save produces two rules.
+      dvRuleId = await createRuleViaFormSave();
+      rule.dataverseId = dvRuleId;
+
+      // The coefficient is not a field on the form, so write it immediately
+      // after the record exists.
+      await XrmContext.WebApi.updateRecord("array_collateralcalculationrule", dvRuleId, {
+        array_coefficient: coeff
+      });
+    } else {
+      // NOT hosted on the rule form (standalone / embedded elsewhere): no
+      // platform record is created for us, so we create it — and an identical
+      // active rule on the lease can be reused instead of duplicated.
+      //
+      // Re-read the lease's rules first: leaseRules is a page-load snapshot, so
+      // a rule added elsewhere while this page sat open would otherwise be
+      // missed and duplicated.
+      await refreshLeaseRulesSnapshot(leaseAgreementId);
+
+      const match = findMatchingLeaseRule(rule);
+      if (match) {
+        adoptExistingLeaseRule(rule, match);
+        dvRuleId = rule.dataverseId;
+        console.log("saveCreateMode: reused existing rule", dvRuleId);
+        showNotification(
+          `Rule already existed (${describeLeaseRule(match)}) — reused it, no duplicate created`,
+          "info"
+        );
+      } else {
+        const ruleRecord = {
+          array_coefficient: coeff,
+          "array_LeaseAgreement@odata.bind": `/array_leaseagreements(${leaseAgreementId})`
+        };
+        const result = await XrmContext.WebApi.createRecord("array_collateralcalculationrule", ruleRecord);
+        dvRuleId = result.id;
+        rule.dataverseId = dvRuleId;
+      }
+    }
+    // No-op when the rule was reused: every charge row already has its id.
+    await syncChargeTypesForRule(rule, dvRuleId);
+
+    // Now a real lease rule — register it so the config dropdown and the
+    // config delete scope both treat it as existing on any later save.
+    registerRuleAsLeaseRule(rule);
+  }
+  // else: user chose to save configs only — no rule created.
+
+  // Configurations (lease-wide)
+  await syncConfigs();
+
+  console.log("Create-mode save complete!");
+  showNotification("Collateral data saved", "success");
+}
+
+/* ----------------------------------------------------------------------------
+   CREATING THE RULE VIA THE FORM'S OWN SAVE
+
+   When hosted on the Collateral Calculation Rule form, the form's record IS the
+   rule. Saving the form creates it. We therefore must NOT also call
+   createRecord — that is what produced two rule records per save.
+   ---------------------------------------------------------------------------- */
+
+// The lease may have been chosen in the fallback search rather than the form's
+// own lookup. Push it onto the form first, so the record the platform creates
+// is attached to the right lease.
+function ensureLeaseOnForm() {
+  try {
+    if (!formContext || typeof formContext.getAttribute !== "function") return;
+    const attr = formContext.getAttribute(LEASE_LOOKUP_ATTR);
+    if (!attr) return;
+
+    const existing = attr.getValue();
+    if (existing && existing.length > 0) return;   // already set on the form
+    if (!currentLeaseAgreementId) return;
+
+    attr.setValue([{
+      id: currentLeaseAgreementId,
+      name: currentLeaseAgreementLabel || "",
+      entityType: LEASE_ENTITY
+    }]);
+  } catch (e) {
+    console.warn("Could not set the lease lookup on the form:", e);
+  }
+}
+
+// Save the form to create the rule, then return its new id. After this the
+// record exists, so the form is an EDIT form for the rest of the session.
+async function createRuleViaFormSave() {
+  ensureLeaseOnForm();
+
+  await formContext.data.save();
+
+  const rawId = formContext.data.entity.getId();
+  const newId = rawId ? rawId.replace(/[{}]/g, "").toLowerCase() : null;
+  if (!newId) throw new Error("Form saved but returned no record id");
+
+  formMode = "edit";
+  hostRuleId = newId;
+  console.log("createRuleViaFormSave: platform created rule", newId);
+  return newId;
+}
+
+/* ----------------------------------------------------------------------------
+   SHARED SYNC HELPERS
+   ---------------------------------------------------------------------------- */
+
+/* Write a record, retrying once without the primary-name field if that field
+   turns out not to exist. The logical name of a "Name" column varies with the
+   publisher prefix, and an unknown property fails the WHOLE request — this
+   degrades to a blank name (the behaviour before this change) rather than
+   breaking every save. The retry is logged so a wrong name is easy to spot. */
+async function saveWithOptionalName(record, nameField, write) {
+  try {
+    return await write(record);
+  } catch (err) {
+    if (nameField && Object.prototype.hasOwnProperty.call(record, nameField)) {
+      console.warn(
+        `Write failed with "${nameField}" — retrying without it. ` +
+        `Check that column's logical name in the maker portal.`, err
+      );
+      const rest = { ...record };
+      delete rest[nameField];
+      return await write(rest);
+    }
+    throw err;
+  }
+}
+
+// Mirror a just-saved on-page rule into leaseRules (the "all rules under this
+// lease" list). Idempotent — updates in place when already present.
+function registerRuleAsLeaseRule(rule) {
+  if (!rule || !rule.dataverseId) return;
+  const charges = (rule.chargeTypes || []).map((ct) => ({
+    dataverseId: ct.dataverseId || null,
+    chargeTypeId: ct.chargeTypeId,
+    chargeTypeName: ct.chargeTypeName
+  }));
+  const entry = {
+    dataverseId: rule.dataverseId,
+    ruleName: rule.ruleName || "",
+    coefficient: rule.coefficient,
+    charges,
+    chargeNames: charges.map((c) => c.chargeTypeName)
+  };
+  const idx = leaseRules.findIndex((r) => r.dataverseId === rule.dataverseId);
+  if (idx === -1) leaseRules.push(entry);
+  else leaseRules[idx] = { ...leaseRules[idx], ...entry };
+}
+
+async function syncChargeTypesForRule(rule, dvRuleId) {
+  const existingChargesRes = await XrmContext.WebApi.retrieveMultipleRecords(
+    "array_collateralrulecharge",
+    `?$select=array_collateralrulechargeid&$filter=_array_rule_value eq '${dvRuleId}'`
+  );
+  const dbChargeIds = existingChargesRes.entities.map(e => e.array_collateralrulechargeid);
+  const uiChargeDvIds = rule.chargeTypes.map(ct => ct.dataverseId).filter(id => id);
+
+  // Delete removed charge types
+  for (const dbCId of dbChargeIds) {
+    if (!uiChargeDvIds.includes(dbCId)) {
+      try { await XrmContext.WebApi.deleteRecord("array_collateralrulecharge", dbCId); }
+      catch(e) { console.warn("Delete charge skipped", e); }
+    }
+  }
+
+  // Create new charge types
+  for (const ct of rule.chargeTypes) {
+    if (!ct.dataverseId) {
+      const chargeRecord = {
+        "array_ChargeType@odata.bind": `/array_chargetypes(${ct.chargeTypeId})`,
+        "array_Rule@odata.bind": `/array_collateralcalculationrules(${dvRuleId})`
+      };
+      // Primary name column — the charge type, e.g. "CO". Read from the label
+      // already in memory, so this costs no extra request.
+      if (ct.chargeTypeName) chargeRecord[RULE_CHARGE_NAME_FIELD] = ct.chargeTypeName;
+
+      const chargeRes = await saveWithOptionalName(
+        chargeRecord, RULE_CHARGE_NAME_FIELD,
+        (rec) => XrmContext.WebApi.createRecord("array_collateralrulecharge", rec)
+      );
+      ct.dataverseId = chargeRes.id;
+    }
+  }
+}
+
+async function syncConfigs() {
+  // Delete scope = THIS rule only. The form shows only this rule's
+  // configurations, so it must only ever delete this rule's configurations —
+  // a wider scope would delete rows the user was never shown and could not
+  // have intended to remove.
+  const rule = getHostRule();
+  const scopeRuleId = rule && rule.dataverseId;
+
+  if (scopeRuleId) {
+    const existingConfigsRes = await XrmContext.WebApi.retrieveMultipleRecords(
+      "array_collateralconfiguration",
+      `?$select=array_collateralconfigurationid&$filter=_array_rule_value eq '${scopeRuleId}'`
+    );
+    const dbConfigIds = existingConfigsRes.entities.map(e => e.array_collateralconfigurationid);
+    const uiConfigDvIds = collateralConfigs.map(c => c.dataverseId).filter(id => id);
+
+    // Delete only configs that existed in DB but were removed from the UI table
+    for (const dbCfgId of dbConfigIds) {
+      if (!uiConfigDvIds.includes(dbCfgId)) {
+        try { await XrmContext.WebApi.deleteRecord("array_collateralconfiguration", dbCfgId); }
+        catch(e) { console.warn("Delete config skipped", e); }
+      }
+    }
+  }
+
+  // Create or Update configs. The parent is the rule on this form, whose GUID
+  // exists by now because the rule is always created/updated BEFORE this runs.
+  for (const config of collateralConfigs) {
+    const parentDvId = resolveConfigParentRuleId(config);
+    if (!parentDvId) {
+      console.warn("Config skipped — parent rule has no Dataverse id yet", config);
+      continue;
+    }
+    // Pin the resolved parent so re-saves are idempotent
+    config.ruleDataverseId = parentDvId;
+
+    // Primary name column — the collateral type, e.g. "Bank Guarantee". Set on
+    // update too, so changing the type never leaves a stale name behind.
+    const namePatch = {};
+    if (config.collateralTypeName) namePatch[CONFIG_NAME_FIELD] = config.collateralTypeName;
+
+    if (config.dataverseId) {
+      await saveWithOptionalName(
+        { array_type: config.collateralType, ...namePatch }, CONFIG_NAME_FIELD,
+        (rec) => XrmContext.WebApi.updateRecord("array_collateralconfiguration", config.dataverseId, rec)
+      );
+    } else {
+      const configRecord = {
+        "array_Rule@odata.bind": `/array_collateralcalculationrules(${parentDvId})`,
+        array_type: config.collateralType,
+        ...namePatch
+      };
+      const cfgRes = await saveWithOptionalName(
+        configRecord, CONFIG_NAME_FIELD,
+        (rec) => XrmContext.WebApi.createRecord("array_collateralconfiguration", rec)
+      );
+      config.dataverseId = cfgRes.id;
+    }
+  }
+
+  // Parents are resolved — drop the "Not saved" markers and refresh labels
+  refreshConfigRuleLabels();
+}
+
+/* ============================================================================
+   FORM CONTEXT, LEASE RESOLUTION & CHARGE TYPES
+   This web resource is embedded directly on the Collateral Calculation Rule
+   form, so it reads the parent form's lease lookup via window.parent.Xrm.
+   ============================================================================ */
+const LEASE_ENTITY = "array_leaseagreement";          // logical name
+const LEASE_ID_FIELD = "array_leaseagreementid";      // primary key
+const LEASE_NAME_FIELD = "array_leaserecordid";       // display / search column
+const LEASE_LOOKUP_ATTR = "array_leaseagreement";     // lookup attribute on the rule form
+
+// Collect Xrm objects from every reachable frame (self, parent, grandparent, top).
+// In Unified Interface the web resource can be nested, so the nearest parent is
+// not always the one holding the form context.
+function getCandidateXrms() {
+  const list = [];
+  const seen = [];
+  function add(w, label) {
+    try { if (w && w.Xrm && seen.indexOf(w.Xrm) === -1) { seen.push(w.Xrm); list.push([label, w.Xrm]); } } catch (e) {}
+  }
+  add(window, "self");
+  try { add(window.parent, "parent"); } catch (e) {}
+  try { add(window.parent && window.parent.parent, "parent.parent"); } catch (e) {}
+  try { add(window.top, "top"); } catch (e) {}
+  return list;
+}
+
+function getFormContext() {
+  const cands = getCandidateXrms();
+  // First choice: a frame whose Page actually exposes our lease lookup attribute
+  for (let i = 0; i < cands.length; i++) {
+    const xrm = cands[i][1];
+    try {
+      if (xrm.Page && typeof xrm.Page.getAttribute === "function" && xrm.Page.getAttribute(LEASE_LOOKUP_ATTR)) {
+        console.log("getFormContext: using Xrm from", cands[i][0], "(lease lookup present)");
+        return xrm.Page;
+      }
+    } catch (e) {}
+  }
+  // Fallback: any frame with a usable form context
+  for (let j = 0; j < cands.length; j++) {
+    const xrm = cands[j][1];
+    try {
+      if (xrm.Page && typeof xrm.Page.getAttribute === "function") {
+        console.log("getFormContext: using Xrm from", cands[j][0], "(fallback)");
+        return xrm.Page;
+      }
+    } catch (e) {}
+  }
+  console.warn("getFormContext: no usable form context found in any frame.");
+  return null;
+}
+
+// Wait until a usable form context is reachable (handles iframe load timing)
+function waitForFormContext(timeoutMs = 5000, intervalMs = 150) {
+  return new Promise((resolve) => {
+    const start = Date.now();
+    (function poll() {
+      const fc = getFormContext();
+      if (fc || Date.now() - start >= timeoutMs) { resolve(fc); return; }
+      setTimeout(poll, intervalMs);
+    })();
+  });
+}
+
+function resolveLeaseAgreementFromForm() {
+  try {
+    const fc = formContext || getFormContext();
+    if (!fc || typeof fc.getAttribute !== "function") return null;
+    const attr = fc.getAttribute(LEASE_LOOKUP_ATTR);
+    if (!attr) return null;
+    const val = attr.getValue();
+    if (val && val.length > 0 && val[0].id) {
+      return val[0].id.replace(/[{}]/g, "").toLowerCase();
+    }
+  } catch (e) {
+    console.warn("resolveLeaseAgreementFromForm failed:", e);
+  }
+  return null;
+}
+
+// Canonical "what lease are we working with" getter (form lookup or fallback search)
+function getLeaseAgreementId() {
+  return currentLeaseAgreementId || resolveLeaseAgreementFromForm();
+}
+
+async function loadChargeTypes() {
+  // Don't $select a possibly-wrong name column (avoids a silent failure that
+  // would leave the dropdown showing stub data). Pull all columns, then resolve
+  // the label from the most likely name fields.
+  const res = await XrmContext.WebApi.retrieveMultipleRecords(
+    "array_chargetype",
+    "?$top=5000"
+  );
+  const entities = res.entities || [];
+  const nameCandidates = ["array_name", "array_chargetypename", "array_chargetype", "name"];
+  const normalized = entities.map((e) => {
+    let label = "";
+    for (const f of nameCandidates) {
+      if (e[f] != null && String(e[f]).trim() !== "") { label = e[f]; break; }
+    }
+    return { array_chargetypeid: e.array_chargetypeid, array_name: label || "(unnamed)" };
+  });
+  normalized.sort((a, b) => a.array_name.localeCompare(b.array_name));
+  console.log(`loadChargeTypes: ${normalized.length} charge type(s) loaded`);
+  return normalized;
+}
+
+/* ============================================================================
+   FALLBACK LEASE AGREEMENT LOOKUP / SEARCH
+   ============================================================================ */
+function initLeaseAgreementSearch() {
+  const box = document.getElementById("leaseSearchBox");
+  if (!box) return;
+
+  box.addEventListener("input", () => {
+    clearTimeout(leaseSearchTimer);
+    const term = box.value.trim();
+    if (term.length < 1) {
+      hideLeaseResults();
+      return;
+    }
+    leaseSearchTimer = setTimeout(() => runLeaseSearch(term), 300);
+  });
+
+  // Close the dropdown when clicking outside
+  document.addEventListener("click", (e) => {
+    const wrap = document.getElementById("leaseSearchWrap");
+    if (wrap && !wrap.contains(e.target)) hideLeaseResults();
+  });
+}
+
+function hideLeaseResults() {
+  const results = document.getElementById("leaseSearchResults");
+  if (results) results.style.display = "none";
+}
+
+async function runLeaseSearch(term) {
+  const results = document.getElementById("leaseSearchResults");
+  if (!results) return;
+
+  const safe = term.replace(/'/g, "''"); // OData single-quote escaping
+  try {
+    const res = await XrmContext.WebApi.retrieveMultipleRecords(
+      LEASE_ENTITY,
+      `?$select=${LEASE_ID_FIELD},${LEASE_NAME_FIELD}&$filter=contains(${LEASE_NAME_FIELD},'${safe}')&$top=20`
+    );
+
+    const rows = res.entities || [];
+    if (rows.length === 0) {
+      results.innerHTML = `<div style="padding:12px 14px;font-size:13px;color:var(--hint);">No lease agreements found</div>`;
+      results.style.display = "block";
+      return;
+    }
+
+    results.innerHTML = rows
+      .map((r) => {
+        const id = r[LEASE_ID_FIELD];
+        const label = r[LEASE_NAME_FIELD] || "(no name)";
+        const safeLabel = escapeHtml(label).replace(/'/g, "&#39;");
+        return `<div class="lease-result-row" onclick="selectLeaseAgreement('${id}', '${safeLabel}')"
+                  style="padding:10px 14px;font-size:13px;color:var(--text);cursor:pointer;border-bottom:1px solid var(--border);"
+                  onmouseover="this.style.background='var(--blue-l)'" onmouseout="this.style.background='transparent'">
+                  ${escapeHtml(label)}
+                </div>`;
+      })
+      .join("");
+    results.style.display = "block";
+  } catch (e) {
+    console.error("Lease search failed:", e);
+    results.innerHTML = `<div style="padding:12px 14px;font-size:13px;color:var(--red);">Search failed. Check console.</div>`;
+    results.style.display = "block";
+  }
+}
+
+function selectLeaseAgreement(id, label) {
+  currentLeaseAgreementId = (id || "").replace(/[{}]/g, "").toLowerCase();
+  currentLeaseAgreementLabel = label || "";   // needed to set the form lookup on save
+  hideLeaseResults();
+  document.getElementById("leaseSearchWrap").style.display = "none";
+  const selWrap = document.getElementById("leaseSelectedWrap");
+  selWrap.style.display = "flex";
+  document.getElementById("leaseSelectedLabel").textContent = label;
+  // Only the lease's rules are loaded, for the duplicate check. Configurations
+  // entered so far belong to the on-page rule and are deliberately kept.
+  loadLeaseRules(currentLeaseAgreementId);
+}
+
+function clearSelectedLease() {
+  currentLeaseAgreementId = null;
+  leaseRules = [];
+  renderAll();
+
+  document.getElementById("leaseSelectedWrap").style.display = "none";
+  const searchWrap = document.getElementById("leaseSearchWrap");
+  searchWrap.style.display = "block";
+  const box = document.getElementById("leaseSearchBox");
+  box.value = "";
+  box.focus();
+}
+
+// Initial render (empty until init resolves mode)
+renderCollateralRules();
+renderCollateralConfigs();
+
+/* ============================================================================
+   SAVE TRIGGERS — in-page button + top form save bar
+   ============================================================================ */
+let collateralSaveInFlight = false;
+
+async function onInPageSaveClick() {
+  const btn = document.getElementById("collateralSaveBtn");
+  if (collateralSaveInFlight) return;
+  collateralSaveInFlight = true;
+  if (btn) { btn.disabled = true; btn.textContent = "Saving..."; }
+  try {
+    await saveCollateralData();
+  } catch (e) {
+    if (!String(e && e.message).startsWith("validation:")) {
+      showNotification("Save failed (check console)", "error");
+    }
+    console.error(e);
+  } finally {
+    collateralSaveInFlight = false;
+    if (btn) { btn.disabled = false; btn.textContent = "Save Collateral Data"; }
+  }
+}
+
+/* Top save-bar handler.
+
+   CREATE MODE: does nothing. The platform save is what creates the rule record,
+   and the in-page "Save Collateral Data" button owns that first save (it calls
+   formContext.data.save() and then attaches the charge types and
+   configurations). Running our save here as well is exactly what produced a
+   second rule record per ribbon save.
+
+   EDIT MODE: the record already exists, so the ribbon save also pushes the
+   coefficient, charge types and configurations. NOTE: these WebApi calls run in
+   parallel with the platform save — an iframe cannot block the host
+   transaction reliably. */
+function registerFormSaveHandler() {
+  try {
+    if (!(formContext && formContext.data && formContext.data.entity)) return;
+
+    // EDIT MODE: the record exists, so on ribbon save push coefficient, charges
+    // and configs via WebApi.
+    if (typeof formContext.data.entity.addOnSave === "function") {
+      formContext.data.entity.addOnSave(async () => {
+        if (formMode !== "edit") return; // create handled in post-save below
+        try { await saveCollateralData(); }
+        catch (e) { console.error("Collateral save (form bar, edit) failed:", e); }
+      });
+    }
+
+    // CREATE MODE: let the PLATFORM create the rule record on ribbon save, then
+    // attach charges + configs to the new record in post-save (the record now
+    // has an id). This avoids the double-create that happened when we also saved
+    // the rule ourselves. addOnPostSave fires after the platform save completes.
+    if (typeof formContext.data.entity.addOnPostSave === "function") {
+      formContext.data.entity.addOnPostSave(async () => {
+        if (formMode === "edit") return; // edit path already ran in addOnSave
+        try {
+          var rawId = formContext.data.entity.getId();
+          var newId = rawId ? rawId.replace(/[{}]/g, "").toLowerCase() : null;
+          if (!newId) {
+            console.warn("Post-save: no record id yet; skipping collateral attach.");
+            return;
+          }
+          // Adopt the platform-created record and attach children WITHOUT
+          // re-saving the form (we're already past the platform save).
+          formMode = "edit";
+          hostRuleId = newId;
+          var rule = (typeof getHostRule === "function") ? getHostRule() : collateralRules[0];
+          if (rule) {
+            rule.dataverseId = newId;
+            var coeff = parseInt(rule.coefficient, 10);
+            if (!isNaN(coeff) && coeff >= 0) {
+              await XrmContext.WebApi.updateRecord("array_collateralcalculationrule", newId, { array_coefficient: coeff });
+            }
+            if (typeof syncChargeTypesForRule === "function") await syncChargeTypesForRule(rule, newId);
+            if (typeof registerRuleAsLeaseRule === "function") registerRuleAsLeaseRule(rule);
+          }
+          if (typeof syncConfigs === "function") await syncConfigs();
+          if (typeof window.markCollateralClean === "function") window.markCollateralClean();
+          console.log("Post-save: collateral attached to new rule", newId);
+        } catch (e) {
+          console.error("Collateral save (form bar, create post-save) failed:", e);
+        }
+      });
+    }
+
+    console.log("Registered collateral save on form save bar (edit + create).");
+  } catch (e) {
+    console.warn("Could not register form save handler:", e);
+  }
+}
+
+/* ============================================================================
+   INITIALIZATION & AUTO-LOAD LOGIC
+   ============================================================================ */
+document.addEventListener("DOMContentLoaded", async () => {
+  console.log("Initializing Collateral UI...");
+
+  // 1. Wait for a usable form context
+  formContext = await waitForFormContext();
+  console.log("Form context resolved:", !!formContext);
+
+  // 2. Determine mode (1 = Create / Scenario B, 2 = Update / Scenario A)
+  let formType = 1;
+  try {
+    if (formContext && formContext.ui && typeof formContext.ui.getFormType === "function") {
+      formType = formContext.ui.getFormType();
+    }
+  } catch (e) { console.warn("getFormType failed, defaulting to create:", e); }
+
+  if (formType === 2) {
+    formMode = "edit";
+    try {
+      const rawId = formContext.data.entity.getId();
+      hostRuleId = rawId ? rawId.replace(/[{}]/g, "").toLowerCase() : null;
+    } catch (e) { console.warn("getId failed:", e); }
+    console.log("Mode: EDIT, hostRuleId:", hostRuleId);
+  } else {
+    formMode = "create";
+    console.log("Mode: CREATE");
+  }
+  applyFormModeUI();
+
+  // 3. Load charge types for the dropdowns
+  if (typeof loadChargeTypes === "function") {
+    try { window.chargeTypes = await loadChargeTypes(); }
+    catch (err) {
+      console.error("Error loading charge types:", err);
+      showNotification("Could not load charge types (check entity/field names)", "error");
+    }
+  }
+  populateCollateralChargeTypeDropdown();
+
+  // 4. Register save on the top form bar
+  registerFormSaveHandler();
+
+  // 5. Mode-specific data load + lease handling
+  const fallbackGroup = document.getElementById("leaseAgreementFallbackGroup");
+
+  if (formMode === "edit") {
+    // Scenario A: load the single host rule on top...
+    if (fallbackGroup) fallbackGroup.style.display = "none";
+    await loadExistingCollateralData();
+    // ...the lease's other rules, for duplicate detection only...
+    const editLeaseId = resolveLeaseAgreementFromForm();
+    await loadLeaseRules(editLeaseId);
+    // ...and ONLY this rule's configurations.
+    await loadConfigsForRule(hostRuleId);
+    return;
+  }
+
+  // CREATE MODE (Scenario B) ---------------------------------------------------
+  // Start empty — never preload the lease's existing rules. We only capture the
+  // lease id so the new rule(s) can be saved under it.
+  let leaseId = resolveLeaseAgreementFromForm();
+  console.log("Create mode — lease from form context:", leaseId);
+
+  // React to the lease lookup changing while the form is open (capture id + reload configs)
+  try {
+    if (formContext && typeof formContext.getAttribute === "function") {
+      const leaseAttr = formContext.getAttribute(LEASE_LOOKUP_ATTR);
+      if (leaseAttr && typeof leaseAttr.addOnChange === "function") {
+        leaseAttr.addOnChange(() => {
+          const newId = resolveLeaseAgreementFromForm();
+          currentLeaseAgreementId = newId;
+          if (newId) {
+            if (fallbackGroup) fallbackGroup.style.display = "none";
+            // Rules only — configurations entered so far belong to the on-page
+            // rule and survive a lease change.
+            loadLeaseRules(newId);
+          } else {
+            if (fallbackGroup) fallbackGroup.style.display = "block";
+            leaseRules = [];
+            renderAll();
+            initLeaseAgreementSearch();
+          }
+        });
+      }
+    }
+  } catch (e) {
+    console.warn("Could not bind lease lookup onChange:", e);
+  }
+
+  // On-page: a SINGLE new rule is edited inline (no multi-rule table). Seed one
+  // empty rule so the inline editor has a target. It is created on save only if filled.
+  collateralRules = [makeEmptyRule()];
+
+  if (leaseId) {
+    // Lease passed from form context -> auto-populate and keep search hidden.
+    // Only the lease's RULES are loaded (duplicate detection). A brand-new rule
+    // has no configurations, so the configuration table starts empty.
+    currentLeaseAgreementId = leaseId;
+    if (fallbackGroup) fallbackGroup.style.display = "none";
+    await loadLeaseRules(leaseId);
+  } else {
+    // No lease on form context -> show the type-ahead search field
+    if (fallbackGroup) fallbackGroup.style.display = "block";
+    if (typeof initLeaseAgreementSearch === "function") initLeaseAgreementSearch();
+    renderAll();
+  }
+});
+
+</script>
+<script>
+/* ============================================================================
+   USABILITY ENHANCEMENT LAYER
+   Additive only. Wraps existing functions from array_LeaseCreationUIJS.js to
+   drive: (1) section gating behind lease selection, (2) a loud unsaved-changes
+   state on the sticky save bar, (3) a browser leave-warning while dirty.
+   No core function is modified; all hooks are wrap-and-call-through.
+   ============================================================================ */
+(function () {
+  var dirty = false;
+  var savedOnce = false;
+
+  function bar()      { return document.getElementById("collateralSaveBar"); }
+  function statusTxt(){ return document.getElementById("collateralSaveStatusText"); }
+
+  function setBar(state, text) {
+    var b = bar(); if (!b) return;
+    b.classList.remove("dirty", "saved");
+    if (state) b.classList.add(state);
+    if (text && statusTxt()) statusTxt().textContent = text;
+  }
+
+  window.markCollateralDirty = function () {
+    dirty = true;
+    setBar("dirty", "Unsaved changes — use Save at the top to commit");
+  };
+  window.markCollateralClean = function () {
+    dirty = false; savedOnce = true;
+    setBar("saved", "All changes saved");
+  };
+
+  // Warn before leaving with unsaved edits (standalone / new-tab contexts).
+  window.addEventListener("beforeunload", function (e) {
+    if (dirty) { e.preventDefault(); e.returnValue = ""; return ""; }
+  });
+
+  /* ---- Gate steps 2–4 until a lease is active ---- */
+  function hasLease() {
+    try {
+      if (typeof getLeaseAgreementId === "function" && getLeaseAgreementId()) return true;
+    } catch (e) {}
+    // In EDIT mode the lease is fixed on the host record; treat as satisfied
+    // when the fallback lease picker is hidden.
+    var fb = document.getElementById("leaseAgreementFallbackGroup");
+    return !!(fb && fb.style.display === "none");
+  }
+  function applyGating() {
+    var gated = ["rulesSection", "configSection"];
+    var locked = !hasLease();
+    gated.forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.classList.toggle("locked", locked);
+    });
+    var saveBtn = document.getElementById("collateralSaveBtn");
+    if (saveBtn) saveBtn.disabled = locked;
+    // Mark step 1 done
+    var head = document.getElementById("leaseStepHead");
+    if (head) head.classList.toggle("done", !locked);
+  }
+  window.refreshCollateralGating = applyGating;
+
+  /* ---- Wrap existing functions to fire dirty + gating ---- */
+  function wrap(name, after) {
+    var orig = window[name];
+    if (typeof orig !== "function") return;
+    window[name] = function () {
+      var r = orig.apply(this, arguments);
+      try { after.apply(this, arguments); } catch (e) { console.warn("enhance hook", name, e); }
+      return r;
+    };
+  }
+
+  // Any edit marks dirty
+  ["saveCollateralRule","saveCollateralConfig","deleteCollateralRule","deleteCollateralConfig",
+   "addChargeTypeToHostRule","removeChargeTypeFromHostRule","onInlineCoefficientChange"
+  ].forEach(function (fn) { wrap(fn, window.markCollateralDirty); });
+
+  // Lease selection / clearing re-runs gating (and clearing is a change)
+  wrap("selectLeaseAgreement", function () { applyGating(); });
+  wrap("clearSelectedLease",  function () { applyGating(); });
+
+  // Successful save flips to clean. saveCollateralData resolves a promise on success.
+  var origSave = window.saveCollateralData;
+  if (typeof origSave === "function") {
+    window.saveCollateralData = function () {
+      var p = origSave.apply(this, arguments);
+      if (p && typeof p.then === "function") {
+        p.then(function () { window.markCollateralClean(); }).catch(function () {});
+      }
+      return p;
+    };
+  }
+
+  // Initial state once the core init has had a chance to run.
+  // The lease lookup can resolve AFTER first load (async parent context), so a
+  // single check could leave the form stuck "locked" if it ran too early.
+  // Re-check on a short poll until a lease is found, then stop. Caps out so it
+  // never loops forever when there genuinely is no lease yet (user picks one,
+  // and selectLeaseAgreement's wrapper re-runs applyGating anyway).
+  function boot() {
+    setBar("", "No changes yet");
+    var tries = 0;
+    (function poll() {
+      applyGating();
+      tries++;
+      // Keep polling for ~6s while no lease; once found, applyGating has
+      // unlocked and we can stop.
+      if (!hasLease() && tries < 20) {
+        setTimeout(poll, 300);
+      }
+    })();
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function () { setTimeout(boot, 400); });
+  } else {
+    setTimeout(boot, 400);
+  }
+})();
+</script>
+
+</body></html>
