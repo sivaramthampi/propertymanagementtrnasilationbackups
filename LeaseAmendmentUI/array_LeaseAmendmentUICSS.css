@@ -1,0 +1,2781 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: linear-gradient(135deg, #f3f2f1 0%, #e8e7e6 100%);
+    color: #2d3748;
+    line-height: 1.6;
+    font-size: 13px;
+}
+
+html,
+body {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.pa-vu {
+    padding: 0 !important;
+}
+
+.form-container,
+.form-container * {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* ===== LOADING SCREEN ===== */
+#loadingScreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #0b1559 0%, #1a237e 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 99999;
+    transition: opacity 0.3s ease-out;
+}
+
+#loadingScreen.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.loader {
+    width: 36px;
+    height: 36px;
+    border: 3px solid rgba(255, 255, 255, 0.2);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.loading-text {
+    color: white;
+    font-size: 15px;
+    font-weight: 600;
+    margin-top: 16px;
+}
+
+/* ===== FORM CONTAINER ===== */
+.form-container {
+    opacity: 0;
+    transition: opacity 0.3s ease-in;
+    padding-bottom: 80px;
+    max-width: 100%;
+}
+
+.form-container.loaded {
+    opacity: 1;
+}
+
+/* ===== FULL LAYOUT ===== */
+.amend-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* ===== AMEND HEADER ===== */
+.amend-header {
+    background: linear-gradient(135deg, #0b1559 0%, #1a237e 100%);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 3px solid #f97316;
+    flex-shrink: 0;
+}
+
+.amend-header h1 {
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #fff;
+}
+
+.amend-badge {
+    background: #f97316;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+}
+
+.lease-info-bar {
+    display: none;
+}
+
+/* ===== WIZARD NAV ===== */
+.wizard-nav {
+    flex-shrink: 0;
+    background: #fff;
+    border-bottom: 2px solid #e5e7eb;
+    padding: 8px 12px 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db transparent;
+}
+
+.wizard-nav::-webkit-scrollbar {
+    height: 3px;
+}
+
+.wizard-nav::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 2px;
+}
+
+.progress-container {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding-bottom: 10px;
+    min-width: max-content;
+    width: 100%;
+    gap: 0;
+}
+
+.progress-line {
+    position: absolute;
+    top: 13px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #e5e7eb;
+    z-index: 0;
+}
+
+.progress-line-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #0b1559, #1e3a8a);
+    width: 0%;
+    transition: width 0.4s ease;
+}
+
+/* ===== WIZARD STEP ===== */
+.wizard-step {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    z-index: 1;
+    cursor: pointer;
+    min-width: 70px;
+    max-width: 90px;
+    flex: 1 0 70px;
+    padding: 0 4px;
+}
+
+.wizard-step-num {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #e5e7eb;
+    color: #6b7280;
+    font-size: 11px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 2px #e5e7eb;
+    transition: background 0.25s, box-shadow 0.25s, color 0.25s;
+}
+
+.wizard-step-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: #9ca3af;
+    text-align: center;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+    max-width: 80px;
+    line-height: 1.25;
+    word-break: break-word;
+    hyphens: auto;
+    transition: color 0.2s;
+}
+
+.wizard-step.active .wizard-step-num {
+    background: linear-gradient(135deg, #0b1559, #1e3a8a);
+    color: #fff;
+    box-shadow: 0 0 0 3px rgba(11, 21, 89, 0.2), 0 2px 8px rgba(11, 21, 89, 0.35);
+    width: 28px;
+    height: 28px;
+}
+
+.wizard-step.active .wizard-step-label {
+    color: #0b1559;
+    font-weight: 700;
+    font-size: 11px;
+}
+
+.wizard-step.completed .wizard-step-num {
+    background: linear-gradient(135deg, #059669, #047857);
+    color: #fff;
+    box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.2), 0 2px 6px rgba(5, 150, 105, 0.25);
+    font-size: 13px;
+    line-height: 1;
+}
+
+.wizard-step.completed .wizard-step-label {
+    color: #059669;
+    font-weight: 600;
+}
+
+.wizard-step:last-child {
+    min-width: 72px;
+    max-width: 88px;
+    flex: 1 0 72px;
+}
+
+.wizard-step:last-child .wizard-step-label {
+    max-width: 78px;
+    font-size: 9px;
+    line-height: 1.2;
+}
+
+.wizard-step:last-child.active .wizard-step-label {
+    font-size: 10px;
+    color: #0b1559;
+    font-weight: 700;
+}
+
+.wizard-divider {
+    display: none;
+}
+
+/* ===== TAB NAV ===== */
+.amend-tabs {
+    display: flex;
+    background: #fff;
+    border-bottom: 2px solid #e5e7eb;
+    padding: 0 16px;
+    flex-shrink: 0;
+    overflow-x: auto;
+}
+
+.amend-tab {
+    padding: 10px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    white-space: nowrap;
+    transition: color 0.15s, border-color 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.amend-tab:hover {
+    color: #0b1559;
+}
+
+.amend-tab.active {
+    color: #0b1559;
+    border-bottom-color: #0b1559;
+}
+
+.tab-badge {
+    background: #e0e7ff;
+    color: #3730a3;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 10px;
+    min-width: 18px;
+    text-align: center;
+}
+
+.amend-tab.active .tab-badge {
+    background: #0b1559;
+    color: #fff;
+}
+
+/* ===== TAB PANELS / AMEND BODY ===== */
+.amend-body {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 14px 16px;
+    background: #f8fafc;
+}
+
+.tab-panel {
+    display: none;
+}
+
+.tab-panel.active {
+    display: block;
+}
+
+/* ===== SECTION CARDS ===== */
+.amend-section-card {
+    background: #fff;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    margin-bottom: 16px;
+    overflow: hidden;
+}
+
+.amend-section-header {
+    background: linear-gradient(135deg, #0b1559 0%, #1e3a8a 100%);
+    padding: 11px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.amend-section-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.amend-section-body {
+    padding: 14px 16px;
+}
+
+/* ===== FORM GRID & GROUPS ===== */
+.amend-form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+}
+
+.amend-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.amend-form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.amend-form-group label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.amend-form-group label.required::after {
+    content: " *";
+    color: #ef4444;
+}
+
+.amend-form-group input,
+.amend-form-group select,
+.amend-form-group textarea {
+    border: 1.5px solid #d1d5db;
+    border-radius: 7px;
+    padding: 7px 10px;
+    font-size: 13px;
+    color: #111827;
+    background: #fff;
+    transition: border-color 0.15s;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.amend-form-group input:focus,
+.amend-form-group select:focus,
+.amend-form-group textarea:focus {
+    outline: none;
+    border-color: #0b1559;
+    box-shadow: 0 0 0 3px rgba(11, 21, 89, 0.08);
+}
+
+/* ===== TABLES ===== */
+.amend-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.amend-table {
+    width: 100%;
+    min-width: 480px;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.amend-table thead tr {
+    background: #f1f5f9;
+}
+
+.amend-table th {
+    padding: 10px 12px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #4b5563;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    border-bottom: 2px solid #e5e7eb;
+    white-space: nowrap;
+    vertical-align: middle;
+    text-align: left;
+}
+
+.amend-table td {
+    padding: 10px 12px;
+    font-size: 12px;
+    color: #111827;
+    vertical-align: middle;
+    border-bottom: 1px solid #f1f5f9;
+    text-align: left;
+}
+
+.amend-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.amend-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.amend-table tbody tr.loading-row td {
+    text-align: center;
+    padding: 24px;
+    color: #9ca3af;
+}
+
+.amend-table th.col-amount,
+.amend-table td.col-amount,
+.amend-table th[style*="text-align:right"],
+.amend-table td[style*="text-align:right"] {
+    text-align: right !important;
+}
+
+.amend-table th.col-center,
+.amend-table td.col-center,
+.amend-table th[style*="text-align:center"],
+.amend-table td[style*="text-align:center"] {
+    text-align: center !important;
+}
+
+/* ===== DEACTIVATED ROW STYLING ===== */
+.amend-table tbody tr.charge-deactivated {
+    background: #f3f4f6 !important;
+    opacity: 0.72;
+}
+
+.amend-table tbody tr.charge-deactivated td {
+    color: #9ca3af !important;
+    text-decoration: line-through;
+}
+
+.amend-table tbody tr.charge-deactivated td:last-child,
+.amend-table tbody tr.charge-deactivated td:first-child strong {
+    text-decoration: none;
+}
+
+.charge-deactivated-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #e5e7eb;
+    color: #6b7280;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 6px;
+    letter-spacing: 0.3px;
+    text-decoration: none !important;
+    margin-left: 5px;
+    vertical-align: middle;
+}
+
+/* ===== ACTION BUTTONS ===== */
+.btn-amend-add {
+    background: linear-gradient(135deg, #0b1559 0%, #1e3a8a 100%);
+    color: #fff;
+    border: none;
+    border-radius: 7px;
+    padding: 7px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: opacity 0.15s, transform 0.1s;
+}
+
+.btn-amend-add:hover {
+    opacity: 0.88;
+    transform: translateY(-1px);
+}
+
+.btn-amend-edit {
+    background: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+    border-radius: 5px;
+    padding: 4px 9px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: background 0.15s;
+}
+
+.btn-amend-edit:hover {
+    background: #bae6fd;
+}
+
+.btn-amend-delete {
+    background: #fee2e2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+    border-radius: 5px;
+    padding: 4px 9px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: background 0.15s;
+}
+
+.btn-amend-delete:hover {
+    background: #fecaca;
+}
+
+.btn-amend-activate {
+    background: #d1fae5;
+    color: #065f46;
+    border: 1px solid #6ee7b7;
+    border-radius: 5px;
+    padding: 4px 8px;
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: background 0.15s;
+}
+
+.btn-amend-activate:hover {
+    background: #a7f3d0;
+}
+
+/* ===== WIZARD FOOTER NAV ===== */
+.wizard-footer-nav {
+    flex-shrink: 0;
+    background: #fff;
+    border-top: 2px solid #e5e7eb;
+    padding: 10px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.btn-amend-close,
+.btn-wizard-back,
+.btn-wizard-next,
+.btn-wizard-finish {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 7px;
+    gap: 5px;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+}
+
+.btn-wizard-back,
+.btn-amend-close {
+    background: #f3f4f6;
+    color: #374151;
+    border: 1.5px solid #d1d5db;
+}
+
+.btn-wizard-back:hover,
+.btn-amend-close:hover {
+    background: #e5e7eb;
+}
+
+.btn-wizard-back:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.btn-wizard-next,
+.btn-wizard-finish {
+    background: linear-gradient(135deg, #0b1559 0%, #1e3a8a 100%);
+    color: #fff;
+    border-color: transparent;
+}
+
+.btn-wizard-next:hover,
+.btn-wizard-finish:hover {
+    opacity: 0.88;
+}
+
+/* ===== AMEND FOOTER ===== */
+.amend-footer {
+    background: #fff;
+    border-top: 2px solid #e5e7eb;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.btn-amend-save {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    color: #fff;
+    border: none;
+    border-radius: 7px;
+    padding: 8px 20px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    transition: opacity 0.15s;
+}
+
+.btn-amend-save:hover {
+    opacity: 0.88;
+}
+
+/* ===== PREVIEW PANEL ===== */
+.preview-section {
+    background: #fff;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    margin-bottom: 16px;
+    overflow: hidden;
+}
+
+.preview-section-header {
+    background: linear-gradient(135deg, #0b1559 0%, #1e3a8a 100%);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.preview-section-title {
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex: 1;
+}
+
+.preview-count-pill {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+
+.preview-terms-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0;
+}
+
+.preview-term-item {
+    padding: 12px 16px;
+    border-right: 1px solid #f1f5f9;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.preview-term-item:last-child {
+    grid-column: 1 / -1;
+    border-right: none;
+}
+
+.preview-term-item:nth-child(3n) {
+    border-right: none;
+}
+
+.preview-term-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.preview-term-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.preview-sign-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #e0f2fe;
+    color: #0369a1;
+    border-radius: 7px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.preview-new-badge {
+    display: inline-block;
+    background: #dcfce7;
+    color: #166534;
+    font-size: 8px;
+    font-weight: 800;
+    padding: 2px 5px;
+    border-radius: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-left: 5px;
+    vertical-align: middle;
+}
+
+/* ===== PREVIEW HEADER BAR ===== */
+.preview-header-bar {
+    background: linear-gradient(135deg, #0b1559 0%, #1a237e 100%);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.preview-header-title {
+    color: #fff;
+    font-size: 15px;
+    font-weight: 800;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.preview-header-sub {
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 11px;
+    margin-top: 3px;
+}
+
+.preview-summary-chips {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.preview-chip {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    border-radius: 7px;
+    padding: 5px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    min-width: 56px;
+    text-align: center;
+}
+
+.preview-chip-num {
+    font-size: 16px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.preview-chip-label {
+    font-size: 10px;
+    opacity: 0.85;
+}
+
+/* ===== MODAL OVERLAY ===== */
+.amend-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 9000;
+    align-items: center;
+    justify-content: center;
+}
+
+.amend-modal-overlay.active {
+    display: flex;
+}
+
+/* ===== MODAL CORE ===== */
+.amend-modal {
+    background: #fff;
+    width: 92%;
+    max-width: 640px;
+    max-height: 90vh;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 56px rgba(0, 0, 0, 0.28);
+    overflow: hidden;
+}
+
+.amend-modal-header {
+    background: linear-gradient(135deg, #0b1559 0%, #1e3a8a 100%);
+    padding: 12px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+}
+
+.amend-modal-title {
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.amend-modal-close {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #ef4444;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, border-color 0.15s, transform 0.15s;
+    flex-shrink: 0;
+    padding: 0;
+    line-height: 1;
+    position: relative;
+}
+
+.amend-modal-close:hover {
+    background: #dc2626;
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: scale(1.1);
+}
+
+.amend-modal-body {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+    padding: 16px 20px;
+}
+
+.amend-modal-footer {
+    padding: 12px 18px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+
+/* ===== MODAL FOOTER BUTTONS ===== */
+.amend-modal-footer button,
+.amend-modal-footer .btn-amend-save,
+.amend-modal-footer .btn-amend-close {
+    padding: 7px 14px;
+    font-size: 12px;
+    border-radius: 7px;
+    gap: 5px;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    font-weight: 700;
+    transition: opacity 0.15s, background 0.15s;
+}
+
+/* ===== MODAL FORM FIELDS ===== */
+.amend-modal .amend-form-group label,
+.amend-modal .amend-form-group label.required {
+    font-size: 12px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.amend-modal .amend-form-group input,
+.amend-modal .amend-form-group select,
+.amend-modal .amend-form-group textarea,
+.amend-modal input[type="text"],
+.amend-modal input[type="number"],
+.amend-modal input[type="date"],
+.amend-modal select,
+.amend-modal textarea {
+    padding: 7px 10px;
+    font-size: 13px;
+    border-radius: 7px;
+    border: 1.5px solid #d1d5db;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.amend-modal h4 {
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.amend-modal .amend-form-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+/* ===== EMPTY STATE ===== */
+.amend-empty {
+    text-align: center;
+    padding: 28px 16px;
+    color: #9ca3af;
+}
+
+.amend-empty svg {
+    margin: 0 auto 10px;
+    display: block;
+    opacity: 0.35;
+}
+
+.amend-empty p {
+    font-size: 12px;
+    font-weight: 600;
+    margin: 0 0 4px;
+}
+
+.amend-empty span {
+    font-size: 11px;
+}
+
+/* ===== STATUS PILL ===== */
+.status-pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+/* ===== SPINNER ===== */
+.amend-spinner {
+    width: 28px;
+    height: 28px;
+    border: 3px solid rgba(11, 21, 89, 0.1);
+    border-top: 3px solid #0b1559;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin: 0 auto 8px;
+}
+
+/* ===== LOOKUP INPUT ===== */
+.amend-lookup-wrap {
+    display: flex;
+    align-items: stretch;
+    border: 1.5px solid #d1d5db;
+    border-radius: 7px;
+    overflow: hidden;
+}
+
+.amend-lookup-wrap input {
+    border: none !important;
+    border-radius: 0 !important;
+    flex: 1;
+}
+
+.amend-lookup-wrap input:focus {
+    box-shadow: none !important;
+}
+
+.amend-lookup-btn {
+    background: #f3f2f1;
+    border: none;
+    border-left: 1px solid #edebe9;
+    padding: 0 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+.amend-lookup-btn:hover {
+    background: #e1dfdd;
+}
+
+/* ===== SIGN METHOD GRID ===== */
+.sign-method-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.sign-method-btn {
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 16px 12px;
+    background: #fff;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+    position: relative;
+}
+
+.sign-method-btn:not(:disabled):hover {
+    border-color: #0b1559;
+    box-shadow: 0 4px 14px rgba(11, 21, 89, 0.12);
+    background: #f0f4ff;
+}
+
+.sign-method-btn.selected {
+    border-color: #0b1559;
+    background: #f0f4ff;
+    box-shadow: 0 4px 14px rgba(11, 21, 89, 0.15);
+}
+
+.sign-method-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    background: #f9fafb;
+}
+
+.sign-method-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sign-method-icon.docusign {
+    background: #fff3e0;
+}
+
+.sign-method-icon.manual {
+    background: #e0f2fe;
+}
+
+.sign-method-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #111827;
+    text-align: center;
+}
+
+.sign-method-sub {
+    font-size: 10px;
+    color: #6b7280;
+    text-align: center;
+    line-height: 1.4;
+}
+
+.sign-method-badge-disabled {
+    position: absolute;
+    top: 7px;
+    right: 7px;
+    background: #fee2e2;
+    color: #dc2626;
+    font-size: 8px;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.sign-method-badge-selected {
+    position: absolute;
+    top: 7px;
+    right: 7px;
+    background: #0b1559;
+    color: #fff;
+    font-size: 8px;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 6px;
+}
+
+/* ===== STAGE INFO NOTE ===== */
+.stage-info-note {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 7px;
+    padding: 9px 12px;
+    font-size: 12px;
+    color: #92400e;
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+    margin-bottom: 16px;
+}
+
+/* ===== CONFIRM MODAL ===== */
+.confirm-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+}
+
+.confirm-overlay.active {
+    display: flex;
+}
+
+.confirm-box {
+    background: #fff;
+    border-radius: 12px;
+    width: min(380px, 90vw);
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+}
+
+.confirm-header {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    padding: 13px 18px;
+}
+
+.confirm-header h3 {
+    color: #fff;
+    margin: 0;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.confirm-body {
+    padding: 16px 18px;
+    font-size: 13px;
+    color: #374151;
+}
+
+.confirm-footer {
+    padding: 12px 18px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    border-top: 1px solid #e5e7eb;
+    flex-wrap: wrap;
+}
+
+/* ===== MULTI-SELECT AMENDMENT TYPE ===== */
+.amend-multiselect-wrap {
+    position: relative;
+}
+
+.amend-multiselect-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #e0e7ff;
+    color: #3730a3;
+    border-radius: 5px;
+    padding: 2px 7px;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.amend-multiselect-chip-remove {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #6366f1;
+    font-size: 12px;
+    line-height: 1;
+    padding: 0;
+    display: flex;
+    align-items: center;
+}
+
+.amend-multiselect-chip-remove:hover {
+    color: #dc2626;
+}
+
+.amend-multiselect-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: #111827;
+    cursor: pointer;
+    transition: background 0.1s;
+}
+
+.amend-multiselect-option:hover {
+    background: #f0f4ff;
+}
+
+.amend-multiselect-option input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    accent-color: #0b1559;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+/* ===== RECORDS LIST & CARDS ===== */
+.records-list {
+    display: grid;
+    gap: 10px;
+}
+
+.record-card {
+    background: #ffffff;
+    border: 1px solid #edebe9;
+    border-radius: 8px;
+    padding: 12px 14px;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.record-card:hover {
+    border-color: #c8c6c4;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+}
+
+.record-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #f3f2f1;
+}
+
+.record-title {
+    font-weight: 700;
+    color: #323130;
+    font-size: 13px;
+}
+
+.record-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.record-details {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+/* ===== STAGE NAVIGATION ===== */
+.stage-navigation {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    padding: 10px 18px;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+    border-top: 1px solid #edebe9;
+    z-index: 99;
+}
+
+.stage-nav-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 12px;
+    align-items: center;
+}
+
+.stage-nav-left {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.stage-nav-right {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+/* ===== NOTIFICATION TOAST ===== */
+.amend-notif-toast {
+    position: fixed;
+    top: 16px;
+    right: 18px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    z-index: 999999;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+    max-width: 320px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    opacity: 1;
+    transition: opacity 0.3s;
+    pointer-events: none;
+}
+
+/* ===== CHARGES TABLE ===== */
+.charges-table-wrapper {
+    overflow-x: auto;
+}
+
+.charges-table {
+    width: 100%;
+    background: white;
+    border-radius: 7px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    border-collapse: collapse;
+}
+
+.charges-table thead tr {
+    background: #f8fafc;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.charges-table th {
+    padding: 10px 12px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.charges-table tbody tr {
+    border-bottom: 1px solid #f1f5f9;
+    transition: background 0.2s ease;
+}
+
+.charges-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.charges-table tbody td {
+    padding: 10px 12px;
+    font-size: 13px;
+    color: #334155;
+    vertical-align: middle;
+}
+
+/* ===== DEPOSITS TABLE ===== */
+.deposits-table-wrapper {
+    overflow-x: auto;
+}
+
+.deposits-table {
+    width: 100%;
+    background: white;
+    border-radius: 7px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    border-collapse: collapse;
+}
+
+.deposits-table thead tr {
+    background: #f8fafc;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.deposits-table th {
+    padding: 10px 12px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.deposits-table tbody tr {
+    border-bottom: 1px solid #f1f5f9;
+    transition: background 0.2s ease;
+}
+
+.deposits-table tbody td {
+    padding: 10px 12px;
+    font-size: 13px;
+    color: #334155;
+    vertical-align: middle;
+}
+
+/* ===== LOOKUP CLEAR BUTTON ===== */
+.lookup-clear-btn {
+    display: none;
+    position: absolute;
+    right: 46px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    color: #605e5c;
+    border: none;
+    border-radius: 2px;
+    width: 22px;
+    height: 22px;
+    font-size: 11px;
+    cursor: pointer;
+    padding: 0;
+    transition: background 0.1s ease, color 0.1s ease;
+    z-index: 2;
+    font-weight: 400;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    text-align: center;
+    box-shadow: none;
+}
+
+.lookup-clear-btn:hover {
+    background: #e1dfdd;
+    color: #201f1e;
+    transform: translateY(-50%);
+}
+
+.lookup-input {
+    position: relative;
+}
+
+.lookup-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 16px;
+    cursor: pointer;
+    color: #605e5c;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ===== REVIEW/PREVIEW TABLES ===== */
+.review-charges-table,
+.review-deposits-table {
+    width: 100%;
+    background: white;
+    border-radius: 7px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    border-collapse: collapse;
+}
+
+.review-charges-table thead tr,
+.review-deposits-table thead tr {
+    background: #f8fafc;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.review-charges-table th,
+.review-deposits-table th {
+    padding: 10px 12px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.review-charges-table tbody tr,
+.review-deposits-table tbody tr {
+    border-bottom: 1px solid #f1f5f9;
+    transition: background 0.2s ease;
+}
+
+.review-charges-table tbody td,
+.review-deposits-table tbody td {
+    padding: 10px 12px;
+    font-size: 13px;
+    color: #334155;
+    vertical-align: middle;
+}
+
+/* ===== BADGE STYLES ===== */
+.badge-success {
+    display: inline-block;
+    padding: 3px 8px;
+    background: #dcfce7;
+    color: #166534;
+    border-radius: 5px;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.badge-muted {
+    display: inline-block;
+    padding: 3px 8px;
+    background: #f1f5f9;
+    color: #64748b;
+    border-radius: 5px;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+/* ===== HIGHLIGHT COLORS ===== */
+.highlight-green {
+    color: #22c55e !important;
+    font-weight: 700 !important;
+}
+
+.highlight-blue {
+    color: #3b82f6 !important;
+    font-weight: 700 !important;
+}
+
+.highlight-orange {
+    color: #f59e0b !important;
+    font-weight: 700 !important;
+}
+
+/* ===== TEXT/HELPER CLASSES ===== */
+.text-muted {
+    color: #605e5c;
+}
+
+.text-primary {
+    color: #0b1559;
+}
+
+.text-success {
+    color: #2bad76;
+}
+
+.text-danger {
+    color: #a4262c;
+}
+
+.bg-light {
+    background: #faf9f8;
+}
+
+.border-light {
+    border-color: #edebe9;
+}
+
+/* ===== NUMBER INPUT CLEAN ===== */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f3f2f1;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c8c6c4;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #a19f9d;
+}
+
+/* ===== SELECT DROPDOWN ARROW ===== */
+select {
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23605e5c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 13px;
+    padding-right: 28px;
+    cursor: pointer;
+}
+
+input[type="date"] {
+    cursor: pointer;
+}
+
+/* ===== AREA SUMMARY / AI PANEL ===== */
+#unitAreaSummaryPanel,
+#chargesAISummaryPanel,
+#depositsSummaryTopPanel {
+    display: block;
+    padding: 0;
+    background: transparent;
+    border: none;
+    margin-bottom: 14px;
+}
+
+/* ===== DEACTIVATE CHARGE MODAL SPECIFICS ===== */
+#dc_endDateGroup {
+    display: none;
+}
+
+/* ===== MULTISELECT DROPDOWN FIX ===== */
+#amend_amendmentTypeWrap .amend-multiselect-dropdown {
+    position: fixed !important;
+}
+
+/* ==========================================================================
+   SUGGESTED DEPOSIT AMOUNT PANEL
+   ========================================================================== */
+.suggested-deposit-panel {
+    background: #f3f0ff;
+    border: 1.5px solid #a78bfa;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+}
+
+.suggested-deposit-label {
+    font-size: 10px;
+    font-weight: 800;
+    color: #6d28d9;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.suggested-deposit-card {
+    background: #fff;
+    border: 1px solid #ddd6fe;
+    border-radius: 8px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.suggested-deposit-amount {
+    font-size: 18px;
+    font-weight: 800;
+    color: #1e1b4b;
+}
+
+.suggested-deposit-currency {
+    display: inline-block;
+    background: #ede9fe;
+    color: #5b21b6;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 5px;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+.suggested-deposit-sub {
+    font-size: 11px;
+    color: #9ca3af;
+    margin-top: 2px;
+}
+
+.suggested-deposit-apply {
+    background: #7c3aed;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 7px 16px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s;
+}
+
+.suggested-deposit-apply:hover {
+    background: #6d28d9;
+}
+
+.suggested-deposit-note {
+    font-size: 11px;
+    color: #7c3aed;
+    margin: 0;
+}
+
+.deposit-info-subheader {
+    font-size: 11px;
+    font-weight: 800;
+    color: #374151;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e5e7eb;
+    margin-bottom: 14px;
+}
+
+/* ==========================================================================
+   DEPOSIT MODAL — compact at 100% zoom to match 90% zoom appearance
+   ========================================================================== */
+#modalEditDeposit .amend-modal {
+    max-width: 520px;
+}
+
+#modalEditDeposit .amend-modal-body {
+    padding: 12px 16px !important;
+    max-height: 66vh !important;
+}
+
+#modalEditDeposit .amend-form-group {
+    gap: 4px;
+    margin-bottom: 10px;
+}
+
+#modalEditDeposit .amend-form-group label {
+    font-size: 11px;
+}
+
+#modalEditDeposit .amend-form-group input,
+#modalEditDeposit .amend-form-group select,
+#modalEditDeposit .amend-form-group textarea {
+    padding: 6px 10px;
+    font-size: 12px;
+}
+
+#modalEditDeposit .amend-modal-footer {
+    padding: 10px 16px;
+}
+
+#modalEditDeposit h4 {
+    font-size: 11px !important;
+    margin-bottom: 10px !important;
+}
+
+/* ===========================================================================
+   RESPONSIVE: MEDIUM (1100px and below)
+   =========================================================================== */
+@media (max-width: 1100px) {
+    .amend-body {
+        padding: 12px 14px;
+    }
+
+    .amend-modal .amend-form-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .amend-section-body {
+        padding: 12px 14px;
+    }
+
+    .amend-modal {
+        max-width: 86%;
+    }
+
+    .wizard-step-label {
+        font-size: 9px;
+    }
+
+    .preview-header-bar {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 12px 16px;
+        flex-wrap: wrap;
+    }
+
+    .preview-summary-chips {
+        flex-wrap: wrap;
+        gap: 6px;
+        width: 100%;
+    }
+
+    .preview-chip {
+        min-width: 50px;
+        padding: 4px 10px;
+    }
+
+    .preview-chip-num {
+        font-size: 14px;
+    }
+
+    .preview-chip-label {
+        font-size: 9px;
+    }
+
+    .preview-terms-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .preview-term-item {
+        padding: 10px 14px;
+    }
+
+    .preview-term-label {
+        font-size: 9px;
+    }
+
+    .preview-term-value {
+        font-size: 12px;
+    }
+
+    .preview-section-header {
+        padding: 9px 14px;
+    }
+
+    .preview-section-title {
+        font-size: 12px;
+    }
+
+    .preview-header-title {
+        font-size: 13px;
+    }
+
+    .preview-header-sub {
+        font-size: 10px;
+    }
+
+    /* Deposit modal at medium screens */
+    #modalEditDeposit .amend-modal {
+        max-width: 82%;
+    }
+
+    .suggested-deposit-amount {
+        font-size: 16px;
+    }
+}
+
+/* ===========================================================================
+   RESPONSIVE: SMALL SCREENS (980px and below)
+   =========================================================================== */
+@media (max-width: 980px) {
+    .amend-header {
+        padding: 8px 14px;
+    }
+
+    .amend-header h1 {
+        font-size: 13px;
+    }
+
+    .wizard-step {
+        min-width: 54px;
+        max-width: 72px;
+        flex: 1 0 54px;
+        padding: 0 2px;
+    }
+
+    .wizard-step:last-child {
+        min-width: 56px;
+        max-width: 74px;
+        flex: 1 0 56px;
+    }
+
+    .wizard-step-num {
+        width: 22px;
+        height: 22px;
+        font-size: 10px;
+    }
+
+    .wizard-step.active .wizard-step-num {
+        width: 24px;
+        height: 24px;
+    }
+
+    .wizard-step-label {
+        font-size: 9px;
+        max-width: 62px;
+    }
+
+    .wizard-step:last-child .wizard-step-label {
+        font-size: 8px;
+        max-width: 64px;
+    }
+
+    .wizard-step.active .wizard-step-label {
+        font-size: 9px;
+    }
+
+    .amend-body {
+        padding: 10px 12px;
+    }
+
+    .amend-modal .amend-form-grid {
+        grid-template-columns: 1fr !important;
+        gap: 9px !important;
+    }
+
+    .amend-modal .amend-form-group.full-width {
+        grid-column: 1 / -1;
+    }
+
+    .amend-modal {
+        width: 96% !important;
+        max-width: 96% !important;
+        max-height: 92vh !important;
+        border-radius: 10px !important;
+    }
+
+    .amend-modal-header {
+        padding: 10px 14px !important;
+    }
+
+    .amend-modal-title {
+        font-size: 12px !important;
+    }
+
+    .amend-modal-body {
+        padding: 12px 14px !important;
+        max-height: 62vh !important;
+    }
+
+    .amend-modal-footer {
+        padding: 9px 12px !important;
+        gap: 6px !important;
+    }
+
+    .amend-modal-footer button,
+    .amend-modal-footer .btn-amend-save,
+    .amend-modal-footer .btn-amend-close {
+        padding: 6px 11px !important;
+        font-size: 11px !important;
+        border-radius: 6px !important;
+        gap: 4px !important;
+    }
+
+    .amend-modal-footer button svg,
+    .amend-modal-footer .btn-amend-save svg,
+    .amend-modal-footer .btn-amend-close svg {
+        width: 11px !important;
+        height: 11px !important;
+    }
+
+    .amend-modal .amend-form-group label,
+    .amend-modal .amend-form-group label.required {
+        font-size: 11px !important;
+    }
+
+    .amend-modal .amend-form-group input,
+    .amend-modal .amend-form-group select,
+    .amend-modal .amend-form-group textarea,
+    .amend-modal input[type="text"],
+    .amend-modal input[type="number"],
+    .amend-modal input[type="date"],
+    .amend-modal select,
+    .amend-modal textarea {
+        padding: 6px 9px !important;
+        font-size: 12px !important;
+        border-radius: 6px !important;
+    }
+
+    .amend-modal h4 {
+        font-size: 11px !important;
+        margin-bottom: 9px !important;
+        letter-spacing: 0.4px;
+    }
+
+    .amend-modal .stage-info-note {
+        font-size: 10px !important;
+        padding: 7px 9px !important;
+    }
+
+    .amend-modal .charge-deactivated-badge,
+    .amend-modal .status-pill {
+        font-size: 8px !important;
+        padding: 1px 5px !important;
+    }
+
+    .amend-modal .btn-amend-activate,
+    .amend-modal .btn-amend-edit,
+    .amend-modal .btn-amend-delete {
+        padding: 3px 7px !important;
+        font-size: 10px !important;
+    }
+
+    button[style*="width:30px"],
+    button[style*="width: 30px"] {
+        width: 24px !important;
+        height: 24px !important;
+    }
+
+    button[style*="width:30px"] svg,
+    button[style*="width: 30px"] svg {
+        width: 10px !important;
+        height: 10px !important;
+    }
+
+    .amend-table td,
+    .amend-table th {
+        font-size: 11px !important;
+        padding: 7px 9px !important;
+    }
+
+    .charges-table th,
+    .charges-table td,
+    .deposits-table th,
+    .deposits-table td {
+        padding: 7px 9px;
+        font-size: 11px;
+    }
+
+    .btn-amend-add {
+        font-size: 11px;
+        padding: 6px 12px;
+        gap: 4px;
+    }
+
+    .wizard-footer-nav {
+        padding: 8px 12px !important;
+    }
+
+    .btn-wizard-back,
+    .btn-wizard-next,
+    .btn-wizard-finish,
+    .btn-amend-close {
+        padding: 6px 12px !important;
+        font-size: 11px !important;
+        border-radius: 6px !important;
+    }
+
+    .preview-chip {
+        min-width: 46px !important;
+        padding: 3px 8px !important;
+    }
+
+    .preview-chip-num {
+        font-size: 13px !important;
+    }
+
+    .preview-chip-label {
+        font-size: 8px !important;
+    }
+
+    .sign-method-grid {
+        gap: 9px !important;
+    }
+
+    .sign-method-btn {
+        padding: 12px 9px !important;
+    }
+
+    .sign-method-icon {
+        width: 32px !important;
+        height: 32px !important;
+    }
+
+    .sign-method-label {
+        font-size: 11px !important;
+    }
+
+    .sign-method-sub {
+        font-size: 9px !important;
+    }
+
+    .amend-modal .amend-lookup-btn {
+        padding: 0 6px !important;
+    }
+
+    .amend-section-body {
+        padding: 12px;
+    }
+
+    .amend-section-title {
+        font-size: 12px;
+    }
+
+    .preview-terms-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .preview-header-bar {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 12px 14px;
+        flex-wrap: wrap;
+    }
+
+    .preview-header-title {
+        font-size: 13px;
+    }
+
+    .amend-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .amend-form-group.full-width {
+        grid-column: 1 / -1;
+    }
+
+    /* Deposit modal responsive */
+    #modalEditDeposit .amend-modal {
+        max-width: 96% !important;
+    }
+
+    #modalEditDeposit .amend-modal-body {
+        padding: 10px 12px !important;
+        max-height: 58vh !important;
+    }
+
+    .suggested-deposit-amount {
+        font-size: 15px;
+    }
+
+    .suggested-deposit-apply {
+        padding: 6px 12px;
+        font-size: 11px;
+    }
+}
+
+/* ===========================================================================
+   RESPONSIVE: SMALL DIALOG (780px and below)
+   =========================================================================== */
+@media (max-width: 780px) {
+    .amend-body {
+        padding: 8px 10px;
+    }
+
+    .amend-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .amend-section-body {
+        padding: 10px;
+    }
+
+    .amend-modal {
+        width: 98% !important;
+        max-width: 98% !important;
+        border-radius: 8px !important;
+    }
+
+    .amend-modal-header {
+        padding: 8px 11px !important;
+    }
+
+    .amend-modal-title {
+        font-size: 11px !important;
+    }
+
+    .amend-modal-body {
+        padding: 9px 11px !important;
+        max-height: 56vh !important;
+    }
+
+    .amend-modal-footer {
+        padding: 7px 10px !important;
+        flex-wrap: wrap !important;
+    }
+
+    .amend-modal-footer button,
+    .amend-modal-footer .btn-amend-save,
+    .amend-modal-footer .btn-amend-close {
+        padding: 5px 10px !important;
+        font-size: 10px !important;
+    }
+
+    .amend-modal .amend-form-group input,
+    .amend-modal .amend-form-group select,
+    .amend-modal .amend-form-group textarea,
+    .amend-modal input,
+    .amend-modal select,
+    .amend-modal textarea {
+        padding: 5px 8px !important;
+        font-size: 11px !important;
+    }
+
+    .amend-modal .amend-form-group label {
+        font-size: 10px !important;
+    }
+
+    .amend-modal h4 {
+        font-size: 10px !important;
+    }
+
+    .wizard-step {
+        min-width: 46px;
+        max-width: 62px;
+        flex: 1 0 46px;
+        padding: 0 2px;
+    }
+
+    .wizard-step:last-child {
+        min-width: 48px;
+        max-width: 64px;
+        flex: 1 0 48px;
+    }
+
+    .wizard-step-num {
+        width: 20px;
+        height: 20px;
+        font-size: 9px;
+    }
+
+    .wizard-step-label {
+        font-size: 8px;
+        max-width: 52px;
+    }
+
+    .wizard-step:last-child .wizard-step-label {
+        font-size: 7px;
+        max-width: 54px;
+    }
+
+    .wizard-footer-nav {
+        padding: 7px 9px !important;
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+
+    .btn-wizard-next,
+    .btn-wizard-finish,
+    .btn-wizard-back,
+    .btn-amend-close {
+        padding: 6px 10px !important;
+        font-size: 10px !important;
+    }
+
+    .preview-summary-chips {
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+
+    .sign-method-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .amend-table th,
+    .amend-table td {
+        padding: 6px 7px !important;
+        font-size: 10px !important;
+    }
+
+    .charges-table th,
+    .charges-table td,
+    .deposits-table th,
+    .deposits-table td,
+    .review-charges-table th,
+    .review-charges-table td,
+    .review-deposits-table th,
+    .review-deposits-table td {
+        padding: 6px 7px;
+        font-size: 10px;
+    }
+
+    /* Deposit modal small screen */
+    #modalEditDeposit .amend-modal-body {
+        max-height: 52vh !important;
+    }
+
+    .suggested-deposit-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .suggested-deposit-apply {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+/* ===========================================================================
+   RESPONSIVE: WIDE SCREENS (1200px and above)
+   =========================================================================== */
+@media (min-width: 1200px) {
+    .amend-body {
+        padding: 20px 32px;
+    }
+
+    .amend-form-grid {
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+
+    .amend-form-group.full-width {
+        grid-column: 1 / -1;
+    }
+
+    .amend-modal .amend-form-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+    }
+
+    .wizard-step-label {
+        font-size: 11px;
+    }
+
+    .wizard-step-num {
+        width: 28px;
+        height: 28px;
+        font-size: 11px;
+    }
+
+    .wizard-step.active .wizard-step-num {
+        width: 30px;
+        height: 30px;
+    }
+
+    .preview-header-bar {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+    }
+
+    .preview-summary-chips {
+        width: auto;
+        flex-wrap: nowrap;
+    }
+
+    .preview-chip {
+        min-width: 56px;
+        padding: 5px 12px;
+    }
+
+    .preview-chip-num {
+        font-size: 16px;
+    }
+
+    .preview-chip-label {
+        font-size: 10px;
+    }
+
+    /* Deposit modal wide screen */
+    #modalEditDeposit .amend-modal {
+        max-width: 520px;
+    }
+
+    .suggested-deposit-amount {
+        font-size: 18px;
+    }
+}
+
+/* ===========================================================================
+   ZOOM 75–80% FIX (980px–1199px effective width)
+   =========================================================================== */
+ 
+@media (min-width: 980px) and (max-width: 1199px) {
+ 
+    /* --- Wizard Nav Steps --- */
+    .wizard-step {
+        min-width: 72px;
+        max-width: 96px;
+        flex: 1 0 72px;
+        padding: 0 4px;
+    }
+ 
+    .wizard-step:last-child {
+        min-width: 74px;
+        max-width: 98px;
+        flex: 1 0 74px;
+    }
+ 
+    .wizard-step-num {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+ 
+    .wizard-step.active .wizard-step-num {
+        width: 30px;
+        height: 30px;
+    }
+ 
+    .wizard-step.completed .wizard-step-num {
+        font-size: 14px;
+    }
+ 
+    .wizard-step-label {
+        font-size: 11px;
+        max-width: 80px;
+        line-height: 1.3;
+    }
+ 
+    .wizard-step:last-child .wizard-step-label {
+        font-size: 10px;
+        max-width: 82px;
+    }
+ 
+    .wizard-step.active .wizard-step-label {
+        font-size: 12px;
+        font-weight: 700;
+    }
+ 
+    .wizard-nav {
+        padding: 8px 10px 0;
+    }
+ 
+    .progress-line {
+        top: 14px;
+    }
+ 
+    /* --- Header --- */
+    .amend-header {
+        padding: 10px 18px;
+    }
+ 
+    .amend-header h1 {
+        font-size: 15px;
+    }
+ 
+    /* --- Body & Section --- */
+    .amend-body {
+        padding: 14px 18px;
+    }
+ 
+    .amend-section-body {
+        padding: 14px 18px;
+    }
+ 
+    .amend-section-title {
+        font-size: 13px;
+    }
+ 
+    /* --- Tables --- */
+    .amend-table td,
+    .amend-table th {
+        font-size: 12px;
+        padding: 9px 11px;
+    }
+ 
+    .charges-table th,
+    .charges-table td,
+    .deposits-table th,
+    .deposits-table td {
+        padding: 9px 11px;
+        font-size: 12px;
+    }
+ 
+    /* --- Buttons --- */
+    .btn-amend-add {
+        font-size: 13px;
+        padding: 8px 16px;
+    }
+ 
+    /* --- Wizard Footer --- */
+    .wizard-footer-nav {
+        padding: 10px 18px;
+    }
+ 
+    .btn-wizard-back,
+    .btn-wizard-next,
+    .btn-wizard-finish,
+    .btn-amend-close {
+        padding: 9px 18px;
+        font-size: 13px;
+        border-radius: 7px;
+    }
+ 
+    /* --- Form Grid --- */
+    .amend-form-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+ 
+    .amend-tab {
+        padding: 10px 14px;
+        font-size: 12px;
+    }
+ 
+    /* --- Sign Method --- */
+    .sign-method-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+    }
+ 
+    .sign-method-btn {
+        padding: 18px 14px;
+    }
+ 
+    .sign-method-icon {
+        width: 42px;
+        height: 42px;
+    }
+ 
+    .sign-method-label {
+        font-size: 13px;
+    }
+ 
+    .sign-method-sub {
+        font-size: 11px;
+    }
+ 
+    /* --- Preview Header --- */
+    .preview-header-bar {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 14px 18px;
+        flex-wrap: nowrap;
+    }
+ 
+    .preview-header-title {
+        font-size: 14px;
+    }
+ 
+    .preview-header-sub {
+        font-size: 11px;
+    }
+ 
+    .preview-summary-chips {
+        flex-wrap: nowrap;
+        gap: 8px;
+        width: auto;
+        flex-shrink: 0;
+    }
+ 
+    .preview-chip {
+        min-width: 56px;
+        padding: 5px 12px;
+    }
+ 
+    .preview-chip-num {
+        font-size: 16px;
+    }
+ 
+    .preview-chip-label {
+        font-size: 10px;
+    }
+ 
+    .preview-terms-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+ 
+    .preview-term-label {
+        font-size: 10px;
+    }
+ 
+    .preview-term-value {
+        font-size: 13px;
+    }
+ 
+    .preview-section-title {
+        font-size: 13px;
+    }
+ 
+    /* --- Modal --- */
+    .amend-modal {
+        max-width: 82%;
+        max-height: 88vh;
+    }
+ 
+    .amend-modal-header {
+        padding: 13px 20px;
+    }
+ 
+    .amend-modal-title {
+        font-size: 14px;
+    }
+ 
+    .amend-modal-body {
+        padding: 18px 22px;
+        max-height: 68vh;
+    }
+ 
+    .amend-modal-footer {
+        padding: 13px 20px;
+        gap: 10px;
+    }
+ 
+    .amend-modal-footer button,
+    .amend-modal-footer .btn-amend-save,
+    .amend-modal-footer .btn-amend-close {
+        padding: 9px 16px;
+        font-size: 13px;
+        border-radius: 7px;
+    }
+ 
+    .amend-modal .amend-form-group label,
+    .amend-modal .amend-form-group label.required {
+        font-size: 13px;
+    }
+ 
+    .amend-modal .amend-form-group input,
+    .amend-modal .amend-form-group select,
+    .amend-modal .amend-form-group textarea,
+    .amend-modal input[type="text"],
+    .amend-modal input[type="number"],
+    .amend-modal input[type="date"],
+    .amend-modal select,
+    .amend-modal textarea {
+        padding: 9px 12px;
+        font-size: 13px;
+        border-radius: 7px;
+    }
+ 
+    .amend-modal h4 {
+        font-size: 13px;
+        margin-bottom: 14px;
+    }
+ 
+    .amend-modal .amend-form-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+    }
+ 
+    .amend-modal .stage-info-note {
+        font-size: 12px;
+        padding: 10px 14px;
+    }
+ 
+    .amend-modal .btn-amend-edit,
+    .amend-modal .btn-amend-delete,
+    .amend-modal .btn-amend-activate {
+        padding: 5px 11px;
+        font-size: 12px;
+    }
+ 
+    /* --- Deposit Modal --- */
+    #modalEditDeposit .amend-modal {
+        max-width: 540px;
+    }
+ 
+    #modalEditDeposit .amend-modal-body {
+        padding: 14px 18px !important;
+        max-height: 66vh !important;
+    }
+ 
+    .suggested-deposit-amount {
+        font-size: 18px;
+    }
+ 
+    /* --- Stage info note (outside modal) --- */
+    .stage-info-note {
+        font-size: 12px;
+        padding: 10px 14px;
+    }
+}
+
+/* ===========================================================================
+   ANIMATION
+   =========================================================================== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes aiShimmer {
+    0% {
+        background-position: 300% 0;
+    }
+
+    100% {
+        background-position: -300% 0;
+    }
+}
+
+@keyframes sparklePulse {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1) rotate(0deg);
+    }
+
+    25% {
+        opacity: 0.8;
+        transform: scale(1.15) rotate(10deg);
+    }
+
+    75% {
+        opacity: 0.9;
+        transform: scale(1.05) rotate(-5deg);
+    }
+}
+
+@keyframes blink {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0;
+    }
+}
