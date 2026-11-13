@@ -1,0 +1,4211 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lease Termination Process</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family:
+          "Segoe UI",
+          -apple-system,
+          BlinkMacSystemFont,
+          sans-serif;
+        background: #f3f2f1;
+        color: #323130;
+        min-height: 100vh;
+        font-size: clamp(12px, 1.2vw, 14px); /* ADD THIS */
+      }
+      #loadingScreen {
+        position: fixed;
+        inset: 0;
+        background: linear-gradient(135deg, #7b1515, #a61c1c);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        transition: opacity 0.5s ease;
+      }
+      #loadingScreen.hidden {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+      .loading-text {
+        color: white;
+        font-size: 16px;
+        font-weight: 600;
+        margin-top: 18px;
+        letter-spacing: 0.5px;
+      }
+      .loader {
+        width: 42px;
+        height: 42px;
+        border: 4px solid rgba(255, 255, 255, 0.3);
+        border-top-color: white;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin: 0 auto;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .form-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        background: #f3f2f1;
+        height: 100vh;
+        overflow: hidden;
+        opacity: 0;
+        transition: opacity 0.4s ease;
+        display: flex;
+        flex-direction: column;
+      }
+      .form-container.loaded {
+        opacity: 1;
+      }
+      .form-header {
+        background: linear-gradient(135deg, #7b1515 0%, #a61c1c 100%);
+        padding: clamp(14px, 2vw, 28px) clamp(12px, 2.5vw, 32px);
+        color: white;
+      }
+      .header-content h1 {
+        font-size: clamp(18px, 2.5vw, 22px);
+        font-weight: 800;
+        letter-spacing: -0.3px;
+        margin-bottom: 6px;
+      }
+      .header-meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+      }
+      .header-meta-item {
+        font-size: clamp(11px, 1.1vw, 13px);
+        opacity: 0.85;
+        font-weight: 500;
+      }
+      .header-meta-sep {
+        opacity: 0.45;
+        font-size: 13px;
+      }
+      .header-skeleton {
+        display: inline-block;
+        width: 140px;
+        height: 14px;
+        background: rgba(255, 255, 255, 0.25);
+        border-radius: 4px;
+        animation: shimmer 1.4s infinite;
+        vertical-align: middle;
+      }
+      .header-skeleton.short {
+        width: 80px;
+      }
+      @keyframes shimmer {
+        0%,
+        100% {
+          opacity: 0.5;
+        }
+        50% {
+          opacity: 1;
+        }
+      }
+      /* REDESIGN: lease option gate banner */
+      .option-gate {
+        border-radius: 8px;
+        padding: 12px 14px;
+        margin: 14px 0 4px;
+        border: 1px solid #bcd9f0;
+        background: #e8f1fa;
+      }
+      .option-gate.is-break { border-color: #e6b9bf; background: #f7ecee; }
+      .option-gate.is-renew { border-color: #bfe0d1; background: #e9f3ef; }
+      .option-gate-row { display: flex; align-items: flex-start; gap: 10px; }
+      .option-gate-icon { font-size: 18px; line-height: 1.2; flex-shrink: 0; }
+      .option-gate-text { flex: 1; }
+      .option-gate-title { font-weight: 700; font-size: 13.5px; color: #1c2430; }
+      .option-gate-desc { font-size: 12px; color: #5b6673; margin-top: 2px; }
+      .option-gate-tag {
+        font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px;
+        white-space: nowrap; align-self: center; background: #0b4f8a; color: #fff;
+      }
+      .option-gate.is-break .option-gate-tag { background: #9e1b2a; }
+      .option-gate.is-renew .option-gate-tag { background: #1f6f54; }
+
+      .stage-progress {
+        background: white;
+        padding: 20px 32px;
+        border-bottom: 1px solid #edebe9;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      }
+      .progress-container {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        position: relative;
+      }
+      .progress-line {
+        position: absolute;
+        top: 20px;
+        left: calc(10%);
+        right: calc(10%);
+        height: 3px;
+        background: #edebe9;
+        border-radius: 2px;
+        z-index: 0;
+      }
+      .progress-line-fill {
+        height: 100%;
+        border-radius: 2px;
+        background: linear-gradient(135deg, #e74c3c 0%, #a61c1c 100%);
+        transition: width 0.4s ease;
+        width: 0%;
+      }
+      .stage-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        position: relative;
+        z-index: 1;
+        cursor: pointer;
+        flex: 1;
+      }
+      .stage-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 3px solid #edebe9;
+        background: white;
+        box-shadow: 0 0 0 4px white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: clamp(11px, 1.1vw, 13px);
+        font-weight: 700;
+        color: #a19f9d;
+        transition: all 0.3s ease;
+      }
+      .stage-label {
+        font-size: clamp(9px, 0.85vw, 10px);
+        font-weight: 600;
+        color: #a19f9d;
+        text-align: center;
+        line-height: 1.3;
+        transition: color 0.3s ease;
+      }
+      .stage-item.active .stage-circle {
+        background: linear-gradient(135deg, #7b1515 0%, #a61c1c 100%);
+        border-color: #7b1515;
+        color: white;
+        box-shadow: 0 4px 16px rgba(123, 21, 21, 0.35);
+      }
+      .stage-item.active .stage-label {
+        color: #7b1515;
+        font-weight: 700;
+      }
+      .stage-item.completed .stage-circle {
+        background: #f0fdf4;
+        border-color: #2bad76;
+        color: #2bad76;
+      }
+      .stage-item.completed .stage-label {
+        color: #2bad76;
+      }
+      .stage-content {
+        display: none;
+      }
+      .stage-content.active {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        overflow: hidden;
+        min-height: 0;
+      }
+      .form-body {
+        padding: clamp(12px, 2vw, 28px) clamp(12px, 2.5vw, 32px);
+        flex: 1;
+        overflow-y: auto;
+        min-height: 0;
+      }
+      .form-section {
+        background: white;
+        border-radius: 12px;
+        border: 1px solid #edebe9;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      }
+      .section-content {
+        padding: clamp(12px, 2vw, 28px);
+      }
+      .section-title {
+        font-size: clamp(14px, 1.8vw, 18px);
+        font-weight: 800;
+        color: #323130;
+        margin-bottom: 6px;
+      }
+      .stage-guide {
+        background: #f3f8fd;
+        border: 1px solid #c7dff7;
+        border-left: 4px solid #0f6cbd;
+        border-radius: 8px;
+        padding: 10px 14px;
+        margin: -8px 0 20px;
+        font-size: 12px;
+        color: #323130;
+        line-height: 1.55;
+      }
+      .stage-guide-title {
+        font-weight: 700;
+        font-size: 12.5px;
+        margin-bottom: 4px;
+        color: #0f4c81;
+      }
+      .stage-guide ul {
+        margin: 0;
+        padding-left: 18px;
+      }
+      .stage-guide li {
+        margin: 2px 0;
+      }
+      .section-description {
+        font-size: clamp(11px, 1.2vw, 13px);
+        color: #605e5c;
+        margin-bottom: 22px;
+        line-height: 1.5;
+      }
+      .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+      }
+      .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .form-group.full-width {
+        grid-column: 1 / -1;
+      }
+      label {
+        font-size: clamp(10px, 0.9vw, 12px);
+        font-weight: 700;
+        color: #605e5c;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+      }
+      label.required::after {
+        content: " *";
+        color: #a61c1c;
+      }
+      .form-group input,
+      .form-group select,
+      .form-group textarea {
+        padding: 10px 14px;
+        border: 1.5px solid #edebe9;
+        border-radius: 6px;
+        font-size: clamp(12px, 1.2vw, 14px);
+        font-family: inherit;
+        color: #323130;
+        background: white;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
+        outline: none;
+      }
+      .form-group input:focus,
+      .form-group select:focus,
+      .form-group textarea:focus {
+        border-color: #7b1515;
+        box-shadow:
+          0 0 0 3px rgba(123, 21, 21, 0.1),
+          0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+      .form-group input[readonly] {
+        background: #faf9f8;
+        color: #605e5c;
+        cursor: default;
+      }
+      .lookup-field.is-filled {
+        background: #f0f7ff;
+        color: #0078d4;
+        font-weight: 600;
+        border-color: #c7e0f4;
+      }
+      .lookup-input-wrap {
+        display: flex;
+        gap: 0;
+      }
+      .lookup-input-wrap input {
+        flex: 1;
+        border-radius: 6px 0 0 6px;
+        border-right: none;
+      }
+      .lookup-input-wrap input:focus {
+        z-index: 1;
+      }
+      .lookup-input-wrap:has(.is-filled) input {
+        border-color: #c7e0f4;
+      }
+      .lookup-input-wrap:has(.is-filled) .lookup-trigger-btn {
+        border-color: #c7e0f4;
+        background: #f0f7ff;
+      }
+      .lookup-trigger-btn {
+        padding: 10px 14px;
+        border: 1.5px solid #edebe9; /* ← change this */
+        border-left: none;
+        border-radius: 0 6px 6px 0;
+        background: #faf9f8;
+        cursor: pointer;
+        font-size: 13px;
+        color: #0078d4;
+        font-weight: 700;
+        white-space: nowrap;
+        font-family: inherit;
+        transition:
+          background 0.15s,
+          border-color 0.15s;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .lookup-field.is-filled + .lookup-trigger-btn,
+      .lookup-input-wrap:has(.lookup-field.is-filled) .lookup-trigger-btn {
+        border-color: #c7e0f4;
+        background: #f0f7ff;
+      }
+      .lookup-trigger-btn:hover {
+        background: #e8f0fe;
+        border-color: #0078d4;
+      }
+      .btn {
+        padding: 10px 20px;
+        border-radius: 6px;
+        font-size: clamp(11px, 1.1vw, 13px);
+        font-weight: 700;
+        cursor: pointer;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s ease;
+        font-family: inherit;
+      }
+      .btn-primary {
+        background: linear-gradient(135deg, #7b1515 0%, #a61c1c 100%);
+        color: white;
+        box-shadow: 0 3px 8px rgba(123, 21, 21, 0.3);
+      }
+      .btn-primary:hover {
+        box-shadow: 0 4px 12px rgba(123, 21, 21, 0.4);
+        transform: translateY(-1px);
+      }
+      .btn-secondary {
+        background: white;
+        color: #605e5c;
+        border: 1.5px solid #edebe9;
+      }
+      .btn-secondary:hover {
+        background: #f3f2f1;
+        border-color: #c8c6c4;
+      }
+      .btn-add-large {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        background: white;
+        border: 2px dashed #c8c6c4;
+        border-radius: 8px;
+        color: #605e5c;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: inherit;
+      }
+      .btn-add-large:hover {
+        border-color: #7b1515;
+        color: #7b1515;
+        background: #fdf5f5;
+      }
+      .btn-success {
+        background: linear-gradient(135deg, #2bad76, #0e6b0e);
+        color: white;
+        box-shadow: 0 3px 8px rgba(43, 173, 118, 0.3);
+      }
+      .btn-success:hover {
+        box-shadow: 0 4px 12px rgba(43, 173, 118, 0.4);
+        transform: translateY(-1px);
+      }
+      .btn-blue {
+        background: linear-gradient(135deg, #106ebe, #004e8c);
+        color: white;
+        box-shadow: 0 3px 8px rgba(16, 110, 190, 0.3);
+      }
+      .btn-blue:hover {
+        box-shadow: 0 4px 12px rgba(16, 110, 190, 0.4);
+        transform: translateY(-1px);
+      }
+      .btn-edit {
+        background: white;
+        color: #0078d4;
+        border: 1.5px solid #c7e0f4;
+        padding: 6px 14px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-family: inherit;
+        transition: all 0.2s;
+      }
+      .btn-edit:hover {
+        background: #eff6ff;
+        border-color: #0078d4;
+      }
+      .stage-navigation {
+        position: sticky;
+        bottom: 0;
+        background: white;
+        border-top: 1px solid #edebe9;
+        padding: clamp(10px, 1.5vw, 16px) clamp(12px, 2.5vw, 32px);
+        box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06);
+        z-index: 100;
+        flex-shrink: 0;
+      }
+      .stage-nav-content {
+        display: flex;
+        align-items: center;
+        max-width: 1400px;
+        margin: 0 auto;
+        gap: 12px;
+      }
+      .stage-nav-left {
+        display: flex;
+      }
+      .stage-nav-right {
+        display: flex;
+        gap: 10px;
+      }
+      .modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 5000;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+      .modal.active {
+        display: flex;
+      }
+      .modal-content {
+        background: white;
+        border-radius: 12px;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+      }
+      .modal-header {
+        background: #7b1515;
+        padding: 18px 24px;
+        border-radius: 12px 12px 0 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .modal-title {
+        color: white;
+        font-size: 16px;
+        font-weight: 700;
+      }
+      .modal-close {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 22px;
+        cursor: pointer;
+        line-height: 1;
+      }
+      .modal-body {
+        padding: 24px;
+      }
+      .modal-footer {
+        padding: 16px 24px;
+        border-top: 1px solid #edebe9;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+      }
+      .charge-edit-modal .modal-header {
+        background: linear-gradient(135deg, #0078d4, #004e8c);
+      }
+      .charge-edit-modal .modal-content {
+        max-width: 480px;
+      }
+      .charge-edit-info-box {
+        background: #f0f7ff;
+        border: 1px solid #c7e0f4;
+        border-radius: 8px;
+        padding: 14px 16px;
+        margin-bottom: 18px;
+      }
+      .charge-edit-info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
+      }
+      .charge-edit-info-row:last-child {
+        margin-bottom: 0;
+      }
+      .charge-edit-info-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: #0078d4;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+      }
+      .charge-edit-info-value {
+        font-size: 13px;
+        font-weight: 700;
+        color: #003166;
+      }
+      .proration-toggle-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #faf9f8;
+        border: 1px solid #edebe9;
+        border-radius: 8px;
+        padding: 14px 16px;
+        margin-top: 16px;
+      }
+      .proration-toggle-text .ptl {
+        font-size: 13px;
+        font-weight: 700;
+        color: #323130;
+      }
+      .proration-toggle-text .pts {
+        font-size: 12px;
+        color: #605e5c;
+        margin-top: 2px;
+      }
+      .prorated-preview {
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin-top: 14px;
+        display: none;
+      }
+      .prorated-preview.show {
+        display: block;
+      }
+      .prorated-preview-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: #166534;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        margin-bottom: 4px;
+      }
+      .prorated-preview-value {
+        font-size: 18px;
+        font-weight: 800;
+        color: #14532d;
+      }
+      .date-constraint-hint {
+        font-size: 11px;
+        color: #8a8886;
+        margin-top: 4px;
+      }
+      .date-constraint-hint.error {
+        color: #a61c1c;
+      }
+      .notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 14px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        z-index: 9000;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        max-width: 360px;
+        animation: slideIn 0.3s ease;
+      }
+      @keyframes slideIn {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+      .notification.success {
+        background: #f0fdf4;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+      }
+      .notification.error {
+        background: #fef2f2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+      }
+      .notification.warning {
+        background: #fffbeb;
+        color: #92400e;
+        border: 1px solid #fde68a;
+      }
+      .initiator-toggle {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+      .initiator-btn {
+        flex: 1;
+        padding: 14px;
+        border: 2px solid #edebe9;
+        border-radius: 8px;
+        cursor: pointer;
+        text-align: center;
+        font-size: 14px;
+        font-weight: 600;
+        background: white;
+        color: #605e5c;
+        transition: all 0.2s ease;
+      }
+      .initiator-btn .initiator-icon {
+        font-size: 24px;
+        display: block;
+        margin-bottom: 6px;
+      }
+      .initiator-btn .initiator-label {
+        display: block;
+      }
+      .initiator-btn:hover {
+        border-color: #7b1515;
+        background: #fdf5f5;
+        color: #7b1515;
+      }
+      .initiator-btn.active {
+        border-color: #7b1515;
+        background: linear-gradient(to bottom, #fdf5f5, white);
+        color: #7b1515;
+        box-shadow: 0 4px 12px rgba(123, 21, 21, 0.15);
+      }
+      .lease-info-strip {
+        background: linear-gradient(to right, #f8f8f8, #f3f2f1);
+        border: 1px solid #edebe9;
+        border-radius: 8px;
+        padding: 14px 18px;
+        margin-bottom: 20px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+      }
+      .lease-info-strip-label {
+        font-size: 10px;
+        font-weight: 700;
+        color: #8a8886;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+      }
+      .lease-info-strip-value {
+        font-size: 13px;
+        font-weight: 700;
+        color: #323130;
+      }
+      .lease-info-strip-skeleton {
+        height: 16px;
+        background: #e8e6e4;
+        border-radius: 4px;
+        width: 80%;
+        animation: shimmer 1.4s infinite;
+      }
+      .moveout-section-divider {
+        margin: 24px 0 18px;
+        border: none;
+        border-top: 2px solid #edebe9;
+      }
+      .units-grid-header {
+        font-size: 14px;
+        font-weight: 700;
+        color: #323130;
+        padding-bottom: 10px;
+        margin-bottom: 14px;
+        border-bottom: 2px solid #edebe9;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .units-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+      .unit-card {
+        background: white;
+        border: 1.5px solid #edebe9;
+        border-radius: 10px;
+        padding: 16px 18px;
+        position: relative;
+        transition:
+          box-shadow 0.2s,
+          border-color 0.2s;
+      }
+      .unit-card:hover {
+        border-color: #c8c6c4;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.07);
+      }
+      .unit-card-name {
+        font-size: 14px;
+        font-weight: 800;
+        color: #323130;
+        margin-bottom: 4px;
+      }
+      .unit-card-building {
+        font-size: 12px;
+        color: #605e5c;
+        font-weight: 500;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .unit-card-dates {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .unit-card-date-label {
+        font-size: 10px;
+        font-weight: 700;
+        color: #8a8886;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        margin-bottom: 2px;
+      }
+      .unit-card-date-value {
+        font-size: 12px;
+        font-weight: 700;
+        color: #323130;
+      }
+      .unit-card-badge {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 20px;
+        background: #f0fdf4;
+        color: #2bad76;
+        border: 1px solid #bbf7d0;
+      }
+      .unit-card-skeleton {
+        background: #f3f2f1;
+        border: 1.5px solid #edebe9;
+        border-radius: 10px;
+        padding: 16px 18px;
+      }
+      .skel-line {
+        background: #e8e6e4;
+        border-radius: 4px;
+        animation: shimmer 1.4s infinite;
+        margin-bottom: 8px;
+      }
+      .case-create-card {
+        background: linear-gradient(to bottom, #f8faff, #ffffff);
+        border: 1.5px solid #c7dff7;
+        border-radius: 12px;
+        padding: 22px 24px;
+        margin-bottom: 20px;
+      }
+      .case-create-card-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 18px;
+        padding-bottom: 14px;
+        border-bottom: 2px solid #e8f0fe;
+      }
+      .case-create-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #0078d4, #004e8c);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        flex-shrink: 0;
+      }
+      .case-create-title {
+        font-size: 16px;
+        font-weight: 800;
+        color: #003166;
+      }
+      .wo-status-card {
+        border-radius: 10px;
+        padding: 16px 20px;
+        margin-bottom: 20px;
+        border: 1.5px solid;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .wo-status-card.not-created {
+        background: #f8fafc;
+        border-color: #e2e8f0;
+      }
+      .wo-status-card.case-only {
+        background: #eff6ff;
+        border-color: #bfdbfe;
+      }
+      .wo-status-card.pending {
+        background: #fffbeb;
+        border-color: #fde68a;
+      }
+      .wo-status-card.in-progress {
+        background: #eff6ff;
+        border-color: #bfdbfe;
+      }
+      .wo-status-card.completed {
+        background: #f0fdf4;
+        border-color: #bbf7d0;
+      }
+      .wo-status-card.cancelled {
+        background: #fef2f2;
+        border-color: #fecaca;
+      }
+      .wo-status-icon {
+        font-size: 30px;
+        flex-shrink: 0;
+      }
+      .wo-status-label {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 3px;
+      }
+      .wo-status-value {
+        font-size: 15px;
+        font-weight: 800;
+      }
+      .wo-status-meta {
+        font-size: 12px;
+        margin-top: 3px;
+        opacity: 0.75;
+      }
+      .wo-status-card.not-created .wo-status-label,
+      .wo-status-card.not-created .wo-status-value {
+        color: #334155;
+      }
+      .wo-status-card.case-only .wo-status-label {
+        color: #1e40af;
+      }
+      .wo-status-card.case-only .wo-status-value {
+        color: #1e3a8a;
+      }
+      .wo-status-card.pending .wo-status-label {
+        color: #92400e;
+      }
+      .wo-status-card.pending .wo-status-value {
+        color: #78350f;
+      }
+      .wo-status-card.in-progress .wo-status-label {
+        color: #1e40af;
+      }
+      .wo-status-card.in-progress .wo-status-value {
+        color: #1e3a8a;
+      }
+      .wo-status-card.completed .wo-status-label {
+        color: #166534;
+      }
+      .wo-status-card.completed .wo-status-value {
+        color: #14532d;
+      }
+      .wo-status-card.cancelled .wo-status-label {
+        color: #991b1b;
+      }
+      .wo-status-card.cancelled .wo-status-value {
+        color: #7f1d1d;
+      }
+      .wo-status-refresh {
+        margin-left: auto;
+        flex-shrink: 0;
+      }
+      .btn-refresh {
+        background: white;
+        border: 1.5px solid #edebe9;
+        color: #605e5c;
+        padding: 7px 14px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-family: inherit;
+        transition: all 0.2s;
+      }
+      .btn-refresh:hover {
+        border-color: #0078d4;
+        color: #0078d4;
+      }
+      .inspection-notes-panel {
+        background: linear-gradient(to right, #f0fdf4, #dcfce7);
+        border: 1.5px solid #86efac;
+        border-radius: 10px;
+        padding: 18px 20px;
+        margin-top: 18px;
+        animation: fadeInDown 0.3s ease;
+      }
+      @keyframes fadeInDown {
+        from {
+          opacity: 0;
+          transform: translateY(-6px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .inspection-notes-panel-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+      .inspection-notes-panel-icon {
+        font-size: 20px;
+      }
+      .inspection-notes-panel-title {
+        font-size: 14px;
+        font-weight: 800;
+        color: #166534;
+      }
+      .case-created-banner {
+        background: linear-gradient(to right, #f0fdf4, #dcfce7);
+        border: 1.5px solid #86efac;
+        border-radius: 10px;
+        padding: 14px 18px;
+        margin-bottom: 18px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #166534;
+      }
+      .case-created-banner-icon {
+        font-size: 22px;
+        flex-shrink: 0;
+      }
+      .case-action-row {
+        margin-top: 18px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .case-action-divider {
+        width: 1px;
+        height: 28px;
+        background: #edebe9;
+        margin: 0 2px;
+      }
+      .validation-notice {
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+      .validation-notice.success {
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        color: #166534;
+      }
+      .validation-notice.warning {
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        color: #92400e;
+      }
+      .validation-notice.error {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #991b1b;
+      }
+      .file-upload-area {
+        border: 2px dashed #c8c6c4;
+        border-radius: 8px;
+        padding: 28px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: #faf9f8;
+      }
+      .file-upload-area:hover {
+        border-color: #7b1515;
+        background: #fdf5f5;
+      }
+      .file-upload-area.has-file {
+        border-color: #2bad76;
+        background: #f0fdf4;
+      }
+      .file-upload-icon {
+        font-size: 32px;
+        margin-bottom: 10px;
+      }
+      .file-upload-text {
+        font-size: 14px;
+        font-weight: 600;
+        color: #605e5c;
+      }
+      .file-upload-hint {
+        font-size: 12px;
+        color: #8a8886;
+        margin-top: 4px;
+      }
+      .file-name-display {
+        font-size: 13px;
+        font-weight: 700;
+        color: #2bad76;
+        margin-top: 8px;
+      }
+      .toggle-group {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 18px;
+        background: #faf9f8;
+        border: 1px solid #edebe9;
+        border-radius: 8px;
+        margin-bottom: 12px;
+      }
+      .toggle-label {
+        font-size: 14px;
+        font-weight: 600;
+        color: #323130;
+      }
+      .toggle-sub {
+        font-size: 12px;
+        color: #605e5c;
+        margin-top: 2px;
+      }
+      .toggle-switch {
+        position: relative;
+        width: 44px;
+        height: 24px;
+        flex-shrink: 0;
+      }
+      .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+      .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: #c8c6c4;
+        border-radius: 24px;
+        transition: 0.3s;
+      }
+      .toggle-slider:before {
+        content: "";
+        position: absolute;
+        width: 18px;
+        height: 18px;
+        left: 3px;
+        bottom: 3px;
+        background: white;
+        border-radius: 50%;
+        transition: 0.3s;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      }
+      .toggle-switch input:checked + .toggle-slider {
+        background: #7b1515;
+      }
+      .toggle-switch input:checked + .toggle-slider:before {
+        transform: translateX(20px);
+      }
+      .charges-card-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .charge-row-card {
+        background: white;
+        border: 1.5px solid #edebe9;
+        border-radius: 10px;
+        padding: 16px 20px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
+      }
+      .charge-row-card:hover {
+        border-color: #c8c6c4;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
+      }
+      .charge-row-card.has-proration {
+        border-color: #86efac;
+        background: linear-gradient(to right, #f0fdf4, white);
+      }
+      .charge-row-main {
+        flex: 1;
+        min-width: 0;
+      }
+      .charge-row-name {
+        font-size: 14px;
+        font-weight: 800;
+        color: #323130;
+        margin-bottom: 3px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .charge-row-meta {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+      }
+      .charge-row-meta-item {
+        font-size: 12px;
+        color: #605e5c;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .charge-row-meta-item strong {
+        color: #323130;
+        font-weight: 700;
+      }
+      .charge-row-amounts {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 4px;
+        text-align: right;
+        flex-shrink: 0;
+      }
+      .charge-amount-original {
+        font-size: 14px;
+        font-weight: 800;
+        color: #323130;
+      }
+      .charge-badge-proration {
+        display: inline-block;
+        background: #dcfce7;
+        color: #166534;
+        border: 1px solid #86efac;
+        padding: 2px 8px;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: 700;
+      }
+      .charge-badge-new {
+        display: inline-block;
+        background: #fef3c7;
+        color: #92400e;
+        border: 1px solid #fbbf24;
+        padding: 2px 8px;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: 700;
+      }
+      .charge-badge-type {
+        display: inline-block;
+        background: #f1f5f9;
+        color: #475569;
+        border: 1px solid #e2e8f0;
+        padding: 2px 8px;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: 700;
+      }
+      .charge-row-card-v2 {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+      .crv2-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px 18px 10px;
+        flex-wrap: wrap;
+      }
+      .crv2-name {
+        font-size: 14px;
+        font-weight: 800;
+        color: #323130;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        flex-wrap: wrap;
+        flex: 1;
+        min-width: 0;
+      }
+      .crv2-header-right {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-shrink: 0;
+      }
+      .crv2-per-cycle {
+        display: flex;
+        align-items: baseline;
+        gap: 4px;
+      }
+      .crv2-per-cycle-amt {
+        font-size: 15px;
+        font-weight: 800;
+        color: #323130;
+      }
+      .crv2-per-cycle-lbl {
+        font-size: 12px;
+        color: #8a8886;
+        font-weight: 500;
+      }
+      .crv2-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 0 18px 10px;
+      }
+      .crv2-meta-item {
+        font-size: 12px;
+        color: #605e5c;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .crv2-meta-item strong {
+        color: #323130;
+        font-weight: 700;
+      }
+      .crv2-meta-adjusted {
+        color: #0078d4 !important;
+      }
+      .crv2-meta-adjusted strong {
+        color: #0078d4 !important;
+      }
+      .crv2-billing {
+        border-top: 1px solid #f3f2f1;
+        padding: 12px 18px 14px;
+        background: #faf9f8;
+        border-radius: 0 0 10px 10px;
+      }
+      .billing-stats-row {
+        display: flex;
+        align-items: stretch;
+        background: white;
+        border: 1.5px solid #edebe9;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 12px;
+      }
+      .billing-stat {
+        flex: 1;
+        padding: 10px 12px;
+        text-align: center;
+        min-width: 0;
+      }
+      .billing-stat-val {
+        font-size: 14px;
+        font-weight: 800;
+        color: #323130;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .billing-stat-lbl {
+        font-size: 10px;
+        font-weight: 700;
+        color: #8a8886;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        margin-top: 2px;
+      }
+      .billing-stat-sep {
+        width: 1px;
+        background: #edebe9;
+        flex-shrink: 0;
+      }
+      .billing-stat-prorated .billing-stat-val {
+        color: #2bad76;
+      }
+      .billing-stat-total {
+        background: linear-gradient(to bottom, #fdf5f5, white);
+      }
+      .billing-stat-total .billing-stat-val {
+        color: #7b1515;
+        font-size: 15px;
+      }
+      .charges-grand-total {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: linear-gradient(135deg, #7b1515, #a61c1c);
+        color: white;
+        border-radius: 10px;
+        padding: 14px 22px;
+        margin-top: 8px;
+      }
+      .cgt-label {
+        font-size: 13px;
+        font-weight: 700;
+        opacity: 0.9;
+      }
+      .cgt-amount {
+        font-size: 20px;
+        font-weight: 800;
+      }
+      .charges-loading-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        padding: 40px 20px;
+        background: #faf9f8;
+        border: 1.5px dashed #edebe9;
+        border-radius: 10px;
+      }
+      .charges-loading-spinner {
+        width: 32px;
+        height: 32px;
+        border: 3px solid rgba(123, 21, 21, 0.15);
+        border-top-color: #7b1515;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      .charges-loading-text {
+        font-size: 13px;
+        font-weight: 600;
+        color: #605e5c;
+      }
+      .charge-skel-card {
+        background: white;
+        border: 1.5px solid #edebe9;
+        border-radius: 10px;
+        padding: 16px 20px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .charge-skel-lines {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .charge-skel-line {
+        background: linear-gradient(
+          90deg,
+          #f3f2f1 25%,
+          #edebe9 50%,
+          #f3f2f1 75%
+        );
+        background-size: 200% 100%;
+        border-radius: 4px;
+        animation: skshimmer 1.4s infinite;
+      }
+      @keyframes skshimmer {
+        0% {
+          background-position: 200% 0;
+        }
+        100% {
+          background-position: -200% 0;
+        }
+      }
+      .proration-table,
+      .dues-table,
+      .review-charges-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+      }
+      .proration-table th,
+      .dues-table th,
+      .review-charges-table th {
+        padding: 12px 14px;
+        text-align: left;
+        font-size: clamp(9px, 0.9vw, 11px);
+        font-weight: 700;
+        color: #475569;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        background: #f8fafc;
+        border-bottom: 2px solid #e2e8f0;
+      }
+      .proration-table td,
+      .dues-table td,
+      .review-charges-table td {
+        padding: 14px;
+        font-size: clamp(11px, 1.1vw, 13px);
+        color: #334155;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: middle;
+      }
+      .proration-table tr:last-child td,
+      .dues-table tr:last-child td,
+      .review-charges-table tr:last-child td {
+        border-bottom: none;
+      }
+      .proration-table tr:hover td,
+      .dues-table tr:hover td {
+        background: #f8fafc;
+      }
+      .dues-table tfoot td {
+        font-weight: 700;
+        background: #f8fafc;
+        border-top: 2px solid #e2e8f0;
+      }
+      .dues-checkbox {
+        width: 18px;
+        height: 18px;
+        accent-color: #7b1515;
+        cursor: pointer;
+      }
+      .charges-table-wrapper {
+        overflow-x: auto;
+      }
+      .review-stage-block {
+        background: white;
+        border: 1px solid #edebe9;
+        border-radius: 10px;
+        margin-bottom: 18px;
+        overflow: hidden;
+      }
+      .review-stage-block-header {
+        padding: 16px 22px;
+        background: linear-gradient(to right, #f8f8f8, #f3f2f1);
+        border-bottom: 1px solid #edebe9;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .review-stage-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        flex-shrink: 0;
+      }
+      .review-stage-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #323130;
+      }
+      .review-stage-body {
+        padding: 20px 22px;
+      }
+      .review-kv-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+      }
+      .review-kv {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .review-kv-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: #605e5c;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+      }
+      .review-kv-value {
+        font-size: 14px;
+        font-weight: 600;
+        color: #323130;
+      }
+      .review-summary-cards {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+        margin-bottom: 20px;
+      }
+      .summary-stat-card {
+        background: white;
+        border: 1px solid #edebe9;
+        border-radius: 10px;
+        padding: 16px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .stat-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        flex-shrink: 0;
+      }
+      .stat-value {
+        font-size: 18px;
+        font-weight: 800;
+        color: #323130;
+      }
+      .stat-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: #605e5c;
+        margin-top: 2px;
+      }
+      .status-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+      }
+      .status-badge.initiated {
+        background: #fef3c7;
+        color: #92400e;
+      }
+      .badge-muted {
+        display: inline-block;
+        background: #f1f5f9;
+        color: #475569;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+      }
+      .badge-success {
+        display: inline-block;
+        background: #dcfce7;
+        color: #166534;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+      }
+      .sub-section-header {
+        font-size: 14px;
+        font-weight: 700;
+        color: #323130;
+        padding-bottom: 10px;
+        margin-bottom: 14px;
+        border-bottom: 2px solid #edebe9;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .fetch-error {
+        padding: 14px 18px;
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        border-radius: 8px;
+        color: #991b1b;
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .highlight-orange {
+        color: #f59e0b !important;
+      }
+      .lease-info-strip-4col {
+        background: linear-gradient(to right, #f8f8f8, #f3f2f1);
+        border: 1px solid #edebe9;
+        border-radius: 8px;
+        padding: 14px 18px;
+        margin-bottom: 20px;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+      }
+      .dcm-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      .dcm-table th {
+        padding: 10px 12px;
+        background: #f8fafc;
+        font-size: 11px;
+        font-weight: 700;
+        color: #475569;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        border-bottom: 2px solid #e2e8f0;
+        text-align: left;
+      }
+      .dcm-table td {
+        padding: 12px;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: middle;
+      }
+      .dcm-table tr:last-child td {
+        border-bottom: none;
+      }
+      .dcm-total-row {
+        margin-top: 14px;
+        background: #faf9f8;
+        border: 1px solid #edebe9;
+        border-radius: 8px;
+        padding: 12px 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 14px;
+        font-weight: 700;
+      }
+      /* ===== UNIFIED WARNING / CONFIRM MODAL DESIGN ===== */
+      /* Shared base — all warning/confirm modals use these */
+      .warn-modal-header {
+        padding: 20px 24px;
+        border-radius: 12px 12px 0 0;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .warn-modal-header.slate {
+        background: linear-gradient(135deg, #7b1515 0%, #a61c1c 100%);
+      }
+      .warn-modal-header.brand {
+        background: linear-gradient(135deg, #7b1515 0%, #a61c1c 100%);
+      }
+      .warn-modal-header-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.12);
+        border: 1.5px solid rgba(255, 255, 255, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        flex-shrink: 0;
+      }
+      .warn-modal-header-text {
+        flex: 1;
+      }
+      .warn-modal-header-title {
+        color: white;
+        font-size: 16px;
+        font-weight: 800;
+        margin-bottom: 2px;
+        line-height: 1.3;
+      }
+      .warn-modal-header-sub {
+        color: rgba(255, 255, 255, 0.75);
+        font-size: 12px;
+        font-weight: 500;
+        line-height: 1.4;
+      }
+      .warn-modal-close {
+        background: rgba(255, 255, 255, 0.12);
+        border: none;
+        color: white;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 16px;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: background 0.15s;
+      }
+      .warn-modal-close:hover {
+        background: rgba(255, 255, 255, 0.22);
+      }
+      .warn-modal-body {
+        padding: 20px 24px;
+      }
+      .warn-modal-footer {
+        padding: 14px 24px;
+        border-top: 1px solid #edebe9;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        background: #fafaf9;
+        border-radius: 0 0 12px 12px;
+      }
+      .warn-info-box {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-left: 3px solid #475569;
+        border-radius: 0 8px 8px 0;
+        padding: 12px 14px;
+        margin-bottom: 14px;
+        font-size: 13px;
+        color: #323130;
+        line-height: 1.65;
+      }
+      .warn-info-box.caution {
+        background: #fafafa;
+        border-left-color: #7b1515;
+        color: #323130;
+      }
+      .warn-notice {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 12px 14px;
+        font-size: 13px;
+        color: #475569;
+        line-height: 1.6;
+        margin-bottom: 14px;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      .warn-notice-icon {
+        font-size: 16px;
+        flex-shrink: 0;
+        margin-top: 1px;
+      }
+
+      .break-warning-modal .modal-content {
+        border-radius: 12px;
+        overflow: hidden;
+        max-width: 540px;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+      }
+      .break-warning-modal-header {
+        padding: 0;
+        position: relative;
+        overflow: hidden;
+      }
+      .break-warning-header-inner {
+        position: relative;
+        padding: 20px 24px;
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        background: linear-gradient(135deg, #7b1515 0%, #a61c1c 100%);
+      }
+      .break-warning-header-icon-wrap {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.12);
+        border: 1.5px solid rgba(255, 255, 255, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        flex-shrink: 0;
+      }
+      .break-warning-header-text {
+        flex: 1;
+      }
+      .break-warning-header-title {
+        color: white;
+        font-size: 16px;
+        font-weight: 800;
+        margin-bottom: 2px;
+        line-height: 1.3;
+      }
+      .break-warning-header-sub {
+        color: rgba(255, 255, 255, 0.75);
+        font-size: 12px;
+        font-weight: 500;
+        line-height: 1.4;
+      }
+      .break-warning-modal-close {
+        position: absolute;
+        top: 12px;
+        right: 14px;
+        background: rgba(255, 255, 255, 0.12);
+        border: none;
+        color: white;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 16px;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .break-warning-modal-close:hover {
+        background: rgba(255, 255, 255, 0.22);
+      }
+      .break-warning-body {
+        padding: 20px 24px;
+        overflow-y: auto;
+        flex: 1;
+      }
+      .break-warning-dates-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+      .break-warning-date-card {
+        background: #faf9f8;
+        border: 1px solid #edebe9;
+        border-radius: 8px;
+        padding: 10px 12px;
+        text-align: center;
+      }
+      .break-warning-date-card.today {
+        background: #fff8f8;
+        border-color: #fecaca;
+      }
+      .break-warning-date-label {
+        font-size: 10px;
+        font-weight: 700;
+        color: #8a8886;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+      }
+      .break-warning-date-card.today .break-warning-date-label {
+        color: #a61c1c;
+      }
+      .break-warning-date-value {
+        font-size: 13px;
+        font-weight: 800;
+        color: #323130;
+      }
+      .break-warning-date-card.today .break-warning-date-value {
+        color: #7b1515;
+      }
+      .break-warning-reason-box {
+        background: #faf9f8;
+        border: 1px solid #edebe9;
+        border-left: 3px solid #7b1515;
+        border-radius: 0 8px 8px 0;
+        padding: 12px 14px;
+        margin-bottom: 12px;
+        font-size: 13px;
+        color: #323130;
+        line-height: 1.65;
+      }
+      .break-warning-penalty-box {
+        background: #fff8f8;
+        border: 1px solid #fecaca;
+        border-left: 3px solid #7b1515;
+        border-radius: 0 8px 8px 0;
+        padding: 12px 14px;
+        margin-bottom: 14px;
+        font-size: 12.5px;
+        color: #7b1515;
+        font-weight: 600;
+        line-height: 1.6;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      .break-warning-penalty-icon {
+        font-size: 16px;
+        flex-shrink: 0;
+      }
+      .break-warning-confirm-text {
+        text-align: center;
+        font-size: 13px;
+        color: #605e5c;
+        padding: 8px 0 2px;
+      }
+      .bw-window-badge {
+        display: inline-block;
+        padding: 4px 14px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .bw-window-badge.within {
+        background: #f0fdf4;
+        color: #166534;
+        border: 1px solid #86efac;
+      }
+      .bw-window-badge.outside {
+        background: #fff8f8;
+        color: #7b1515;
+        border: 1px solid #fecaca;
+      }
+      .break-warning-modal-footer {
+        padding: 14px 24px;
+        border-top: 1px solid #edebe9;
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        background: #fafaf9;
+        border-radius: 0 0 12px 12px;
+      }
+      .btn-warning-proceed {
+        background: linear-gradient(135deg, #7b1515 0%, #a61c1c 100%);
+        color: white;
+        box-shadow: 0 2px 8px rgba(30, 41, 59, 0.25);
+      }
+      .btn-warning-proceed:hover {
+        box-shadow: 0 4px 12px rgba(123, 21, 21, 0.38);
+        transform: translateY(-1px);
+      }
+
+      /* WO incomplete modal */
+      .wo-warning-modal .modal-content {
+        border-radius: 12px;
+        overflow: hidden;
+        max-width: 480px;
+      }
+      .wo-warning-header {
+        background: linear-gradient(135deg, #7b1515 0%, #a61c1c 100%);
+        padding: 20px 24px;
+        border-radius: 12px 12px 0 0;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .wo-warning-header-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.12);
+        border: 1.5px solid rgba(255, 255, 255, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+      }
+      .wo-warning-header-title {
+        color: white;
+        font-size: 16px;
+        font-weight: 800;
+      }
+      .wo-warning-header-sub {
+        color: rgba(255, 255, 255, 0.75);
+        font-size: 12px;
+        margin-top: 2px;
+      }
+      .wo-warning-body {
+        padding: 20px 24px;
+      }
+      .wo-warning-status-display {
+        background: #fff8f8;
+        border: 1px solid #fecaca;
+        border-left: 3px solid #a61c1c;
+        border-radius: 0 8px 8px 0;
+        padding: 12px 14px;
+        margin-bottom: 14px;
+      }
+      .wo-warning-status-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: #a61c1c;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+      }
+      .wo-warning-status-value {
+        font-size: 15px;
+        font-weight: 800;
+        color: #323130;
+      }
+      .wo-warning-text {
+        font-size: 13px;
+        color: #605e5c;
+        line-height: 1.7;
+      }
+      .wo-warning-footer {
+        padding: 14px 24px;
+        border-top: 1px solid #edebe9;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        background: #fafaf9;
+        border-radius: 0 0 12px 12px;
+      }
+      .btn-wo-proceed {
+        background: linear-gradient(135deg, #7b1515 0%, #a61c1c 100%);
+        color: white;
+        box-shadow: 0 2px 8px rgba(30, 41, 59, 0.25);
+      }
+      .amend-modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.55);
+        z-index: 6000;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+      .amend-modal-overlay.active {
+        display: flex;
+      }
+      .amend-modal {
+        background: white;
+        border-radius: 14px;
+        width: 100%;
+        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.22);
+        display: flex;
+        flex-direction: column;
+        max-height: 92vh;
+      }
+      .amend-modal-header {
+        background: linear-gradient(135deg, #7b1515 0%, #a61c1c 100%);
+        padding: 18px 24px;
+        border-radius: 14px 14px 0 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-shrink: 0;
+      }
+      .amend-modal-title {
+        color: white;
+        font-size: 16px;
+        font-weight: 700;
+        margin: 0;
+      }
+      .amend-modal-close {
+        background: rgba(255, 255, 255, 0.18);
+        border: none;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: background 0.2s;
+      }
+      .amend-modal-close:hover {
+        background: rgba(255, 255, 255, 0.32);
+      }
+      .amend-modal-body {
+        padding: 24px;
+        overflow-y: auto;
+        flex: 1;
+      }
+      .amend-modal-footer {
+        padding: 16px 24px;
+        border-top: 1px solid #edebe9;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        flex-shrink: 0;
+        background: #fafaf9;
+        border-radius: 0 0 14px 14px;
+      }
+      .amend-form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-bottom: 14px;
+      }
+      .amend-form-group.full-width {
+        width: 100%;
+      }
+      .amend-form-group label {
+        font-size: clamp(10px, 0.9vw, 12px);
+        font-weight: 700;
+        color: #605e5c;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+      }
+      .amend-form-group label.required::after {
+        content: " *";
+        color: #a61c1c;
+      }
+      .amend-form-group input:not([type="hidden"]),
+      .amend-form-group select,
+      .amend-form-group textarea {
+        padding: 10px 14px;
+        border: 1.5px solid #edebe9;
+        border-radius: 6px;
+        font-size: clamp(12px, 1.2vw, 14px);
+        font-family: inherit;
+        color: #323130;
+        background: white;
+        outline: none;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
+        width: 100%;
+      }
+      .amend-form-group input:focus,
+      .amend-form-group select:focus,
+      .amend-form-group textarea:focus {
+        border-color: #7b1515;
+        box-shadow: 0 0 0 3px rgba(123, 21, 21, 0.1);
+      }
+      .amend-section-header {
+        font-size: 13px;
+        font-weight: 700;
+        color: #2d3748;
+        margin: 18px 0 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #edebe9;
+      }
+      .btn-amend-close {
+        padding: 10px 20px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        border: 1.5px solid #edebe9;
+        background: white;
+        color: #605e5c;
+        font-family: inherit;
+      }
+      .btn-amend-close:hover {
+        background: #f3f2f1;
+      }
+      .btn-amend-save {
+        padding: 10px 20px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        border: none;
+        background: linear-gradient(135deg, #7b1515 0%, #a61c1c 100%);
+        color: white;
+        font-family: inherit;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        box-shadow: 0 3px 8px rgba(123, 21, 21, 0.3);
+      }
+      .btn-amend-save:hover {
+        box-shadow: 0 4px 12px rgba(123, 21, 21, 0.4);
+        transform: translateY(-1px);
+      }
+      @media (max-width: 768px) {
+        .units-grid {
+          grid-template-columns: 1fr;
+        }
+        .lease-info-strip {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .review-kv-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .initiator-toggle {
+          flex-direction: column;
+        }
+        .form-grid {
+          grid-template-columns: 1fr;
+        }
+        .review-summary-cards {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .lease-info-strip-4col {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .case-action-row {
+          flex-direction: column;
+          align-items: stretch;
+        }
+        .case-action-divider {
+          display: none;
+        }
+        .billing-stats-row {
+          flex-wrap: wrap;
+        }
+        .crv2-header {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        .crv2-header-right {
+          width: 100%;
+          justify-content: space-between;
+        }
+      }
+    </style>
+  <style id="hideDialogChromeTitle">
+              [id^="defaultDialogChromeTitle"],
+              [id^="defaultDialogChromeTitle"] * {
+                visibility: hidden !important;
+                height: 0 !important;
+                overflow: hidden !important;
+                padding: 0 !important;
+                margin: 0 !important;
+              }
+            </style><style id="lt-billing-styles">
+/* ===== CHARGE CARD V2 ===== */
+.charge-row-card-v2 { flex-direction: column; align-items: stretch; gap: 0; padding: 0; overflow: hidden; }
+.crv2-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px 10px; }
+.crv2-name { font-size: 14px; font-weight: 800; color: #323130; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.crv2-header-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.crv2-per-cycle { display: flex; align-items: baseline; gap: 4px; }
+.crv2-per-cycle-amt { font-size: 15px; font-weight: 800; color: #323130; }
+.crv2-per-cycle-lbl { font-size: 12px; color: #8a8886; font-weight: 500; }
+.crv2-meta { display: flex; flex-wrap: wrap; gap: 10px; padding: 0 18px 10px; }
+.crv2-meta-item { font-size: 12px; color: #605e5c; display: flex; align-items: center; gap: 4px; }
+.crv2-meta-item strong { color: #323130; font-weight: 700; }
+.crv2-meta-adjusted { color: #0078d4 !important; }
+.crv2-meta-adjusted strong { color: #0078d4 !important; }
+.crv2-billing { border-top: 1px solid #f3f2f1; padding: 12px 18px 14px; background: #faf9f8; }
+
+/* ===== BILLING STATS ROW ===== */
+.billing-stats-row { display: flex; align-items: center; gap: 0; background: white; border: 1.5px solid #edebe9; border-radius: 8px; overflow: hidden; margin-bottom: 12px; }
+.billing-stat { flex: 1; padding: 10px 14px; text-align: center; min-width: 0; }
+.billing-stat-val { font-size: 15px; font-weight: 800; color: #323130; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.billing-stat-lbl { font-size: 10px; font-weight: 700; color: #8a8886; text-transform: uppercase; letter-spacing: 0.4px; margin-top: 2px; }
+.billing-stat-sep { width: 1px; background: #edebe9; align-self: stretch; flex-shrink: 0; }
+.billing-stat-prorated .billing-stat-val { color: #2bad76; }
+.billing-stat-total .billing-stat-val { color: #7b1515; font-size: 16px; }
+.billing-stat-total { background: linear-gradient(to bottom, #fdf5f5, white); }
+
+/* ===== GRAND TOTAL BANNER — multi-currency ===== */
+.charges-grand-total { display: flex; align-items: center; justify-content: space-between; background: linear-gradient(135deg,#7b1515,#a61c1c); color: white; border-radius: 10px; padding: 14px 22px; margin-top: 4px; gap: 16px; }
+.cgt-label { font-size: 13px; font-weight: 700; opacity: 0.9; flex-shrink: 0; }
+.cgt-amount { display: flex; align-items: center; flex-wrap: wrap; gap: 2px 0; justify-content: flex-end; }
+.cgt-currency-part { font-size: 20px; font-weight: 800; white-space: nowrap; }
+.cgt-currency-sep { font-size: 18px; font-weight: 400; opacity: 0.6; padding: 0 8px; }
+
+/* ===== EDIT MODAL PREVIEW ===== */
+.prorated-preview-label::after { content: ' (with proration)'; font-weight: 400; opacity: 0.75; }
+
+/* ===== DEPOSIT PROGRESS BAR TRANSITION ===== */
+#depositsTableBody td { vertical-align: middle; }
+
+/* ===== DEPOSIT CONFIRM MODAL ===== */
+#depositConfirmModal .modal-header { background: linear-gradient(135deg,#7b1515,#a61c1c); }
+#depositConfirmModal .dcm-summary-row { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #f3f2f1; font-size:13px; }
+#depositConfirmModal .dcm-summary-row:last-child { border-bottom:none; }
+#depositConfirmModal .dcm-label { color:#605e5c; font-weight:600; }
+#depositConfirmModal .dcm-value { font-weight:800; color:#323130; }
+#depositConfirmModal .dcm-value.deducted { color:#e74c3c; }
+#depositConfirmModal .dcm-value.remaining { color:#2bad76; }
+</style><style id="hideDialogChromeTitle">
+              [id^="defaultDialogChromeTitle"],
+              [id^="defaultDialogChromeTitle"] * {
+                visibility: hidden !important;
+                height: 0 !important;
+                overflow: hidden !important;
+                padding: 0 !important;
+                margin: 0 !important;
+              }
+            </style><style id="hideDialogChromeTitle">
+              [id^="defaultDialogChromeTitle"],
+              [id^="defaultDialogChromeTitle"] * {
+                visibility: hidden !important;
+                height: 0 !important;
+                overflow: hidden !important;
+                padding: 0 !important;
+                margin: 0 !important;
+              }
+            </style><style id="hideDialogChromeTitle">
+              [id^="defaultDialogChromeTitle"],
+              [id^="defaultDialogChromeTitle"] * {
+                visibility: hidden !important;
+                height: 0 !important;
+                overflow: hidden !important;
+                padding: 0 !important;
+                margin: 0 !important;
+              }
+            </style><style id="hideDialogChromeTitle">
+      [id^="defaultDialogChromeTitle"],
+      [id^="defaultDialogChromeTitle"] * {
+        visibility: hidden !important;
+        height: 0 !important;
+        overflow: hidden !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+    </style><style id="amendEarlyLoaderCss">#amendContainer{visibility:hidden !important;}#amendLoadingScreen{display:flex !important;}</style><style id="amendUxEnhCss_v1">@keyframes amendPulseDot{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.25);opacity:0.7;}}.amend-skeleton{display:block;background:linear-gradient(90deg,#F3F4F6 0%,#E5E7EB 50%,#F3F4F6 100%);background-size:200% 100%;animation:amendSkelShimmer 1.2s ease-in-out infinite;border-radius:6px;height:14px;}@keyframes amendSkelShimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}.amend-skeleton-row{display:flex;gap:12px;padding:12px 14px;align-items:center;border-bottom:1px solid #F3F4F6;}.amend-skeleton-row > .amend-skeleton:nth-child(1){flex:1.5;}.amend-skeleton-row > .amend-skeleton:nth-child(2){flex:1;}.amend-skeleton-row > .amend-skeleton:nth-child(3){flex:1;}.amend-skeleton-row > .amend-skeleton:nth-child(4){flex:0.8;}.amend-skeleton-row > .amend-skeleton:nth-child(5){flex:0.6;}.amend-table tbody tr.amend-empty-row td,.amend-empty,.pp-empty{padding:32px 24px !important;text-align:center !important;color:#6B7280 !important;}.amend-empty-icon{width:48px;height:48px;margin:0 auto 12px;border-radius:50%;background:#F3F4F6;display:flex;align-items:center;justify-content:center;color:#9CA3AF;}.amend-empty-title{font-size:14px;font-weight:600;color:#374151;margin:0 0 4px;}.amend-empty-hint{font-size:12.5px;color:#6B7280;line-height:1.5;margin:0;}.amend-empty-cta{display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:8px 16px;border-radius:8px;border:none;background:#1C6BD4;color:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:background 140ms ease,transform 80ms ease,box-shadow 140ms ease;}.amend-empty-cta:hover{background:#1E40AF;box-shadow:0 4px 10px rgba(28,107,212,0.25);}.amend-empty-cta:active{transform:scale(0.97);}</style><script src="Lease%20Termination%20Processline_files/pdf.min_bSLR.js" async=""></script><style>body #pendingSelectionScreen{background:#ffffff !important;background-image:none !important;}.amend-body{overflow-x:visible !important;}.amend-table-wrapper{overflow-x:auto !important;-webkit-overflow-scrolling:touch;max-width:100%;}.amend-modal-overlay{display:flex !important;opacity:0;visibility:hidden;pointer-events:none;transition:opacity 180ms ease-out,visibility 0s linear 180ms;will-change:opacity;}.amend-modal-overlay.active{opacity:1 !important;visibility:visible !important;pointer-events:auto !important;transition:opacity 180ms ease-out,visibility 0s linear 0s;}.amend-modal-overlay .amend-modal{transform:translateY(8px) scale(0.98);opacity:0;transition:transform 200ms cubic-bezier(0.16,1,0.3,1),opacity 200ms ease-out;will-change:transform,opacity;}.amend-modal-overlay.active .amend-modal{transform:translateY(0) scale(1);opacity:1;}.confirm-overlay{display:flex !important;opacity:0;visibility:hidden;pointer-events:none;transition:opacity 160ms ease-out,visibility 0s linear 160ms;}.confirm-overlay.active{opacity:1 !important;visibility:visible !important;pointer-events:auto !important;transition:opacity 160ms ease-out,visibility 0s linear 0s;}.tab-panel.active{animation:amendTabFade 180ms ease-out;}@keyframes amendTabFade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}.wizard-step{transition:background-color 160ms ease,color 160ms ease,border-color 160ms ease;}button,.amend-btn,.amend-btn-primary,.amend-btn-secondary{transition:background-color 140ms ease,border-color 140ms ease,box-shadow 140ms ease,transform 80ms ease;}button:active,.amend-btn:active{transform:translateY(1px);}input,select,textarea{transition:border-color 140ms ease,box-shadow 140ms ease,background-color 140ms ease;}.amend-table tbody tr{transition:background-color 120ms ease;}.amend-table-wrapper{min-height:60px;}.amend-table tbody{animation:amendTableFade 160ms ease-out;}@keyframes amendTableFade{from{opacity:0.4;}to{opacity:1;}}.amend-section,.amend-card{transition:opacity 140ms ease,transform 140ms ease;}html{scroll-behavior:smooth;}.amend-modal,.amend-modal-body{scroll-behavior:smooth;}.amend-modal-overlay,.amend-modal,.amend-notif-toast,.amend-notif-popup{backface-visibility:hidden;-webkit-backface-visibility:hidden;}.amend-notif-toast{animation:amendToastSlide 220ms cubic-bezier(0.16,1,0.3,1);}@keyframes amendToastSlide{from{opacity:0;transform:translateX(24px);}to{opacity:1;transform:translateX(0);}}.amend-notif-popup{animation:amendPopupFade 180ms ease-out;}@keyframes amendPopupFade{from{opacity:0;}to{opacity:1;}}.amend-notif-popup>div{animation:amendPopupRise 220ms cubic-bezier(0.16,1,0.3,1);}@keyframes amendPopupRise{from{opacity:0;transform:translateY(-12px) scale(0.97);}to{opacity:1;transform:translateY(0) scale(1);}}.amend-field-error-msg{animation:amendErrFade 160ms ease-out;}@keyframes amendErrFade{from{opacity:0;transform:translateY(-3px);}to{opacity:1;transform:translateY(0);}}#amendLoadingScreen{transition:opacity 220ms ease-out,visibility 0s linear 220ms;}#amendLoadingScreen.amend-hiding{opacity:0 !important;visibility:hidden !important;}button:focus-visible,.amend-btn:focus-visible,[role="button"]:focus-visible,a:focus-visible{outline:2px solid #1C6BD4;outline-offset:2px;border-radius:4px;}input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;border-color:#1C6BD4 !important;box-shadow:0 0 0 3px rgba(28,107,212,0.25) !important;}input:disabled,select:disabled,textarea:disabled,button:disabled,.amend-btn:disabled{cursor:not-allowed !important;background-color:#F3F4F6 !important;color:#9CA3AF !important;}.preview-section{border:1px solid #E5E7EB !important;border-radius:12px !important;box-shadow:0 1px 3px rgba(0,0,0,0.04) !important;overflow:hidden !important;background:#fff !important;transition:box-shadow 180ms ease,border-color 180ms ease,transform 180ms ease;}.preview-section:hover{box-shadow:0 4px 12px rgba(28,107,212,0.08) !important;border-color:#BFDBFE !important;}.preview-section-header{background:linear-gradient(180deg,#F9FAFB 0%,#F3F4F6 100%) !important;padding:12px 16px 12px 18px !important;border-bottom:1px solid #E5E7EB !important;border-left:4px solid #1C6BD4 !important;display:flex !important;align-items:center !important;gap:10px !important;transition:background 180ms ease,border-left-color 180ms ease;}.preview-section:hover .preview-section-header{background:linear-gradient(180deg,#EFF6FF 0%,#DBEAFE 100%) !important;border-left-color:#1E40AF !important;}.preview-section-title{color:#111827 !important;font-size:13px !important;font-weight:600 !important;letter-spacing:0.1px !important;margin:0 !important;flex:1 !important;display:flex !important;align-items:center !important;gap:8px !important;text-shadow:none !important;text-transform:none !important;}.preview-section-title svg,.preview-section-title i{color:#1C6BD4 !important;flex-shrink:0;width:16px;height:16px;}.preview-count-pill{background:#EFF6FF !important;color:#1E40AF !important;font-size:11px !important;font-weight:700 !important;padding:3px 10px !important;border-radius:999px !important;border:1px solid #BFDBFE !important;box-shadow:0 1px 2px rgba(28,107,212,0.08);white-space:nowrap;transition:background 140ms ease,color 140ms ease,border-color 140ms ease;}.preview-section:hover .preview-count-pill{background:#1C6BD4 !important;color:#fff !important;border-color:#1C6BD4 !important;}.preview-section .preview-count-pill[data-empty="true"]{background:#F3F4F6 !important;color:#6B7280 !important;border-color:#E5E7EB !important;}@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:0.01ms !important;transition-duration:0.01ms !important;}}</style></head>
+  <body>
+    <!-- Loading Screen — visible on boot, hidden by hideLoadingScreen() after init -->
+    <div id="loadingScreen" class="hidden" style="display: none;">
+      <div class="loader"></div>
+      <div class="loading-text">Loading Lease Termination...</div>
+    </div>
+
+    <div class="form-container loaded" id="formContainer">
+      <!-- Header -->
+      <div class="form-header">
+        <div class="header-content">
+          <h1>🔴 Lease Termination Process</h1>
+          <div class="header-meta">
+            <span class="header-meta-item">Lease:
+              <strong id="hdr_leaseId">—</strong></span>
+            <span class="header-meta-sep">|</span>
+            <span class="header-meta-item">Tenant:
+              <strong id="hdr_tenant">—</strong></span>
+            <span class="header-meta-sep">|</span>
+            <span class="header-meta-item">Property:
+              <strong id="hdr_property">—</strong></span>
+            <span id="hdr_termTypeWrap" style="display: none">
+              <span class="header-meta-sep">|</span>
+              <span class="header-meta-item">Type: <strong id="hdr_termType"></strong></span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stage Progress Bar — 6 stages -->
+      <div class="stage-progress">
+        <div class="progress-container">
+          <div class="progress-line">
+            <div class="progress-line-fill" id="progressFill" style="width: 0%;"></div>
+          </div>
+          <div class="stage-item active" id="stageTab1" onclick="LT.goToStage(1)">
+            <div class="stage-circle">1</div>
+            <div class="stage-label">Notice<br>Initiation</div>
+          </div>
+          <div class="stage-item" id="stageTab2" onclick="LT.goToStage(2)">
+            <div class="stage-circle">2</div>
+            <div class="stage-label">Move-out<br>Inspection</div>
+          </div>
+          <div class="stage-item" id="stageTab3" onclick="LT.goToStage(3)">
+            <div class="stage-circle">3</div>
+            <div class="stage-label">Charges &amp;<br>Proration</div>
+          </div>
+          <div class="stage-item" id="stageTab4" onclick="LT.goToStage(4)">
+            <div class="stage-circle">4</div>
+            <div class="stage-label">Financial<br>Clauses</div>
+          </div>
+          <div class="stage-item" id="stageTab5" onclick="LT.goToStage(5)">
+            <div class="stage-circle">5</div>
+            <div class="stage-label">Invoices &amp;<br>Deposits</div>
+          </div>
+          <div class="stage-item" id="stageTab6" onclick="LT.goToStage(6)">
+            <div class="stage-circle">✓</div>
+            <div class="stage-label">Final<br>Review</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════ STAGE 1 ═══════════════ -->
+      <div class="stage-content active" id="stage1">
+        <div class="form-body">
+          <div class="form-section">
+            <div class="section-content">
+              <div class="section-title">Notice Initiation</div>
+              <div class="section-description">
+                Record who is ending the lease, the notice and the move-out date.
+              </div>
+<div class="lease-info-strip" id="leaseInfoStrip"><div class="fetch-error" style="grid-column:1/-1;">⚠️ Could not load lease data: No record ID received.</div></div>
+
+              <!-- Option A — pending amendments warning. Hidden by default,
+                   shown by renderPendingAmendmentsBanner() if query finds any. -->
+              <div id="pendingAmendmentsBanner" style="display:none;"></div>
+
+              <div id="allOptionsPanel"></div>
+
+              <div class="units-grid-header">🏢 Associated Units</div>
+              <div class="units-grid" id="unitsGrid"><div class="fetch-error">⚠️ Could not load unit associations.</div></div>
+
+              <hr class="moveout-section-divider">
+              <div class="sub-section-header">📅 Termination Dates</div>
+              <!-- Order per Rakesh feedback: Notice → Move-Out → Lease End -->
+              <div class="form-grid">
+                <div class="form-group full-width">
+                  <label>Notice Given Date <span style="font-weight:400;color:#8a8886">— when the tenant was informed</span></label>
+                  <input type="date" id="noticeGivenDate" onchange="LT.onNoticeGivenDateChange()">
+                </div>
+              </div>
+
+              <hr class="moveout-section-divider">
+              <div class="form-grid">
+                <div class="form-group full-width">
+                  <label class="required">Move-Out Date <span style="font-weight:400;color:#8a8886">— when the tenant vacates; frees the unit</span></label>
+                  <input type="date" id="moveOutDate" onchange="LT.onMoveOutDateChange()">
+                  <span style="font-size:11px;color:#8a8886;margin-top:3px">Can be before, on, or after the lease end date.</span>
+                </div>
+              </div>
+
+              <hr class="moveout-section-divider">
+              <div class="form-grid" style="margin-top: 14px">
+                <div class="form-group full-width">
+                  <label>Lease End Date <span style="font-weight:400;color:#8a8886">— drives billing</span></label>
+                  <input type="date" id="leaseEndDate" onchange="LT.onLeaseEndDateChange()">
+                  <span id="leaseEndDateHint" style="font-size: 11px; color: #8a8886; margin-top: 3px">
+                    Rent bills to this date. Cannot exceed the original lease end date. Prefilled from the lease.
+                  </span>
+                </div>
+              </div>
+              <div id="moveOutTerminationAlert" class="validation-notice" style="display: none"></div>
+              <div class="sub-section-header">
+                📋 Who is initiating the termination?
+              </div>
+              <div class="initiator-toggle">
+                <div class="initiator-btn active" id="initiatorTenant" onclick="LT.setInitiator('tenant')">
+                  <span class="initiator-icon">🏠</span><span class="initiator-label">Tenant</span>
+                </div>
+                <div class="initiator-btn" id="initiatorLandlord" onclick="LT.setInitiator('landlord')">
+                  <span class="initiator-icon">🏢</span><span class="initiator-label">Landlord</span>
+                </div>
+              </div>
+
+              <!-- Existing Documents on Lease (view-only list) — populated by LT._renderExistingDocuments at boot. Hidden if no documents exist. -->
+              <div id="existingDocumentsSection" style="display: none"></div>
+
+              <div id="tenantUploadSection">
+                <div class="sub-section-header">📎 Tenant Notice Document</div>
+                <div class="form-group full-width">
+                  <label>Upload Tenant Notice Letter</label>
+                  <div class="file-upload-area" id="tenantUploadArea" onclick="document.getElementById('tenantFileInput').click()">
+                    <div class="file-upload-icon">📄</div>
+                    <div class="file-upload-text">
+                      Click to upload or drag &amp; drop
+                    </div>
+                    <div class="file-upload-hint">
+                      PDF, DOC, DOCX — max 5 MB
+                    </div>
+                    <div class="file-name-display" id="tenantFileName" style="display: none"></div>
+                  </div>
+                  <input type="file" id="tenantFileInput" accept=".pdf,.doc,.docx" style="display: none" onchange="LT.handleFileUpload('tenant', this)">
+                </div>
+              </div>
+
+              <div id="landlordEmailSection" style="display: none">
+                <div class="sub-section-header">📧 Landlord Notice Actions</div>
+                <div class="toggle-group">
+                  <div>
+                    <div class="toggle-label">Send Notice Email to Tenant</div>
+                    <div class="toggle-sub">
+                      A notice email will be sent to the tenant's registered
+                      email address.
+                    </div>
+                  </div>
+                  <label class="toggle-switch"><input type="checkbox" id="sendEmailToggle" onchange="LT.toggleEmailFields(this.checked)"><span class="toggle-slider"></span></label>
+                </div>
+                <div id="emailFields" style="display: none; margin-top: 14px">
+                  <div class="form-grid">
+                    <div class="form-group">
+                      <label>Tenant Email</label><input type="email" id="tenantEmail" placeholder="Loading tenant email..." readonly="readonly" class="lookup-field">
+                    </div>
+                    <div class="form-group">
+                      <label>CC (optional)</label><input type="email" id="ccEmail" placeholder="cc@example.com">
+                    </div>
+                    <div class="form-group full-width">
+                      <label>Email Subject</label><input type="text" id="emailSubject" value="Lease Termination Notice">
+                    </div>
+                    <div class="form-group full-width">
+                      <label>Email Body</label>
+                      <div style="display: flex; flex-direction: column; gap: 6px">
+                        <div style="display: flex; justify-content: flex-end">
+                          <button type="button" onclick="LT.toggleTemplateDropdown()" style="
+                              padding: 5px 12px;
+                              background: #0078d4;
+                              color: white;
+                              border: none;
+                              border-radius: 5px;
+                              font-size: 12px;
+                              font-weight: 700;
+                              cursor: pointer;
+                              font-family: inherit;
+                              display: flex;
+                              align-items: center;
+                              gap: 5px;
+                            ">
+                            📋 Templates
+                          </button>
+                        </div>
+                        <div style="position: relative">
+                          <textarea id="emailBody" rows="6" placeholder="Click the template button or type your message..." style="width: 100%; box-sizing: border-box">Dear Tenant, this is to formally notify you that the lease agreement is being terminated.</textarea>
+                          <div id="emailTemplateDropdown" style="
+                              display: none;
+                              position: absolute;
+                              top: 100%;
+                              left: 0;
+                              right: 0;
+                              z-index: 500;
+                              background: white;
+                              border: 1.5px solid #edebe9;
+                              border-radius: 8px;
+                              box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+                              margin-top: 4px;
+                              max-height: 280px;
+                              overflow: hidden;
+                              flex-direction: column;
+                            ">
+                            <div style="
+                                padding: 10px 12px;
+                                border-bottom: 1px solid #edebe9;
+                                background: #faf9f8;
+                              ">
+                              <input type="text" id="templateSearchBox" placeholder="Search templates..." oninput="LT.filterTemplates(this.value)" onclick="event.stopPropagation()" style="
+                                  width: 100%;
+                                  padding: 7px 10px;
+                                  border: 1.5px solid #edebe9;
+                                  border-radius: 5px;
+                                  font-size: 13px;
+                                  font-family: inherit;
+                                  outline: none;
+                                ">
+                            </div>
+                            <div id="templateDropdownList" style="overflow-y: auto; max-height: 200px"></div>
+                          </div>
+                        </div>
+                      </div>
+                      <span style="font-size: 11px; color: #8a8886; margin-top: 3px">Click <strong>Templates</strong> to load and select
+                        from Dynamics email templates.</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-group full-width" style="margin-top: 14px">
+                  <label>Upload &amp; Attach Notice Document</label>
+                  <div class="file-upload-area" id="landlordUploadArea" onclick="
+                      document.getElementById('landlordFileInput').click()
+                    ">
+                    <div class="file-upload-icon">📎</div>
+                    <div class="file-upload-text">
+                      Click to upload or drag &amp; drop
+                    </div>
+                    <div class="file-upload-hint">
+                      Will be stored in Lease SharePoint folder — max 5 MB
+                    </div>
+                    <div class="file-name-display" id="landlordFileName" style="display: none"></div>
+                  </div>
+                  <input type="file" id="landlordFileInput" accept=".pdf,.doc,.docx" style="display: none" onchange="LT.handleFileUpload('landlord', this)">
+                </div>
+              </div>
+
+              <div class="form-group full-width" style="margin-top: 18px">
+                <label>Additional Notes / Reason for Termination</label>
+                <textarea id="terminationNotes" rows="3" placeholder="Add any relevant notes about this termination..."></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════ STAGE 2 ═══════════════ -->
+      <div class="stage-content" id="stage2">
+        <div class="form-body">
+          <div class="form-section">
+            <div class="section-content">
+              <div class="section-title">Move-out Inspection</div>
+              <div class="section-description">
+                Optional — arrange the move-out inspection.
+              </div>
+<div class="wo-status-card not-created" id="woStatusCard">
+                <div class="wo-status-icon" id="woStatusIcon">📋</div>
+                <div style="flex: 1">
+                  <div class="wo-status-label" id="woStatusLabel">Status</div>
+                  <div class="wo-status-value" id="woStatusValue">
+                    Work Order Not Created
+                  </div>
+                  <div class="wo-status-meta" id="woStatusMeta">
+                    Create the inspection work order below, or continue without one.
+                  </div>
+                </div>
+                <div class="wo-status-refresh" id="woRefreshBtn" style="display: none">
+                  <button class="btn-refresh" onclick="LT.refreshWOStatus()">
+                    🔄 Refresh
+                  </button>
+                </div>
+              </div>
+
+              <div class="case-created-banner" id="caseCreatedBanner" style="display: none">
+                <span class="case-created-banner-icon">✅</span>
+                <div>
+                  <strong>Work Order Created:</strong>
+                  <span id="caseWONumber">—</span>
+                  <div style="
+                      font-size: 12px;
+                      font-weight: 500;
+                      margin-top: 2px;
+                      color: #166534;
+                    ">
+                    Fields are now view-only.
+                  </div>
+                </div>
+              </div>
+
+              <div class="case-create-card">
+                <div class="case-create-card-header">
+                  <div class="case-create-icon">🔧</div>
+                  <div>
+                    <div class="case-create-title">
+                      Field Service Inspection Case
+                    </div>
+                  </div>
+                </div>
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label class="required">Customer (Contact / Account)</label>
+                    <div class="lookup-input-wrap">
+                      <input type="text" id="caseCustomer" placeholder="Select customer..." class="lookup-field" readonly="readonly" style="cursor: pointer" onclick="LT.openCustomerLookup()">
+                      <button class="lookup-trigger-btn" onclick="LT.openCustomerLookup()">🔍</button>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="required">Incident Type</label>
+                    <div class="lookup-input-wrap">
+                      <input type="text" id="caseIncidentTypeDisplay" placeholder="Select incident type..." class="lookup-field" readonly="readonly" style="cursor: pointer" onclick="LT.openIncidentTypeLookup()">
+                      <button class="lookup-trigger-btn" onclick="LT.openIncidentTypeLookup()">🔍</button>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="required">Functional Location</label>
+                    <div class="lookup-input-wrap">
+                      <input type="text" id="caseFunctionalLocationDisplay" placeholder="Auto-filled from the unit..." class="lookup-field" readonly="readonly" style="cursor: pointer" onclick="LT.openFunctionalLocationLookup()">
+                      <button class="lookup-trigger-btn" onclick="LT.openFunctionalLocationLookup()">🔍</button>
+                    </div>
+                  </div>
+                  <div class="form-group full-width">
+                    <label>Description</label>
+                    <textarea id="caseDescription" rows="4" placeholder="Describe the inspection requirements..."></textarea>
+                  </div>
+                </div>
+                <div class="case-action-row">
+                  <button class="btn btn-blue" id="btnCreateCaseWO" onclick="LT.createWorkOrder()">
+                    🔧 Create Work Order
+                  </button>
+                  <span style="font-size: 12px; color: #8a8886; margin-left: 4px" id="caseFormHint">
+                    Click <strong>Create Work Order</strong> to generate a Termination Inspection work order in Field Service.
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════ STAGE 3 — CHARGES ═══════════════ -->
+      <div class="stage-content" id="stage3">
+        <div class="form-body">
+          <div class="form-section">
+            <div class="section-content">
+              <div class="section-title">Charges &amp; Proration</div>
+              <div class="section-description">
+                Check what will still be billed for each recurring charge.
+              </div>
+<div class="lease-info-strip-4col" id="s3InfoStrip">
+                <div>
+                  <div class="lease-info-strip-label">Move-Out Date</div>
+                  <div class="lease-info-strip-value" id="s3MoveOutDate">—</div>
+                </div>
+                <div>
+                  <div class="lease-info-strip-label">Recurring Charges</div>
+                  <div class="lease-info-strip-value" id="s3ChargeCount">0</div>
+                </div>
+                <div>
+                  <div class="lease-info-strip-label">Prorated Charges</div>
+                  <div class="lease-info-strip-value" id="s3ProratedCount" style="color: #2bad76">0</div>
+                </div>
+                <div>
+                  <div class="lease-info-strip-label">New Charges</div>
+                  <div class="lease-info-strip-value" id="s3NewChargeCount">0</div>
+                </div>
+              </div>
+
+              <div class="sub-section-header">🔄 Recurring Charges</div>
+              <div class="charges-card-grid" id="chargesCardGrid">
+                <div class="charges-loading-state">
+                    <div class="charges-loading-spinner"></div>
+                    <div class="charges-loading-text">Loading recurring charges from lease agreement…</div>
+                </div></div>
+              <div id="addChargeButtonWrap" style="margin-top: 16px; display: none; align-items: center; gap: 14px; flex-wrap: wrap;">
+                <button class="btn-add-large" onclick="LT.openAddChargeModal()">
+                  ＋ Add New Charge
+                </button>
+                <span style="font-size: 12px; color: #8a8886">New charges activate upon termination completion.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════ STAGE 4 — FINANCIAL CLAUSES ═══════════════ -->
+      <div class="stage-content" id="stage4">
+        <div class="form-body">
+          <div class="form-section">
+            <div class="section-content">
+              <div class="section-title">Financial Clauses &amp; Schedules</div>
+              <div class="section-description">
+                Review only — nothing to fill in.
+              </div>
+<div class="lease-info-strip-4col">
+                <div>
+                  <div class="lease-info-strip-label">Termination Date</div>
+                  <div class="lease-info-strip-value" id="s3c_termDate">—</div>
+                </div>
+                <div>
+                  <div class="lease-info-strip-label">Financial Clauses</div>
+                  <div class="lease-info-strip-value" id="s3c_clauseCount">—</div>
+                </div>
+                <div>
+                  <div class="lease-info-strip-label">Active Schedules</div>
+                  <div class="lease-info-strip-value" id="s3c_scheduleCount">—</div>
+                </div>
+                <div>
+                  <div class="lease-info-strip-label">To Be Stopped</div>
+                  <div class="lease-info-strip-value" id="s3c_afterCount">—</div>
+                </div>
+              </div>
+
+              <div id="financialClausesContainer" style="display: flex; flex-direction: column; gap: 12px; margin-top: 16px"></div>
+              <div id="turnoverSettlementPanel"></div>
+              <div id="poolRulesPanel"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════ STAGE 5 ═══════════════ -->
+      <div class="stage-content" id="stage5">
+        <div class="form-body">
+          <div class="form-section">
+            <div class="section-content">
+              <div class="section-title">Invoices &amp; Deposits</div>
+              <div class="section-description">
+                Settle what the tenant owes from the security deposit.
+              </div>
+              <!-- Rakesh feedback: moved advisory banners from top to bottom —
+                   deposit selection + outstanding invoices come first. A top
+                   chip is shown when any advisory exists so users still know
+                   warnings are present. -->
+              <div id="stage5AdvisoryChip" style="display:none;margin-bottom:14px;">
+                <a href="#stage5AdvisoryPanel" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#fff8e1;border:1px solid #ffb300;border-radius:20px;color:#8c6a00;font-size:12px;font-weight:700;text-decoration:none;cursor:pointer;" onclick="document.getElementById('stage5AdvisoryPanel').scrollIntoView({behavior:'smooth',block:'start'});return false;">
+                  ⚠️ <span id="stage5AdvisoryChipCount">0</span> advisories below — click to review
+                </a>
+              </div>
+                <div id="depositsSection" style="margin-bottom: 24px;">
+                  <div class="sub-section-header" style="margin-bottom: 14px">
+                    🔒 Security &amp; Insurance
+                    <span style="
+                        font-size: 11px;
+                        font-weight: 500;
+                        color: #8a8886;
+                        text-transform: none;
+                        letter-spacing: 0;
+                        margin-left: 8px;
+                      ">Check deposit(s) to deduct from — deduction is applied
+                      highest amount first</span>
+                  </div>
+                  <div id="depositsLoadingState" style="display: none">
+                    <div class="charges-loading-state">
+                      <div class="charges-loading-spinner"></div>
+                      <div class="charges-loading-text">
+                        Loading deposit records…
+                      </div>
+                    </div>
+                  </div>
+                  <div id="depositsErrorState" style="display: none">
+                    <div class="fetch-error" style="
+                        flex-direction: column;
+                        gap: 10px;
+                        align-items: flex-start;
+                      ">
+                      <div id="depositsErrorMsg">
+                        ⚠️ Could not load deposits.
+                      </div>
+                      <button class="btn btn-secondary" style="width: fit-content" onclick="LT.retryDepositsFetch()">
+                        🔄 Retry
+                      </button>
+                    </div>
+                  </div>
+                  <div id="depositsTableWrap" class="charges-table-wrapper">
+                    <table class="dues-table">
+                      <thead>
+                        <tr>
+                          <th style="width: 44px">Select</th>
+                          <th style="width: 110px">Currency</th>
+                          <th>Original Amount</th>
+                          <th>Remaining After Deductions</th>
+                        </tr>
+                      </thead>
+                      <tbody id="depositsTableBody"></tbody>
+                    </table>
+                  </div>
+                  <div style="
+                      font-size: 12px;
+                      color: #8a8886;
+                      margin-top: 6px;
+                      margin-bottom: 4px;
+                    ">
+                    Select one or more deposits. The total deduction is applied
+                    to the highest-amount deposit first, then spills to the next
+                    if needed.
+                  </div>
+                </div>
+
+
+              <!-- Repair / damage cost — must be confirmed before dues are settled -->
+              <div id="repairCostSection" style="
+                  background: #fff8f8;
+                  border: 1.5px solid #fecaca;
+                  border-radius: 10px;
+                  padding: 16px 18px;
+                  margin-bottom: 24px;
+                ">
+                <div class="sub-section-header" style="margin-bottom: 10px">
+                  🛠️ Repair / Damage Cost
+                  <span style="
+                      font-size: 11px;
+                      font-weight: 500;
+                      color: #8a8886;
+                      text-transform: none;
+                      letter-spacing: 0;
+                      margin-left: 8px;
+                    ">From the inspection — reserved from the deposit before
+                    dues. Enter 0 if none.</span>
+                </div>
+                <div id="damageInputsContainer"></div>
+                <div id="repairCostError" style="
+                    display: none;
+                    font-size: 12px;
+                    font-weight: 700;
+                    color: #a61c1c;
+                    margin-top: 6px;
+                  "></div>
+                <div style="
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    margin-top: 10px;
+                  ">
+                  <button class="btn btn-primary" id="repairCostOkBtn" onclick="LT.confirmRepairCost()">
+                    ✔ OK
+                  </button>
+                  <button class="btn btn-secondary" id="repairCostEditBtn" onclick="LT.editRepairCost()" style="display: none">
+                    ✏️ Edit
+                  </button>
+                  <span id="repairCostConfirmedMsg" style="
+                      display: none;
+                      font-size: 12px;
+                      font-weight: 700;
+                      color: #2bad76;
+                    ">✅ Repair cost confirmed — you can now settle dues
+                    below.</span>
+                </div>
+              </div>
+
+              <!-- Shown instead of the repair section when the lease has no deposit -->
+              <div id="noDepositNotice" class="validation-notice warning" style="display: none">
+                ℹ️ No security deposit on this lease — there is nothing to
+                deduct dues or damages from. Outstanding amounts must be settled
+                by invoice.
+              </div>
+
+              <div id="duesSettlementArea">
+                <div class="sub-section-header" style="margin-bottom: 14px">
+                  📄 Outstanding Invoices
+                  <span style="
+                      font-size: 11px;
+                      font-weight: 500;
+                      color: #8a8886;
+                      text-transform: none;
+                      letter-spacing: 0;
+                      margin-left: 8px;
+                    ">Active &amp; partially paid invoices linked to this
+                    lease</span>
+                </div>
+                <input type="text" id="invoiceFilterInput" placeholder="🔍 Search by invoice # or description…" oninput="LT.setInvoiceFilter(this.value)" style="
+                    width: 100%;
+                    max-width: 360px;
+                    padding: 8px 12px;
+                    border: 1.5px solid #edebe9;
+                    border-radius: 6px;
+                    font-size: 13px;
+                    font-family: inherit;
+                    margin-bottom: 12px;
+                  ">
+                <div id="invoicesLoadingState" style="display: none">
+                  <div class="charges-loading-state">
+                    <div class="charges-loading-spinner"></div>
+                    <div class="charges-loading-text">Loading invoices…</div>
+                  </div>
+                </div>
+                <div id="invoicesErrorState" style="display: none">
+                  <div class="fetch-error" style="
+                      flex-direction: column;
+                      gap: 10px;
+                      align-items: flex-start;
+                    ">
+                    <div id="invoicesErrorMsg">⚠️ Could not load invoices.</div>
+                    <button class="btn btn-secondary" style="width: fit-content" onclick="LT.retryInvoicesFetch()">
+                      🔄 Retry
+                    </button>
+                  </div>
+                </div>
+                <div id="invoicesTableWrap" class="charges-table-wrapper" style="margin-bottom: 8px">
+                  <table class="dues-table">
+                    <thead>
+                      <tr>
+                        <th style="width: 36px">Select</th>
+                        <th>Invoice #</th>
+                        <th>Description</th>
+                        <th>Due Date</th>
+                        <th>Total Amount</th>
+                        <th>Remaining Amount</th>
+                        <th style="text-align: right">Deduct from Deposit</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody id="invoicesTableBody">
+                      <tr>
+                        <td colspan="8">
+                          <div class="charge-skel-line" style="height: 14px; width: 100%; margin: 0"></div>
+                        </td>
+                      </tr>
+                    </tbody>
+                    <tfoot>
+                      <tr>
+                        <td colspan="5" style="text-align: right; font-weight: 700">
+                          Total Selected Dues:
+                        </td>
+                        <td id="duesFoot" style="font-weight: 800; color: #e74c3c">
+                          —
+                        </td>
+                        <td id="totalDeductedFoot" style="
+                            font-weight: 800;
+                            color: #e74c3c;
+                            text-align: right;
+                          ">
+                          —
+                        </td>
+                        <td></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+                <div style="font-size: 12px; color: #8a8886; margin-bottom: 28px">
+                  Select a deposit from the Security &amp; Insurance grid to
+                  enable invoice selection for matching currencies.
+                </div>
+
+                <div id="upcomingChargesWrap" style="display: none; margin-bottom: 28px">
+                  <div class="sub-section-header" style="margin-bottom: 14px">
+                    🔄 Upcoming Charges
+                    <span style="
+                        font-size: 11px;
+                        font-weight: 500;
+                        color: #8a8886;
+                        text-transform: none;
+                        letter-spacing: 0;
+                        margin-left: 8px;
+                      ">Grand total of future billing cycles per currency — for
+                      information only, not deducted from deposits</span>
+                  </div>
+                  <div class="charges-table-wrapper">
+                    <table class="dues-table">
+                      <thead>
+                        <tr>
+                          <th style="width: 36px"></th>
+                          <th style="width: 100px">Currency</th>
+                          <th>Description</th>
+                          <th colspan="2">Total Upcoming Amount</th>
+                          <th style="width: 90px">Type</th>
+                        </tr>
+                      </thead>
+                      <tbody id="upcomingChargesBody"></tbody>
+                      <tfoot id="upcomingChargesFoot" style="display: none">
+                        <tr>
+                          <td colspan="4" style="text-align: right; font-weight: 700">
+                            Total Upcoming:
+                          </td>
+                          <td id="upcomingFoot" style="font-weight: 800; color: #e74c3c">
+                            —
+                          </td>
+                          <td></td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                  <div style="font-size: 12px; color: #8a8886; margin-top: 6px">
+                    Each row is the combined future billing total for all
+                    recurring charges in that currency.
+                  </div>
+                </div>
+
+              </div>
+              <!-- /duesSettlementArea -->
+
+              <!-- Rakesh feedback: advisory banners moved from top to bottom. -->
+              <div id="stage5AdvisoryPanel" style="margin-top: 28px;">
+                <div id="draftInvoiceBanner" style="margin-bottom: 14px; display:none;"></div>
+                <div id="postTermInvoicesPanel"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════ STAGE 6 — FINAL REVIEW ═══════════════ -->
+      <div class="stage-content" id="stage6">
+        <div class="form-body">
+          <div class="form-section">
+            <div class="section-content">
+              <div class="section-title">Final Review &amp; Confirmation</div>
+              <div class="section-description">
+                Check the summary, then click <strong>Submit</strong>.
+              </div>
+<div class="review-summary-cards">
+                <div class="summary-stat-card">
+                  <div class="stat-icon" style="
+                      background: linear-gradient(135deg, #7b1515, #a61c1c);
+                    ">
+                    📅
+                  </div>
+                  <div class="stat-info">
+                    <div class="stat-value" id="rv_moveOut">—</div>
+                    <div class="stat-label">Move-Out Date</div>
+                  </div>
+                </div>
+                <div class="summary-stat-card">
+                  <div class="stat-icon" style="
+                      background: linear-gradient(135deg, #0078d4, #004e8c);
+                    ">
+                    🔧
+                  </div>
+                  <div class="stat-info">
+                    <div class="stat-value" id="rv_woStatus">—</div>
+                    <div class="stat-label">Inspection Status</div>
+                  </div>
+                </div>
+                <div class="summary-stat-card">
+                  <div class="stat-icon" style="
+                      background: linear-gradient(135deg, #e74c3c, #c0392b);
+                    ">
+                    ⚠️
+                  </div>
+                  <div class="stat-info">
+                    <div class="stat-value" id="rv_dues">—</div>
+                    <div class="stat-label">Dues Deducted</div>
+                  </div>
+                </div>
+                <div class="summary-stat-card">
+                  <div class="stat-icon" style="
+                      background: linear-gradient(135deg, #f59e0b, #d97706);
+                    ">
+                    🏦
+                  </div>
+                  <div class="stat-info">
+                    <div class="stat-value" id="rv_adjDeposit">—</div>
+                    <div class="stat-label">Deposit Adjusted</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="review-stage-block">
+                <div class="review-stage-block-header">
+                  <div class="review-stage-icon" style="background: #fef2f2">
+                    🔴
+                  </div>
+                  <div class="review-stage-title">
+                    Stage 1 — Notice Initiation &amp; Move-Out
+                  </div>
+                  <div style="margin-left: auto">
+                    <span class="status-badge initiated">Initiated</span>
+                  </div>
+                </div>
+                <div class="review-stage-body">
+                  <div class="review-kv-grid">
+                    <div class="review-kv">
+                      <div class="review-kv-label">Initiated By</div>
+                      <div class="review-kv-value" id="rv_initiator">—</div>
+                    </div>
+                    <div class="review-kv">
+                      <div class="review-kv-label">Break Option</div>
+                      <div class="review-kv-value" id="rv_breakOption">—</div>
+                    </div>
+                    <div class="review-kv">
+                      <div class="review-kv-label">Notice Given Date</div>
+                      <div class="review-kv-value" id="rv_noticeGivenDate">—</div>
+                    </div>
+                    <div class="review-kv">
+                      <div class="review-kv-label">Move-Out Date</div>
+                      <div class="review-kv-value" id="rv_newEndDate">—</div>
+                    </div>
+                    <div class="review-kv">
+                      <div class="review-kv-label">Lease End Date</div>
+                      <div class="review-kv-value" id="rv_leaseEndDate">—</div>
+                    </div>
+                    <div class="review-kv">
+                      <div class="review-kv-label">Document Uploaded</div>
+                      <div class="review-kv-value" id="rv_document">—</div>
+                    </div>
+                    <div class="review-kv" style="grid-column: 1/-1">
+                      <div class="review-kv-label">Termination Notes</div>
+                      <div class="review-kv-value" id="rv_notes" style="font-size: 13px; color: #605e5c">
+                        —
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="review-stage-block">
+                <div class="review-stage-block-header">
+                  <div class="review-stage-icon" style="background: #eff6ff">
+                    🔧
+                  </div>
+                  <div class="review-stage-title">
+                    Stage 2 — Move-out Inspection
+                  </div>
+                </div>
+                <div class="review-stage-body">
+                  <div class="review-kv-grid">
+                    <div class="review-kv">
+                      <div class="review-kv-label">Work Order</div>
+                      <div class="review-kv-value" id="rv_woNumber">—</div>
+                    </div>
+                    <div class="review-kv">
+                      <div class="review-kv-label">WO Status</div>
+                      <div class="review-kv-value" id="rv_woStatusDetail">
+                        —
+                      </div>
+                    </div>
+                    <div class="review-kv">
+                      <div class="review-kv-label">Incident Type</div>
+                      <div class="review-kv-value" id="rv_incidentType">—</div>
+                    </div>
+                    <div class="review-kv">
+                      <div class="review-kv-label">Functional Location</div>
+                      <div class="review-kv-value" id="rv_functionalLocation">
+                        —
+                      </div>
+                    </div>
+                    <div class="review-kv">
+                      <div class="review-kv-label">Customer</div>
+                      <div class="review-kv-value" id="rv_caseCustomer">—</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="review-stage-block">
+                <div class="review-stage-block-header">
+                  <div class="review-stage-icon" style="background: #f0fdf4">
+                    🔄
+                  </div>
+                  <div class="review-stage-title">
+                    Stage 3 — Charges &amp; Proration
+                  </div>
+                </div>
+                <div class="review-stage-body">
+                  <div class="review-kv-grid" style="margin-bottom: 16px">
+                    <div class="review-kv">
+                      <div class="review-kv-label">Proration Enabled</div>
+                      <div class="review-kv-value" id="rv_proration">No</div>
+                    </div>
+                    <div class="review-kv">
+                      <div class="review-kv-label">New Charges Added</div>
+                      <div class="review-kv-value" id="rv_newCharges">0</div>
+                    </div>
+                    <div class="review-kv">
+                      <div class="review-kv-label"></div>
+                      <div class="review-kv-value"></div>
+                    </div>
+                  </div>
+                  <div id="rv_chargesTable"></div>
+                </div>
+              </div>
+
+              <!-- Rakesh feedback: Stage 4 was missing from Review -->
+              <div class="review-stage-block" id="rv_clausesBlock">
+                <div class="review-stage-block-header">
+                  <div class="review-stage-icon" style="background: #fef9c3">
+                    📜
+                  </div>
+                  <div class="review-stage-title">
+                    Stage 4 — Financial Clauses &amp; Schedules
+                  </div>
+                </div>
+                <div class="review-stage-body">
+                  <div class="review-kv-grid" style="margin-bottom: 16px">
+                    <div class="review-kv">
+                      <div class="review-kv-label">Financial Clauses</div>
+                      <div class="review-kv-value" id="rv_clauseCount">0</div>
+                    </div>
+                    <div class="review-kv">
+                      <div class="review-kv-label">Active Schedules</div>
+                      <div class="review-kv-value" id="rv_scheduleCount">0</div>
+                    </div>
+                    <div class="review-kv">
+                      <div class="review-kv-label">To Be Stopped</div>
+                      <div class="review-kv-value" id="rv_scheduleAfterCount">0</div>
+                    </div>
+                  </div>
+                  <div id="rv_clausesTable" style="font-size:12px;color:#605e5c;"></div>
+                </div>
+              </div>
+
+              <div class="review-stage-block" id="rv_turnoverBlock" style="display: none">
+                <div class="review-stage-block-header">
+                  <div class="review-stage-icon" style="background: #fdf4ff">🛍️</div>
+                  <div class="review-stage-title">Turnover Settlement</div>
+                </div>
+                <div class="review-stage-body">
+                  <div id="rv_turnover"></div>
+                </div>
+              </div>
+
+              <div class="review-stage-block">
+                <div class="review-stage-block-header">
+                  <div class="review-stage-icon" style="background: #fffbeb">
+                    📋
+                  </div>
+                  <div class="review-stage-title">
+                    Stage 5 — Invoices &amp; Deposit Adjustment
+                  </div>
+                </div>
+                <div class="review-stage-body">
+                  <div id="rv_postTermNote"></div>
+                  <div class="review-kv-grid">
+                    <div class="review-kv">
+                      <div class="review-kv-label">Total Dues Selected</div>
+                      <div class="review-kv-value highlight-orange" id="rv_totalDues">
+                        —
+                      </div>
+                    </div>
+                    <div class="review-kv">
+                      <div class="review-kv-label">Invoices Selected</div>
+                      <div class="review-kv-value" id="rv_duesCount">0</div>
+                    </div>
+                    <div class="review-kv">
+                      <div class="review-kv-label">Deposits Adjusted</div>
+                      <div class="review-kv-value" id="rv_depositCount">0</div>
+                    </div>
+                    <div class="review-kv">
+                      <div class="review-kv-label">Total Deposit Deduction</div>
+                      <div class="review-kv-value highlight-orange" id="rv_adjDeposit2">
+                        —
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="validation-notice success" style="margin-top: 20px">
+                ✅ Upon submission: Lease marked as Terminated · Charges updated
+                · Lease History activated · Termination Notice generated and
+                uploaded to SharePoint.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Navigation -->
+      <div class="stage-navigation">
+        <div class="stage-nav-content">
+          <div class="stage-nav-left">
+            <button class="btn btn-secondary" id="btnBack" onclick="LT.prevStage()" style="display: none">
+              ← Back
+            </button>
+          </div>
+          <div style="flex: 1; text-align: center">
+            <span style="font-size: 13px; color: #605e5c; font-weight: 600" id="stageLabel">Stage 1 of 6 — Notice Initiation</span>
+          </div>
+          <div class="stage-nav-right">
+            <button class="btn btn-secondary" onclick="LT.resetForm()">
+              ↺ Reset
+            </button>
+            <button class="btn btn-primary" id="btnNext" onclick="LT.nextStage()">Save &amp; Proceed →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== CHARGE END DATE VIOLATION MODAL ===== -->
+    <div class="modal" id="chargeEndDateViolationModal">
+      <div class="modal-content" style="max-width: 620px">
+        <div class="modal-header" style="background: linear-gradient(135deg, #7b1515, #a61c1c)">
+          <div class="modal-title">
+            📋 Charge End Dates Exceed Move-Out Date
+          </div>
+          <button class="modal-close" onclick="LT.closeModal('chargeEndDateViolationModal')">
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <div style="
+              background: #faf9f8;
+              border: 1px solid #edebe9;
+              border-left: 3px solid #7b1515;
+              border-radius: 0 8px 8px 0;
+              padding: 12px 14px;
+              margin-bottom: 18px;
+              font-size: 13px;
+              color: #323130;
+              line-height: 1.6;
+            ">
+            <strong><span id="cedv_count">0</span> charge(s)</strong> have an
+            end date that exceeds the move-out date of
+            <strong id="cedv_moveOutDate">—</strong>.<br>
+            Update each charge end date to be on or before the move-out date
+            before proceeding.
+          </div>
+          <div class="charges-table-wrapper">
+            <table class="dues-table">
+              <thead>
+                <tr>
+                  <th>Charge Name</th>
+                  <th>Current End Date</th>
+                  <th>Move-Out Date</th>
+                  <th style="text-align: center">Action</th>
+                </tr>
+              </thead>
+              <tbody id="cedv_chargeList"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer" style="justify-content: space-between">
+          <button class="btn btn-secondary" onclick="LT.closeModal('chargeEndDateViolationModal')">
+            ← Go Back
+          </button>
+          <button class="btn btn-primary" onclick="LT.quickFixAllChargeEndDates()">
+            📅 Fix All to Move-Out Date
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== DEPOSIT CONFIRM MODAL ===== -->
+    <div class="modal" id="depositConfirmModal">
+      <div class="modal-content" style="max-width: 520px">
+        <div class="modal-header" style="background: linear-gradient(135deg, #7b1515, #a61c1c)">
+          <div class="modal-title">🏦 Confirm Deposit Adjustment</div>
+          <button class="modal-close" onclick="LT.closeModal('depositConfirmModal')">
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <div style="
+              background: #faf9f8;
+              border: 1px solid #edebe9;
+              border-left: 3px solid #7b1515;
+              border-radius: 0 8px 8px 0;
+              padding: 12px 14px;
+              margin-bottom: 18px;
+              font-size: 13px;
+              color: #323130;
+              line-height: 1.6;
+            ">
+            The selected deposit(s) will be marked
+            <strong>Adjusted</strong> and the deduction recorded.
+            This cannot be undone.
+          </div>
+          <table class="dcm-table">
+            <thead>
+              <tr>
+                <th>Currency</th>
+                <th>Original Amount</th>
+                <th>Deducted</th>
+                <th>Remaining</th>
+              </tr>
+            </thead>
+            <tbody id="dcm_depositRows"></tbody>
+          </table>
+          <div class="dcm-total-row">
+            <span style="color: #605e5c">Total Deduction Applied</span>
+            <span id="dcm_totalDeduction" style="color: #e74c3c">—</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="LT.closeModal('depositConfirmModal')">
+            ← Go Back
+          </button>
+          <button id="dcm_confirmBtn" class="btn btn-primary" onclick="LT.confirmDepositAdjustment()">
+            ✔ Confirm &amp; Continue
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== ADD RECURRING CHARGE MODAL ===== -->
+    <div class="amend-modal-overlay" id="addChargeModal">
+      <div class="amend-modal" style="max-width: 700px">
+        <div class="amend-modal-header">
+          <h3 class="amend-modal-title" id="addChargeModalTitle">
+            Add Recurring Charge
+          </h3>
+          <button class="amend-modal-close" onclick="LT.closeModal('addChargeModal')">
+            <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" style="display: block">
+              <line x1="1" y1="1" x2="11" y2="11"></line>
+              <line x1="11" y1="1" x2="1" y2="11"></line>
+            </svg>
+          </button>
+        </div>
+        <div class="amend-modal-body">
+          <input type="hidden" id="ac_editId">
+          <div class="amend-section-header">Linking Information</div>
+          <div class="amend-form-group full-width">
+            <label class="required">Charge Name</label><input type="text" id="ac_name" placeholder="e.g., Cold Rent, Maintenance Fee">
+          </div>
+          <div class="amend-form-group full-width">
+            <label class="required">Charge Type</label><select id="ac_chargeType">
+              <option value="" selected="selected">Select charge type</option>
+            </select>
+          </div>
+          <div class="amend-form-group full-width">
+            <label>Unit</label><select id="ac_unit">
+              <option value="" selected="selected">All units on this lease (or pick one)</option>
+            </select>
+          </div>
+          <div class="amend-section-header">Timeline Information</div>
+          <div class="amend-form-group full-width">
+            <label class="required">Start Date</label><input type="date" id="ac_startDate" onchange="LT.ac_onStartDateChange()">
+          </div>
+          <div class="amend-form-group full-width">
+            <label class="required">End Date</label>
+            <input type="date" id="ac_endDate" onchange="LT.ac_onEndDateChange()">
+            <span id="ac_endDateHint" style="font-size: 11px; color: #8a8886; margin-top: 3px">Must not exceed the move-out date.</span>
+          </div>
+          <div class="amend-form-group full-width">
+            <label class="required">Frequency</label><select id="ac_frequency" onchange="
+                LT.ac_handleFrequencyVisibility();
+                LT.ac_updateInvoiceGenDateMax();
+              ">
+              <option value="" selected="selected">Select frequency</option>
+            </select>
+          </div>
+          <div class="amend-form-group full-width">
+            <label class="required">Pre Frequency Offset</label><select id="ac_preFrequencyOffset">
+              <option value="false" selected="selected">No</option>
+              <option value="true">Yes</option>
+            </select>
+          </div>
+          <div class="amend-form-group full-width">
+            <label class="required">Proration Enabled</label><select id="ac_prorationEnabled" onchange="LT.ac_handleProrationChange()">
+              <option value="false" selected="selected">No</option>
+              <option value="true">Yes</option>
+            </select>
+          </div>
+          <div id="ac_prorationConditionalFields" style="display: none">
+            <div class="amend-form-group full-width">
+              <label>Proration Enabled for First Cycle</label><select id="ac_prorationEnabledFirstCycle" onchange="LT.ac_handleFirstCycleProrationChange()">
+                <option value="" selected="selected">Select</option>
+                <option value="true">Yes</option>
+                <option value="false">No</option>
+              </select>
+            </div>
+            <div class="amend-form-group full-width" id="ac_firstCycleFrequencyEndDateGroup" style="display: none">
+              <label>First Cycle Frequency End Date</label><input type="date" id="ac_frequencyStartDate">
+            </div>
+            <div class="amend-form-group full-width">
+              <label>Proration Enabled for Last Cycle</label><select id="ac_prorationEnabledLastCycle">
+                <option value="false" selected="selected">No</option>
+                <option value="true">Yes</option>
+              </select>
+            </div>
+          </div>
+          <div class="amend-form-group full-width">
+            <label class="required">Invoice Generation Date</label><input type="date" id="ac_invoiceGenerationDate" onchange="LT.ac_updateInvoiceGenDateMax()">
+          </div>
+          <div class="amend-form-group full-width">
+            <label class="required">Due Date Rule</label><select id="ac_dueDateRule" onchange="LT.ac_handleDueDateRuleChange()">
+              <option value="" selected="selected">Select due date rule</option>
+            </select>
+          </div>
+          <div class="amend-form-group full-width">
+            <label class="required" id="ac_dueInDaysLabel">Due In (Days)</label><input type="number" id="ac_dueInDays" placeholder="e.g., 30" min="0">
+          </div>
+          <div class="amend-section-header">Billing Information</div>
+          <div class="amend-form-group full-width">
+            <label class="required">Currency</label><select id="ac_currency" onchange="LT.ac_handleCurrencyChange()">
+              <option value="" selected="selected">Select currency</option>
+            </select>
+          </div>
+          <div class="amend-form-group full-width" id="ac_useAsInvoiceCurrencyGroup" style="display: none">
+            <label>Use as Invoice Currency</label><select id="ac_useAsInvoiceCurrency">
+              <option value="false" selected="selected">No</option>
+              <option value="true">Yes</option>
+            </select>
+          </div>
+          <div class="amend-form-group full-width">
+            <label class="required">Invoice Type</label>
+            <input type="text" id="ac_invoiceTypeDisplay" placeholder="Auto-populated" readonly="readonly" style="background: #faf9f8; color: #605e5c; cursor: default">
+            <input type="hidden" id="ac_invoiceType">
+          </div>
+          <div class="amend-form-group full-width">
+            <label class="required">Invoice Prefix</label>
+            <input type="text" id="ac_invoicePrefixDisplay" placeholder="Auto-populated" readonly="readonly" style="opacity: 0.6"><input type="hidden" id="ac_invoicePrefix">
+          </div>
+          <div class="amend-form-group full-width">
+            <label>Invoice Separately</label><select id="ac_invoiceSeparately">
+              <option value="false" selected="selected">No</option>
+              <option value="true">Yes</option>
+            </select>
+          </div>
+          <div class="amend-form-group full-width">
+            <label class="required">Amount</label><input type="number" id="ac_amount" placeholder="0.00" step="0.01" min="0">
+          </div>
+          <div class="amend-form-group full-width">
+            <label>Tax Included</label><select id="ac_taxIncluded">
+              <option value="false" selected="selected">No</option>
+              <option value="true">Yes</option>
+            </select>
+          </div>
+          <div class="amend-form-group full-width">
+            <label>Billable Area</label><input type="number" id="ac_billableArea" placeholder="0.00" step="0.01" min="0">
+          </div>
+          <div class="amend-form-group full-width">
+            <label class="required">VAT %</label>
+            <select id="ac_vat">
+              <option value="" selected="selected">Select VAT</option>
+            </select>
+          </div>
+          <div class="amend-form-group full-width">
+            <label class="required">Bank Account Number</label>
+            <div style="position: relative">
+              <input type="text" id="ac_bankAccountDisplay" placeholder="Search bank account..." readonly="readonly" onclick="LT.ac_openBankAccountLookup()" style="
+                  width: 100%;
+                  cursor: pointer;
+                  padding-right: 62px;
+                  text-overflow: ellipsis;
+                  overflow: hidden;
+                  white-space: nowrap;
+                  box-sizing: border-box;
+                ">
+              <input type="hidden" id="ac_bankAccount">
+              <button type="button" id="ac_clearBankAccountBtn" onclick="
+                  LT.ac_clearBankAccountField();
+                  event.stopPropagation();
+                " title="Clear" style="
+                  display: none;
+                  position: absolute;
+                  right: 34px;
+                  top: 50%;
+                  transform: translateY(-50%);
+                  background: none;
+                  border: none;
+                  cursor: pointer;
+                  padding: 4px;
+                  color: #605e5c;
+                  font-size: 13px;
+                  line-height: 1;
+                ">
+                ×
+              </button>
+              <button type="button" onclick="LT.ac_openBankAccountLookup()" style="
+                  position: absolute;
+                  right: 8px;
+                  top: 50%;
+                  transform: translateY(-50%);
+                  background: none;
+                  border: none;
+                  cursor: pointer;
+                  padding: 4px;
+                  color: #605e5c;
+                ">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <circle cx="6" cy="6" r="4.5" stroke="#605e5c" stroke-width="1.4"></circle>
+                  <line x1="9.5" y1="9.5" x2="13" y2="13" stroke="#605e5c" stroke-width="1.4" stroke-linecap="round"></line>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="amend-form-group full-width" id="ac_rateRuleGroup" style="display: none">
+            <label class="required">Exchange Rate Rule</label>
+            <div style="position: relative">
+              <input type="text" id="ac_rateRuleDisplay" placeholder="Search rate rule..." readonly="readonly" onclick="LT.ac_openRateRuleLookup()" style="
+                  width: 100%;
+                  cursor: pointer;
+                  padding-right: 62px;
+                  text-overflow: ellipsis;
+                  overflow: hidden;
+                  white-space: nowrap;
+                  box-sizing: border-box;
+                ">
+              <input type="hidden" id="ac_rateRule">
+              <button type="button" id="ac_clearRateRuleBtn" onclick="
+                  LT.ac_clearRateRuleField();
+                  event.stopPropagation();
+                " title="Clear" style="
+                  display: none;
+                  position: absolute;
+                  right: 34px;
+                  top: 50%;
+                  transform: translateY(-50%);
+                  background: none;
+                  border: none;
+                  cursor: pointer;
+                  padding: 4px;
+                  color: #605e5c;
+                  font-size: 13px;
+                  line-height: 1;
+                ">
+                ×
+              </button>
+              <button type="button" onclick="LT.ac_openRateRuleLookup()" style="
+                  position: absolute;
+                  right: 8px;
+                  top: 50%;
+                  transform: translateY(-50%);
+                  background: none;
+                  border: none;
+                  cursor: pointer;
+                  padding: 4px;
+                  color: #605e5c;
+                ">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <circle cx="6" cy="6" r="4.5" stroke="#605e5c" stroke-width="1.4"></circle>
+                  <line x1="9.5" y1="9.5" x2="13" y2="13" stroke="#605e5c" stroke-width="1.4" stroke-linecap="round"></line>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="amend-form-group full-width" id="ac_exchangeRateDayGroup" style="display: none">
+            <label class="required">Exchange Rate Day</label><input type="number" id="ac_exchangeRateDay" placeholder="Enter day (1-31)" step="1" min="1" max="31" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+          </div>
+        </div>
+        <div class="amend-modal-footer">
+          <button class="btn-amend-close" onclick="LT.closeModal('addChargeModal')">
+            Cancel
+          </button>
+          <button class="btn-amend-save" id="addChargeSaveBtn" onclick="LT.saveNewCharge()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Add Charge
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bank Account Lookup Modal -->
+    <div class="amend-modal-overlay" id="ac_bankAccountLookupModal" style="z-index: 7000">
+      <div class="amend-modal" style="max-width: 700px">
+        <div class="amend-modal-header">
+          <h3 class="amend-modal-title">Select Bank Account</h3>
+          <button class="amend-modal-close" onclick="LT.closeModal('ac_bankAccountLookupModal')">
+            <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" style="display: block">
+              <line x1="1" y1="1" x2="11" y2="11"></line>
+              <line x1="11" y1="1" x2="1" y2="11"></line>
+            </svg>
+          </button>
+        </div>
+        <div class="amend-modal-body">
+          <input type="text" id="ac_bankAccountSearchBox" placeholder="Search bank account number..." oninput="LT.ac_searchBankAccounts()" style="
+              width: 100%;
+              font-size: 14px;
+              padding: 10px 14px;
+              border: 1.5px solid #edebe9;
+              border-radius: 6px;
+              font-family: inherit;
+              margin-bottom: 16px;
+            ">
+          <div id="ac_bankAccountSearchResults">
+            <div style="text-align: center; padding: 20px; color: #718096">
+              Loading bank accounts...
+            </div>
+          </div>
+        </div>
+        <div class="amend-modal-footer">
+          <button class="btn-amend-close" onclick="LT.closeModal('ac_bankAccountLookupModal')">
+            Cancel
+          </button>
+          <button class="btn-amend-save" onclick="LT.ac_deselectBankAccount()" id="ac_btnDeselectBankAccount" style="
+              display: none;
+              background: linear-gradient(135deg, #e74c3c, #c0392b);
+            ">
+            Deselect
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rate Rule Lookup Modal -->
+    <div class="amend-modal-overlay" id="ac_rateRuleLookupModal" style="z-index: 7000">
+      <div class="amend-modal" style="max-width: 700px">
+        <div class="amend-modal-header">
+          <h3 class="amend-modal-title">Select Rate Rule</h3>
+          <button class="amend-modal-close" onclick="LT.closeModal('ac_rateRuleLookupModal')">
+            <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" style="display: block">
+              <line x1="1" y1="1" x2="11" y2="11"></line>
+              <line x1="11" y1="1" x2="1" y2="11"></line>
+            </svg>
+          </button>
+        </div>
+        <div class="amend-modal-body">
+          <input type="text" id="ac_rateRuleSearchBox" placeholder="Search rate rule name..." oninput="LT.ac_searchRateRules()" style="
+              width: 100%;
+              font-size: 14px;
+              padding: 10px 14px;
+              border: 1.5px solid #edebe9;
+              border-radius: 6px;
+              font-family: inherit;
+              margin-bottom: 16px;
+            ">
+          <div id="ac_rateRuleSearchResults">
+            <div style="text-align: center; padding: 20px; color: #718096">
+              Loading rate rules...
+            </div>
+          </div>
+        </div>
+        <div class="amend-modal-footer">
+          <button class="btn-amend-close" onclick="LT.closeModal('ac_rateRuleLookupModal')">
+            Cancel
+          </button>
+          <button class="btn-amend-save" onclick="LT.ac_deselectRateRule()" id="ac_btnDeselectRateRule" style="
+              display: none;
+              background: linear-gradient(135deg, #e74c3c, #c0392b);
+            ">
+            Deselect
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== CHARGE EDIT MODAL ===== -->
+    <div class="modal charge-edit-modal" id="chargeEditModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div class="modal-title">✏️ Edit Recurring Charge</div>
+          <button class="modal-close" onclick="LT.closeModal('chargeEditModal')">
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="charge-edit-info-box">
+            <div class="charge-edit-info-row">
+              <span class="charge-edit-info-label">Charge Name</span><span class="charge-edit-info-value" id="editChargeName">—</span>
+            </div>
+            <div class="charge-edit-info-row" id="editChargeTypeRow" style="display: none">
+              <span class="charge-edit-info-label">Charge Type</span><span class="charge-edit-info-value" id="editChargeType">—</span>
+            </div>
+            <div class="charge-edit-info-row">
+              <span class="charge-edit-info-label">Frequency</span><span class="charge-edit-info-value" id="editChargeFrequency">—</span>
+            </div>
+            <div class="charge-edit-info-row">
+              <span class="charge-edit-info-label">Amount per Cycle</span><span class="charge-edit-info-value" id="editChargeAmount">—</span>
+            </div>
+            <div class="charge-edit-info-row" id="editChargeStartRow" style="display: none">
+              <span class="charge-edit-info-label">Start Date</span><span class="charge-edit-info-value" id="editChargeStartDate">—</span>
+            </div>
+            <div class="charge-edit-info-row">
+              <span class="charge-edit-info-label">Original End Date</span><span class="charge-edit-info-value" id="editChargeOriginalEnd">—</span>
+            </div>
+          </div>
+          <div class="form-group" style="margin-top: 4px">
+            <label>Move out Date</label>
+            <input type="date" id="editChargeEndDate" onchange="LT.onEditEndDateChange()">
+            <span class="date-constraint-hint" id="editDateHint">Cannot exceed the move-out date.</span>
+          </div>
+          <div class="proration-toggle-row">
+            <div class="proration-toggle-text">
+              <div class="ptl">Enable Last Cycle Proration</div>
+              <div class="pts">
+                Calculates a partial amount for the final billing cycle based on
+                actual days
+              </div>
+            </div>
+            <label class="toggle-switch"><input type="checkbox" id="editChargeProrate" onchange="LT.onEditProrateChange()"><span class="toggle-slider"></span></label>
+          </div>
+          <div class="prorated-preview" id="proratedPreview">
+            <div class="prorated-preview-label">
+              Total Billing to Termination
+            </div>
+            <div class="prorated-preview-value" id="proratedPreviewValue">
+              —
+            </div>
+            <div style="font-size: 11px; color: #166534; margin-top: 4px" id="proratedPreviewCalc"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="LT.closeModal('chargeEditModal')">
+            Cancel
+          </button>
+          <button class="btn btn-primary" onclick="LT.saveChargeEdit()">
+            💾 Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== BREAK OPTION WARNING MODAL ===== -->
+    <div class="modal break-warning-modal" id="breakOptionWarningModal">
+      <div class="modal-content" style="
+          max-width: 540px;
+          display: flex;
+          flex-direction: column;
+          max-height: 90vh;
+        ">
+        <div class="break-warning-modal-header">
+          <button class="break-warning-modal-close" onclick="LT.closeModal('breakOptionWarningModal')">
+            ×
+          </button>
+          <div class="break-warning-header-inner">
+            <div class="break-warning-header-icon-wrap">⏰</div>
+            <div class="break-warning-header-text">
+              <div class="break-warning-header-title" id="bwModalHeaderTitle">
+                Break Option
+              </div>
+              <div class="break-warning-header-sub" id="bwModalHeaderSub">
+                This lease has a Break Option. Review the details below before
+                proceeding.
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="break-warning-body" style="overflow-y: auto; flex: 1">
+          <div style="text-align: center; margin-bottom: 14px">
+            <span class="bw-window-badge outside" id="bwWindowBadge">⚠️ Outside Exercisable Window</span>
+          </div>
+          <div class="break-warning-dates-row">
+            <div class="break-warning-date-card">
+              <div class="break-warning-date-label">Available From</div>
+              <div class="break-warning-date-value" id="bwd_availFrom">—</div>
+            </div>
+            <div class="break-warning-date-card today">
+              <div class="break-warning-date-label" style="color: #0369a1">
+                Today
+              </div>
+              <div class="break-warning-date-value" id="bwd_today" style="color: #0c4a6e">
+                —
+              </div>
+            </div>
+            <div class="break-warning-date-card">
+              <div class="break-warning-date-label">Expiry Date</div>
+              <div class="break-warning-date-value" id="bwd_expiry">—</div>
+            </div>
+          </div>
+          <div class="break-warning-reason-box" id="breakWarningDetail"></div>
+          <div class="break-warning-penalty-box" id="bwPenaltyBox" style="flex-direction: column; gap: 6px">
+            <div style="display: flex; align-items: flex-start; gap: 10px">
+              <span class="break-warning-penalty-icon">⚠️</span>
+              <div>
+                <strong>Penalty Notice:</strong> Proceeding outside the break
+                option window may result in a contractual penalty as per the
+                terms of the lease agreement.
+              </div>
+            </div>
+            <div id="bwPenaltyAmount" style="display: none"></div>
+          </div>
+          <div class="break-warning-confirm-text">
+            Click <strong>Save &amp; Proceed</strong> to record the exercised
+            date and continue to Stage 2.
+          </div>
+        </div>
+        <div class="break-warning-modal-footer">
+          <button class="btn btn-secondary" onclick="LT.closeModal('breakOptionWarningModal')">
+            ← Cancel &amp; Go Back
+          </button>
+          <button class="btn btn-warning-proceed btn" id="bwProceedBtn" onclick="LT.proceedDespiteBreakWarning()">
+            💾 Save &amp; Proceed →
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== WO INCOMPLETE MODAL ===== -->
+    <div class="modal wo-warning-modal" id="woIncompleteModal">
+      <div class="modal-content" style="max-width: 480px">
+        <div class="wo-warning-header">
+          <div class="wo-warning-header-icon">🔧</div>
+          <div>
+            <div class="wo-warning-header-title">Inspection Not Completed</div>
+            <div class="wo-warning-header-sub">
+              Are you sure you want to proceed?
+            </div>
+          </div>
+        </div>
+        <div class="wo-warning-body">
+          <div class="wo-warning-status-display">
+            <div class="wo-warning-status-label">Current Work Order Status</div>
+            <div class="wo-warning-status-value" id="woModalStatusValue">—</div>
+          </div>
+          <div class="wo-warning-text" id="woModalStatusDesc">
+            The inspection work order has not been marked as Completed yet.
+          </div>
+          <div class="wo-warning-text" style="margin-top: 8px">
+            You can still proceed and update details after the inspection is
+            done.
+          </div>
+        </div>
+        <div class="wo-warning-footer">
+          <button class="btn btn-secondary" onclick="LT.closeModal('woIncompleteModal')">
+            ← Go Back
+          </button>
+          <button class="btn btn-wo-proceed btn" onclick="LT.proceedDespiteWOIncomplete()">
+            Continue Anyway →
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== SUBMIT CONFIRM MODAL ===== -->
+    <div class="modal" id="submitConfirmModal">
+      <div class="modal-content" style="max-width: 520px">
+        <div class="modal-header" style="background: linear-gradient(135deg, #7b1515, #a61c1c)">
+          <div class="modal-title">Confirm Lease Termination</div>
+          <button class="modal-close" onclick="LT.closeModal('submitConfirmModal')">
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <p style="
+              font-size: 15px;
+              color: #323130;
+              line-height: 1.7;
+              margin-bottom: 16px;
+            ">
+            You are about to
+            <strong>finalise the lease termination</strong> for:<br><strong id="confirmLeaseTitle">Unknown Lease</strong>
+          </p>
+          <div style="
+              background: #fff8f8;
+              border: 1px solid #fecaca;
+              border-left: 3px solid #7b1515;
+              border-radius: 0 8px 8px 0;
+              padding: 12px 14px;
+              font-size: 13px;
+              color: #7b1515;
+              line-height: 1.6;
+            ">
+            This action cannot be undone. All records will be updated, documents
+            generated, and the lease will be marked as
+            <strong>Terminated</strong>.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="LT.closeModal('submitConfirmModal')">
+            Cancel
+          </button>
+          <button class="btn btn-primary" onclick="LT.submitTermination()">
+            ✔ Confirm &amp; Submit
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- ===== STAGE 4 SKIP DEPOSIT SAVE MODAL ===== -->
+    <div class="modal" id="depositSkipModal">
+      <div class="modal-content" style="max-width: 480px">
+        <div class="modal-header" style="background: linear-gradient(135deg, #7b1515, #a61c1c)">
+          <div class="modal-title">⚠️ Deposit Changes Not Saved</div>
+          <button class="modal-close" onclick="LT.closeModal('depositSkipModal')">
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <div style="
+              background: #fffbeb;
+              border: 1px solid #fde68a;
+              border-left: 3px solid #f59e0b;
+              border-radius: 0 8px 8px 0;
+              padding: 14px 16px;
+              font-size: 13px;
+              color: #92400e;
+              line-height: 1.7;
+              margin-bottom: 14px;
+            ">
+            <strong>Your deposit selections have not been saved yet.</strong><br>
+            If you close this window or navigate away, all deposit and invoice
+            selections made on this screen will be lost.
+          </div>
+          <div style="font-size: 13px; color: #605e5c; line-height: 1.6">
+            You can return to this stage later to apply deposit deductions.
+            Click <strong>Continue</strong> to proceed to the final review
+            without saving deposit changes.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="LT.closeModal('depositSkipModal')">
+            ← Go Back
+          </button>
+          <button class="btn btn-primary" onclick="
+              LT.closeModal('depositSkipModal');
+              LT.goToStage(6);
+            ">
+            Continue →
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- Saving Overlay -->
+    <div id="savingOverlay" style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(123, 21, 21, 0.92);
+        z-index: 8000;
+        align-items: center;
+        justify-content: center;
+      ">
+      <div style="text-align: center">
+        <div class="loader"></div>
+        <div id="loadingMessage" style="
+            color: white;
+            margin-top: 16px;
+            font-size: 16px;
+            font-weight: 600;
+          ">
+          Processing termination...
+        </div>
+      </div>
+    </div>
+ <script src="/WebResources/array_LeaseTerminationjs" defer></script>
+    <noscript>
+      <style>
+        #loadingScreen {
+          display: none !important;
+        }
+        #formContainer {
+          opacity: 1 !important;
+        }
+      </style>
+    </noscript>
+
+    <script>
+      window.addEventListener("DOMContentLoaded", function () {
+        setTimeout(function () {
+          var ls = document.getElementById("loadingScreen");
+          var fc = document.getElementById("formContainer");
+          if (ls && !ls.classList.contains("hidden")) {
+            ls.classList.add("hidden");
+            setTimeout(function () {
+              ls.style.display = "none";
+            }, 500);
+          }
+          if (fc && !fc.classList.contains("loaded"))
+            fc.classList.add("loaded");
+        }, 1000);
+      });
+    </script>
+    <!-- ===== NEW CHARGE CONFIRM MODAL ===== -->
+    <div class="modal" id="pendingChargesConfirmModal">
+      <div class="modal-content" style="max-width: 500px">
+        <div class="modal-header" style="background: linear-gradient(135deg, #2bad76, #0e6b0e)">
+          <div class="modal-title">✅ New Charges Saved as Draft</div>
+          <button class="modal-close" onclick="LT.closeModal('pendingChargesConfirmModal')">
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <div style="
+              background: #f0fdf4;
+              border: 1px solid #86efac;
+              border-left: 3px solid #2bad76;
+              border-radius: 0 8px 8px 0;
+              padding: 14px 16px;
+              font-size: 13px;
+              color: #166534;
+              line-height: 1.7;
+              margin-bottom: 14px;
+            ">
+            <strong><span id="pcm_chargeCount">0</span> new charge(s) have been saved
+              with status <em>Draft</em>.</strong>
+          </div>
+          <div style="font-size: 13px; color: #605e5c; line-height: 1.7">
+            These charges are currently in <strong>Draft</strong> status. They will be automatically
+            <strong>activated</strong> when you click <strong>Submit</strong> on
+            the final step.<br><br>
+            Do you want to continue to the next step?
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="LT.closeModal('pendingChargesConfirmModal')">
+            ← Go Back
+          </button>
+          <button class="btn btn-primary" onclick="LT._confirmPendingChargesContinue()">
+            Continue →
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== RESET CONFIRM MODAL ===== -->
+    <div class="modal" id="resetConfirmModal">
+      <div class="modal-content" style="max-width: 520px">
+        <div class="modal-header" style="background: linear-gradient(135deg, #7b1515, #a61c1c)">
+          <div class="modal-title">↺ Reset Termination</div>
+          <button class="modal-close" onclick="LT.closeModal('resetConfirmModal')">
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <div style="
+              background: #fef2f2;
+              border: 1px solid #fecaca;
+              border-left: 3px solid #a61c1c;
+              border-radius: 0 8px 8px 0;
+              padding: 14px 16px;
+              font-size: 13px;
+              color: #7b1515;
+              line-height: 1.7;
+              margin-bottom: 14px;
+            ">
+            This will undo <strong>ALL changes</strong> made during this
+            termination process:
+          </div>
+          <ul style="
+              font-size: 13px;
+              color: #605e5c;
+              line-height: 2;
+              margin-left: 20px;
+            ">
+            <li>Clear exercised/effective dates on the break option</li>
+            <li>Cancel the inspection work order</li>
+            <li>Clear termination end dates on recurring charges</li>
+            <li>Restore deposit status and clear adjusted amounts</li>
+            <li>Deactivate the lease history record</li>
+          </ul>
+          <div style="
+              margin-top: 14px;
+              font-size: 13px;
+              font-weight: 700;
+              color: #7b1515;
+            ">
+            Are you sure you want to reset?
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="LT.closeModal('resetConfirmModal')">
+            Cancel
+          </button>
+          <button class="btn btn-primary" onclick="LT._confirmReset()" style="background: linear-gradient(135deg, #7b1515, #a61c1c)">
+            ↺ Yes, Reset Everything
+          </button>
+        </div>
+      </div>
+    </div>
+  </body></html>
