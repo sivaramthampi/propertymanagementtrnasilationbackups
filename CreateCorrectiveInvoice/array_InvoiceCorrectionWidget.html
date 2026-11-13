@@ -1,0 +1,1825 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        min-height: 100vh;
+        padding: 20px;
+        color: #2c3e50;
+      }
+
+      .container {
+        width: 100%;
+        max-width: 1100px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        overflow: hidden;
+      }
+
+      .header {
+        background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+        padding: 26px;
+        color: white;
+      }
+      .header h1 {
+        font-size: 1.75em;
+        font-weight: 600;
+        color: white;
+        margin-bottom: 6px;
+      }
+      .header p {
+        color: rgba(255, 255, 255, 0.85);
+        font-size: 0.95em;
+      }
+
+      .content {
+        padding: 32px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .card {
+        background: white;
+        border: 1px solid #e8ecef;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+        transition: box-shadow 0.2s;
+        animation: fadeIn 0.25s ease both;
+      }
+      .card:nth-child(2) {
+        animation-delay: 0.06s;
+      }
+      .card:nth-child(3) {
+        animation-delay: 0.12s;
+      }
+      .card:hover {
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+      }
+
+      .card-header {
+        padding: 14px 24px;
+        border-bottom: 1px solid #e8ecef;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      }
+      .card-header h3 {
+        font-size: 0.8em;
+        font-weight: 600;
+        color: #495057;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        margin: 0;
+      }
+      .card-body {
+        padding: 24px;
+      }
+
+      /* Form Grid */
+      .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      .form-grid .full-width {
+        grid-column: 1 / -1;
+      }
+      .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .form-group label {
+        font-size: 0.8em;
+        font-weight: 600;
+        color: #4a5568;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .form-group input,
+      .form-group select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 0.9em;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #2c3e50;
+        background: white;
+        transition:
+          border 0.2s,
+          box-shadow 0.2s;
+        appearance: none;
+        -webkit-appearance: none;
+        opacity: 1;
+      }
+      .form-group input:focus,
+      .form-group select:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      }
+      .form-group input[readonly],
+      .form-group select[disabled] {
+        background: #f8f9fa;
+        color: #464646;
+        -webkit-text-fill-color: #3b3b3b;
+        cursor: default;
+        border-color: #e8ecef;
+        opacity: 1;
+      }
+      .required {
+        color: #e74c3c;
+        margin-left: 2px;
+      }
+
+      .select-wrap {
+        position: relative;
+      }
+      .select-wrap::after {
+        content: "";
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 0;
+        height: 0;
+        border-left: 4px solid transparent;
+        border-right: 4px solid transparent;
+        border-top: 5px solid #a0aec0;
+        pointer-events: none;
+      }
+      .select-wrap select {
+        padding-right: 30px;
+      }
+
+      .section-divider {
+        grid-column: 1 / -1;
+        font-size: 0.75em;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #a0aec0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 4px;
+      }
+      .section-divider::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: #e8ecef;
+      }
+
+      /* Table */
+      .table-wrap {
+        overflow-x: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9em;
+      }
+      thead {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      }
+      thead th {
+        padding: 12px 14px;
+        text-align: left;
+        font-size: 0.75em;
+        font-weight: 600;
+        color: #495057;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #e8ecef;
+        white-space: nowrap;
+      }
+      tbody tr {
+        border-bottom: 1px solid #f0f0f0;
+        transition: background 0.15s;
+      }
+      tbody tr:hover {
+        background: #f8f9fa;
+      }
+      tbody tr:last-child {
+        border-bottom: none;
+      }
+      tbody td {
+        padding: 11px 14px;
+        color: #2c3e50;
+        white-space: nowrap;
+        vertical-align: middle;
+      }
+      tbody td.num {
+        text-align: right;
+        color: #4a5568;
+      }
+      .empty-row td {
+        text-align: center;
+        color: #a0aec0;
+        padding: 40px;
+        font-style: italic;
+        font-size: 0.9em;
+      }
+
+      /* Badges */
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 0.78em;
+        font-weight: 600;
+      }
+      .badge-yes {
+        background: #d1fae5;
+        color: #059669;
+      }
+      .badge-no {
+        background: #f1f5f9;
+        color: #94a3b8;
+      }
+
+      .card-footer {
+        padding: 16px 24px;
+        border-top: 1px solid #e8ecef;
+        background: #f8f9fa;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .btn {
+        padding: 10px 24px;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.9em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .btn:active {
+        transform: scale(0.98);
+      }
+      .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.25);
+      }
+      .btn-primary:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.35);
+      }
+      .btn-primary svg {
+        stroke: white;
+        fill: none;
+        stroke-width: 2.5;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        width: 14px;
+        height: 14px;
+      }
+      .btn-primary:disabled {
+        background: linear-gradient(135deg, #cbd5e0, #a0aec0);
+        box-shadow: none;
+        cursor: not-allowed;
+        opacity: 0.7;
+      }
+
+      /* Spinner */
+      .loader-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(4px);
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+      }
+      .loader-overlay.active {
+        display: flex !important;
+      }
+      .loader-content {
+        text-align: center;
+      }
+      .loader-spinner {
+        width: 48px;
+        height: 48px;
+        border: 4px solid #e5e7eb;
+        border-top: 4px solid #667eea;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin: 0 auto 16px;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .loader-text {
+        color: #4a5568;
+        font-size: 0.95em;
+        font-weight: 500;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* ── Confirmation Overlay ───────────────────────────────────────────────── */
+      .confirm-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.55);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        z-index: 9998;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+      }
+      .confirm-overlay.active {
+        display: flex;
+      }
+
+      .confirm-modal {
+        background: white;
+        border-radius: 20px;
+        padding: 40px 36px 32px;
+        max-width: 480px;
+        width: 100%;
+        text-align: left;
+        box-shadow:
+          0 24px 60px rgba(0, 0, 0, 0.18),
+          0 0 0 1px rgba(255, 255, 255, 0.1);
+        position: relative;
+        animation: modalPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+      }
+      @keyframes modalPop {
+        from {
+          opacity: 0;
+          transform: scale(0.85) translateY(16px);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+        }
+      }
+
+      .confirm-modal::before {
+        content: "";
+        position: absolute;
+        top: -1px;
+        left: -1px;
+        right: -1px;
+        height: 5px;
+        border-radius: 20px 20px 0 0;
+        background: linear-gradient(
+          90deg,
+          #f6ad55 0%,
+          #ed8936 50%,
+          #dd6b20 100%
+        );
+      }
+
+      .confirm-icon-wrap {
+        width: 56px;
+        height: 56px;
+        margin-bottom: 20px;
+        border-radius: 50%;
+        background: #fef3c7;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .confirm-icon-wrap svg {
+        width: 26px;
+        height: 26px;
+        stroke: #d97706;
+        fill: none;
+        stroke-width: 2.5;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .confirm-modal h2 {
+        font-size: 1.2em;
+        font-weight: 700;
+        color: #1a202c;
+        margin-bottom: 8px;
+        line-height: 1.3;
+      }
+      .confirm-modal p {
+        font-size: 0.88em;
+        color: #64748b;
+        line-height: 1.6;
+        margin-bottom: 20px;
+      }
+      .confirm-modal p strong {
+        color: #2d3748;
+        font-weight: 600;
+      }
+
+      .confirm-summary {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 14px 16px;
+        margin-bottom: 24px;
+        font-size: 0.85em;
+      }
+      .confirm-summary-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 5px 0;
+        border-bottom: 1px solid #f0f4f8;
+        gap: 12px;
+      }
+      .confirm-summary-row:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+      }
+      .confirm-summary-row:first-child {
+        padding-top: 0;
+      }
+      .confirm-summary-label {
+        color: #94a3b8;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        font-size: 0.8em;
+        white-space: nowrap;
+      }
+      .confirm-summary-value {
+        color: #2d3748;
+        font-weight: 500;
+        text-align: right;
+        word-break: break-word;
+        max-width: 260px;
+      }
+
+      .confirm-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+      }
+      .btn-cancel {
+        padding: 10px 22px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background: white;
+        color: #4a5568;
+        font-size: 0.88em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .btn-cancel:hover {
+        background: #f8fafc;
+        border-color: #cbd5e0;
+      }
+      .btn-cancel:active {
+        transform: scale(0.98);
+      }
+
+      .btn-confirm {
+        padding: 10px 22px;
+        border: none;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        font-size: 0.88em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.25);
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+      }
+      .btn-confirm:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.35);
+      }
+      .btn-confirm:active {
+        transform: scale(0.98);
+      }
+      .btn-confirm svg {
+        stroke: white;
+        fill: none;
+        stroke-width: 2.5;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        width: 13px;
+        height: 13px;
+      }
+
+      /* ── Success Popup ──────────────────────────────────────────────────────── */
+      .success-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.55);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        z-index: 10000;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+      }
+      .success-overlay.active {
+        display: flex;
+      }
+      .success-modal {
+        background: white;
+        border-radius: 20px;
+        padding: 48px 40px 40px;
+        max-width: 420px;
+        width: 100%;
+        text-align: center;
+        box-shadow:
+          0 24px 60px rgba(0, 0, 0, 0.18),
+          0 0 0 1px rgba(255, 255, 255, 0.1);
+        position: relative;
+        animation: modalPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+      }
+      .success-modal::before {
+        content: "";
+        position: absolute;
+        top: -1px;
+        left: -1px;
+        right: -1px;
+        height: 5px;
+        border-radius: 20px 20px 0 0;
+        background: linear-gradient(
+          90deg,
+          #667eea 0%,
+          #764ba2 50%,
+          #f093fb 100%
+        );
+      }
+      .success-icon-wrap {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 24px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: iconBounce 0.5s 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+      }
+      @keyframes iconBounce {
+        from {
+          opacity: 0;
+          transform: scale(0.4);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+      .success-icon-wrap svg {
+        width: 38px;
+        height: 38px;
+        stroke: #059669;
+        fill: none;
+        stroke-width: 2.5;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-dasharray: 60;
+        stroke-dashoffset: 60;
+        animation: drawCheck 0.45s 0.55s ease forwards;
+      }
+      @keyframes drawCheck {
+        to {
+          stroke-dashoffset: 0;
+        }
+      }
+      .success-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: linear-gradient(
+          135deg,
+          rgba(102, 126, 234, 0.1) 0%,
+          rgba(118, 75, 162, 0.1) 100%
+        );
+        color: #667eea;
+        font-size: 0.72em;
+        font-weight: 700;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+        padding: 4px 12px;
+        border-radius: 20px;
+        margin-bottom: 14px;
+        animation: fadeSlideUp 0.35s 0.4s ease both;
+      }
+      .success-badge svg {
+        width: 10px;
+        height: 10px;
+        fill: #667eea;
+      }
+      .success-modal h2 {
+        font-size: 1.45em;
+        font-weight: 700;
+        color: #1a202c;
+        margin-bottom: 10px;
+        animation: fadeSlideUp 0.35s 0.45s ease both;
+        line-height: 1.3;
+      }
+      .success-modal p {
+        font-size: 0.9em;
+        color: #64748b;
+        line-height: 1.6;
+        margin-bottom: 32px;
+        animation: fadeSlideUp 0.35s 0.5s ease both;
+      }
+      .success-modal p strong {
+        color: #2d3748;
+        font-weight: 600;
+      }
+      @keyframes fadeSlideUp {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .success-details {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-bottom: 28px;
+        animation: fadeSlideUp 0.35s 0.55s ease both;
+      }
+      .detail-pill {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 10px 16px;
+        text-align: center;
+        min-width: 110px;
+      }
+      .detail-pill .pill-label {
+        font-size: 0.68em;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #94a3b8;
+        margin-bottom: 4px;
+      }
+      .detail-pill .pill-value {
+        font-size: 0.88em;
+        font-weight: 700;
+        color: #2d3748;
+      }
+      .success-close-btn {
+        width: 100%;
+        padding: 13px;
+        border: none;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        font-size: 0.92em;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        animation: fadeSlideUp 0.35s 0.6s ease both;
+        letter-spacing: 0.02em;
+      }
+      .success-close-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+      }
+      .success-close-btn:active {
+        transform: scale(0.98);
+      }
+
+      .field-error {
+        font-size: 0.8em;
+        color: #e53e3e;
+        margin-top: 4px;
+        display: none;
+      }
+      .field-error.show {
+        display: block;
+      }
+
+      @media (max-width: 640px) {
+        .form-grid {
+          grid-template-columns: 1fr;
+        }
+        .form-grid .full-width {
+          grid-column: 1;
+        }
+        .confirm-actions {
+          flex-direction: column-reverse;
+        }
+        .btn-cancel,
+        .btn-confirm {
+          width: 100%;
+          justify-content: center;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Spinner -->
+    <div class="loader-overlay" id="spinner">
+      <div class="loader-content">
+        <div class="loader-spinner"></div>
+        <div class="loader-text">Processing…</div>
+      </div>
+    </div>
+
+    <!-- ── Confirmation Modal ───────────────────────────────────────────────────── -->
+    <div class="confirm-overlay" id="confirmOverlay">
+      <div class="confirm-modal">
+        <div class="confirm-icon-wrap">
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
+            />
+            <line x1="12" y1="9" x2="12" y2="13" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+          </svg>
+        </div>
+        <h2 id="confirmTitle">Confirm Submission</h2>
+        <p id="confirmMessage">
+          Please review the details below before proceeding. This action cannot
+          be undone.
+        </p>
+        <div class="confirm-summary" id="confirmSummary"></div>
+        <div class="confirm-actions">
+          <button class="btn-cancel" onclick="closeConfirm()">
+            Cancel — Go Back
+          </button>
+          <button
+            class="btn-confirm"
+            id="confirmProceedBtn"
+            onclick="proceedSubmit()"
+          >
+            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg>
+            Confirm &amp; Submit
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Success Popup -->
+    <div class="success-overlay" id="successOverlay">
+      <div class="success-modal">
+        <div class="success-icon-wrap">
+          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg>
+        </div>
+        <div class="success-badge">
+          <svg viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" /></svg>
+          <span id="successBadgeText">Completed</span>
+        </div>
+        <h2 id="successTitle">Invoice Processed!</h2>
+        <p id="successMessage">Your request has been submitted successfully.</p>
+        <div class="success-details" id="successDetails"></div>
+        <button
+          class="success-close-btn"
+          id="openInvoiceBtn"
+          style="margin-top: 10px; display: none"
+        >
+          Open Corrected Invoice
+        </button>
+        <button
+          class="success-close-btn"
+          style="margin-top: 10px"
+          onclick="closeSuccessAndExit()"
+        >
+          Done — Close Window
+        </button>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="header">
+        <h1>Invoice Correction</h1>
+        <p>Create a corrected invoice for an existing invoice</p>
+        <div
+          id="invoiceNoPreviewBanner"
+          style="
+            display: none;
+            margin-top: 12px;
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.15);
+            border-left: 3px solid #4fd1c5;
+            border-radius: 4px;
+            color: #ffffff;
+            font-size: 0.9em;
+          "
+        >
+          <strong>Expected Invoice ID:</strong>
+          <span id="invoiceNoPreviewValue">—</span>
+          <span style="opacity: 0.75; font-size: 0.85em; margin-left: 8px"
+            >(The final ID will be secured and assigned upon saving)</span
+          >
+        </div>
+      </div>
+
+      <div class="content">
+        <!-- Corrected Invoice Header -->
+        <div class="card" id="invoiceHeaderSection">
+          <div class="card-header"><h3>Corrected Invoice</h3></div>
+          <div class="card-body">
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Invoice Name</label>
+                <input readonly id="name" placeholder="—" />
+              </div>
+              <div class="form-group">
+                <label>Tenant</label>
+                <div class="select-wrap">
+                  <select disabled id="accountLookup"></select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Invoice Type</label>
+                <div class="select-wrap">
+                  <select id="invoiceTypeLookup" disabled></select>
+                </div>
+              </div>
+              <div class="form-group" style="display: none">
+                <label>Lease Agreement</label>
+                <div class="select-wrap">
+                  <select disabled id="leaseLookup"></select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Property</label>
+                <div class="select-wrap">
+                  <select disabled id="propertyLookup"></select>
+                </div>
+              </div>
+
+              <div class="dis" style="display: none; padding: 0px; margin: 0px">
+                <div class="section-divider">Billing Address</div>
+                <div class="form-group full-width">
+                  <label>Bill-To Name</label>
+                  <input readonly id="billto_name" placeholder="—" />
+                </div>
+                <div class="form-group">
+                  <label>Address Line 1</label>
+                  <input readonly id="bill_line1" placeholder="—" />
+                </div>
+                <div class="form-group">
+                  <label>Address Line 2</label>
+                  <input readonly id="bill_line2" placeholder="—" />
+                </div>
+                <div class="form-group">
+                  <label>Address Line 3</label>
+                  <input readonly id="bill_line3" placeholder="—" />
+                </div>
+                <div class="form-group">
+                  <label>Postal Code</label>
+                  <input readonly id="bill_postal" placeholder="—" />
+                </div>
+                <div class="form-group">
+                  <label>City</label>
+                  <input readonly id="billto_city" placeholder="—" />
+                </div>
+                <div class="form-group">
+                  <label>State / Province</label>
+                  <input readonly id="billto_state" placeholder="—" />
+                </div>
+                <div class="form-group">
+                  <label>Country</label>
+                  <input readonly id="billto_country" placeholder="—" />
+                </div>
+              </div>
+
+              <div class="section-divider">Billing Details</div>
+
+              <div class="form-group">
+                <label>Invoice Date</label>
+                <input type="date" readonly id="invoiceDate" />
+              </div>
+              <div class="form-group">
+                <label>Due Date</label>
+                <input type="date" readonly id="dueDate" />
+              </div>
+              <div class="form-group" style="display: none">
+                <label>Date Delivered</label>
+                <input type="date" readonly id="dateDelivered" />
+              </div>
+              <div
+                class="form-group full-width"
+                style="display: none; padding: 0px; margin: 0px"
+              >
+                <label>Description</label>
+                <input readonly id="description" placeholder="—" />
+              </div>
+            </div>
+          </div>
+
+          <div class="card-body" style="padding-top: 0px">
+            <div class="form-group">
+              <label
+                >Reason for Correction <span class="required">*</span></label
+              >
+              <input
+                id="reasonForCorrection"
+                placeholder="Enter reason for this correction…"
+                autocomplete="off"
+              />
+              <div id="reasonError" class="field-error"></div>
+            </div>
+          </div>
+          <div class="card-footer">
+            <button
+              class="btn btn-primary"
+              id="submitBtn"
+              onclick="requestSubmit()"
+            >
+              <svg viewBox="0 0 24 24">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              Submit
+            </button>
+          </div>
+        </div>
+
+        <!-- Invoice Lines -->
+        <div class="card" id="invoiceLinesSection" style="display: none">
+          <div class="card-header"><h3>Invoice Lines</h3></div>
+          <div class="table-wrap">
+            <table id="linesTable">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Qty</th>
+                  <th>Unit Price</th>
+                  <th>Total Amount</th>
+                  <th>Discount</th>
+                  <th>Tax</th>
+                  <th>VAT</th>
+                  <th>Currency</th>
+                  <th>Tax Incl.</th>
+                  <th>Exch. Rate</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="empty-row">
+                  <td colspan="12">No invoice lines loaded yet</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      debugger;
+
+      // ── State ─────────────────────────────────────────────────────────────────
+      let invoiceIsPaid = false;
+      let oldInvoiceId, newInvoiceId;
+      let originalInvoiceTotal = 0;
+      let originalLineSnapshots = {};
+      let oldInvoiceTypeId = null;
+      let propertyId = null;
+      let prefixId = null;
+      let correctiveInvoiceTypeId = null;
+      let invoiceNumber = null;
+      let invoiceNo = null;
+      let prefixBaseValue = null;
+      let currencies = [],
+        vats = [];
+      let oldInvoiceName = "";
+      let newInvoiceName = "";
+
+      // ── Init ──────────────────────────────────────────────────────────────────
+      window.onload = async () => {
+        showSpinner(true);
+        const data = JSON.parse(
+          new URLSearchParams(window.location.search).get("data"),
+        );
+        oldInvoiceId = data.id.replace(/[{}]/g, "");
+        await loadLookups();
+        await loadExtraLookups();
+        await loadInvoice();
+        await loadInvoiceLines();
+        showSpinner(false);
+
+        document
+          .getElementById("reasonForCorrection")
+          .addEventListener("input", function () {
+            const errorEl = document.getElementById("reasonError");
+            if (this.value.trim()) {
+              errorEl.textContent = "";
+              errorEl.classList.remove("show");
+            }
+          });
+      };
+
+      // ── Invoice header ────────────────────────────────────────────────────────
+      async function loadInvoice() {
+        /* const inv = await parent.Xrm.WebApi.retrieveRecord("invoice", oldInvoiceId,
+  "?$select=billto_city,billto_country,billto_name,billto_stateorprovince,billto_line1," +
+  "array_remainingamount,totalamount,totallineitemamount,totaltax," +
+  "billto_line2,billto_line3,billto_postalcode,datedelivered,description,duedate," +
+  "msdyn_invoicedate,_customerid_value,_array_leaseagreement_value,_array_property_value," +
+  "_array_invoicetype_value,name,_transactioncurrencyid_value,array_invoiceno") */
+
+        const inv = await parent.Xrm.WebApi.retrieveRecord(
+          "invoice",
+          oldInvoiceId,
+          "?$select=billto_city,billto_country,billto_name,billto_stateorprovince,statecode,billto_line1," +
+            "array_remainingamount,totalamount,array_amountpaid,totallineitemamount,totaltax,array_credt," +
+            "billto_line2,billto_line3,billto_postalcode,datedelivered,description,duedate," +
+            "msdyn_invoicedate,_customerid_value,_array_leaseagreement_value,_array_property_value," +
+            "_array_invoicetype_value,name,_transactioncurrencyid_value,array_invoiceno," +
+            "array_frequencyenddate,array_frequencystartdate,_array_parentinvoice_value",
+        );
+
+        window._oldCredit = inv.array_credt ?? null;
+        document.getElementById("billto_name").value = inv.billto_name || "";
+        document.getElementById("billto_city").value = inv.billto_city || "";
+        document.getElementById("billto_country").value =
+          inv.billto_country || "";
+        document.getElementById("billto_state").value =
+          inv.billto_stateorprovince || "";
+        document.getElementById("bill_line1").value = inv.billto_line1 || "";
+        document.getElementById("bill_line2").value = inv.billto_line2 || "";
+        document.getElementById("bill_line3").value = inv.billto_line3 || "";
+        document.getElementById("bill_postal").value =
+          inv.billto_postalcode || "";
+        document.getElementById("dateDelivered").value = (
+          inv.datedelivered || ""
+        ).substring(0, 10);
+        document.getElementById("dueDate").value = (
+          inv.duedate || ""
+        ).substring(0, 10);
+        document.getElementById("invoiceDate").value = (
+          inv.msdyn_invoicedate || ""
+        ).substring(0, 10);
+        document.getElementById("description").value = inv.description || "";
+        document.getElementById("name").value = inv.name || "";
+        oldInvoiceName = inv.name || "";
+
+        window._oldRemainingAmount = inv.array_remainingamount ?? 0;
+        window._oldTotalAmount = inv.totalamount ?? 0;
+        window._oldTotalLineItemAmount = inv.totallineitemamount ?? 0;
+        window._oldTotalTax = inv.totaltax ?? 0;
+        window._rawDateDelivered = inv.datedelivered || null;
+        window._rawDueDate = inv.duedate || null;
+        window._rawInvoiceDate = inv.msdyn_invoicedate || null;
+        window._oldCurrencyId = inv._transactioncurrencyid_value || null;
+        window._oldParentInvoiceId = inv._array_parentinvoice_value || null;
+        window._rawFrequencyStartDate = inv.array_frequencystartdate || null;
+        window._rawFrequencyEndDate = inv.array_frequencyenddate || null;
+
+        oldInvoiceTypeId = inv._array_invoicetype_value;
+        propertyId = inv._array_property_value;
+        invoiceIsPaid = inv.statecode === 2;
+
+        if (invoiceIsPaid) window._oldAmountPaid = inv.array_amountpaid ?? 0;
+        if (inv._customerid_value)
+          document.getElementById("accountLookup").value =
+            inv._customerid_value.replace(/[{}]/g, "");
+        if (inv._array_leaseagreement_value)
+          document.getElementById("leaseLookup").value =
+            inv._array_leaseagreement_value.replace(/[{}]/g, "");
+        if (inv._array_property_value)
+          document.getElementById("propertyLookup").value =
+            inv._array_property_value.replace(/[{}]/g, "");
+        if (inv._array_invoicetype_value)
+          document.getElementById("invoiceTypeLookup").value =
+            inv._array_invoicetype_value.replace(/[{}]/g, "");
+
+        await resolveCorrectiveInvoiceData();
+      }
+
+      // ── Lookup helpers ─────────────────────────────────────────────────────────
+      async function loadLookups() {
+        await loadLookupeach("account", "accountid", "name", "accountLookup");
+        await loadLookupeach(
+          "array_leaseagreement",
+          "array_leaseagreementid",
+          "array_leasename",
+          "leaseLookup",
+        );
+        await loadLookupeach(
+          "array_property",
+          "array_propertyid",
+          "array_propertyrecordid",
+          "propertyLookup",
+        );
+        await loadLookupeach(
+          "array_invoicetype",
+          "array_invoicetypeid",
+          "array_name",
+          "invoiceTypeLookup",
+        );
+      }
+
+      async function loadLookupeach(entity, idField, nameField, dropdown) {
+        const res = await parent.Xrm.WebApi.retrieveMultipleRecords(
+          entity,
+          `?$select=${nameField},${idField}`,
+        );
+        populateSelect(dropdown, res.entities, idField, nameField);
+      }
+
+      async function loadExtraLookups() {
+        const [cur, vat] = await Promise.all([
+          parent.Xrm.WebApi.retrieveMultipleRecords(
+            "transactioncurrency",
+            "?$select=transactioncurrencyid,currencyname",
+          ),
+          parent.Xrm.WebApi.retrieveMultipleRecords(
+            "array_vat",
+            "?$select=array_vatid,array_name,array_vat",
+          ),
+        ]);
+        currencies = cur.entities;
+        vats = vat.entities;
+      }
+
+      function lookupName(list, idField, nameField, id) {
+        if (!id) return "";
+        const clean = id.replace(/[{}]/g, "").toLowerCase();
+        const found = list.find(
+          (x) => x[idField].replace(/[{}]/g, "").toLowerCase() === clean,
+        );
+        return found ? found[nameField] : id;
+      }
+
+      function getVatRate(vatId) {
+        if (!vatId) return 0;
+        const clean = vatId.replace(/[{}]/g, "").toLowerCase();
+        const found = vats.find(
+          (x) => x.array_vatid.replace(/[{}]/g, "").toLowerCase() === clean,
+        );
+        return found ? parseFloat(found.array_vat) || 0 : 0;
+      }
+
+      function populateSelect(id, data, valueField, textField) {
+        const s = document.getElementById(id);
+        if (!s) return;
+        s.innerHTML =
+          '<option value="">— Select —</option>' +
+          data
+            .map(
+              (d) =>
+                `<option value="${d[valueField]}">${d[textField]}</option>`,
+            )
+            .join("");
+      }
+
+      // ── Invoice lines ──────────────────────────────────────────────────────────
+      async function loadInvoiceLines() {
+        // const result = await parent.Xrm.WebApi.retrieveMultipleRecords("invoicedetail",
+        //   `?$select=invoicedetailid,invoicedetailname,priceperunit,productdescription,quantity,baseamount,extendedamount,` +
+        //   `array_paymentamount,array_taxincluded,manualdiscountamount,tax,array_currentexchangerate,` +
+        //   `_array_chargetype_value,_array_recurringcharge_value,_array_paymentcurrency_value,_array_vat_value` +
+        //   `&$filter=_invoiceid_value eq ${oldInvoiceId}`)
+
+        const result = await parent.Xrm.WebApi.retrieveMultipleRecords(
+          "invoicedetail",
+          `?$select=invoicedetailid,invoicedetailname,priceperunit,productdescription,quantity,baseamount,extendedamount,` +
+            `array_paymentamount,array_taxincluded,manualdiscountamount,tax,array_currentexchangerate,` +
+            `array_discountinpaymentcurrency,` +
+            `_array_chargetype_value,_array_recurringcharge_value,_array_paymentcurrency_value,_array_vat_value` +
+            `&$filter=_invoiceid_value eq ${oldInvoiceId}`,
+        );
+
+        const tbody = document.querySelector("#linesTable tbody");
+        tbody.innerHTML = "";
+        originalInvoiceTotal = 0;
+        originalLineSnapshots = {};
+
+        if (!result.entities.length) {
+          tbody.innerHTML =
+            '<tr class="empty-row"><td colspan="12">No invoice lines found</td></tr>';
+          return;
+        }
+
+        result.entities.forEach((line) => {
+          const qty = parseFloat(line.quantity || 1);
+          const price = parseFloat(line.priceperunit || 0);
+          const discount = parseFloat(line.manualdiscountamount || 0);
+          const tax = parseFloat(line.tax || 0);
+          const lineTotal =
+            line.extendedamount != null
+              ? parseFloat(line.extendedamount)
+              : qty * price - discount + tax;
+          originalInvoiceTotal += lineTotal;
+
+          originalLineSnapshots[line.invoicedetailid] = {
+            qty: parseFloat(line.quantity || 1),
+            price: parseFloat(line.priceperunit || 0),
+            discount: parseFloat(line.manualdiscountamount || 0),
+            vatId: line._array_vat_value || "",
+          };
+
+          const tr = document.createElement("tr");
+          Object.assign(tr.dataset, {
+            id: line.invoicedetailid,
+            name: line.invoicedetailname || "",
+            qty: line.quantity || 1,
+            price: line.priceperunit || 0,
+            baseamount: line.baseamount || 0,
+            extendedamount: line.extendedamount || 0,
+            productdescription: line.productdescription || "",
+            paymentamount: line.array_paymentamount || 0,
+            taxincluded: String(line.array_taxincluded || false),
+            discount: line.manualdiscountamount || 0,
+            discountinpaymentcurrency:
+              line.array_discountinpaymentcurrency || 0,
+
+            tax: line.tax || 0,
+            exchangerate: line.array_currentexchangerate || 0,
+            chargetype: line._array_chargetype_value || "",
+            recurring: line._array_recurringcharge_value || "",
+            currency: line._array_paymentcurrency_value || "",
+            vat: line._array_vat_value || "",
+          });
+          tbody.appendChild(tr);
+          renderRow(tr);
+        });
+      }
+
+      // ── Row rendering (read-only) ──────────────────────────────────────────────
+      function renderRow(tr) {
+        const vatName = lookupName(
+          vats,
+          "array_vatid",
+          "array_name",
+          tr.dataset.vat,
+        );
+        const currName = lookupName(
+          currencies,
+          "transactioncurrencyid",
+          "currencyname",
+          tr.dataset.currency,
+        );
+        const taxIncl = tr.dataset.taxincluded === "true";
+
+        tr.innerHTML = `
+      <td>${tr.dataset.name}</td>
+      <td class="num">${tr.dataset.qty}</td>
+      <td class="num">${parseFloat(tr.dataset.price || 0).toFixed(2)}</td>
+      <td class="num">${parseFloat(tr.dataset.extendedamount || 0).toFixed(2)}</td>
+      <td class="num">${parseFloat(tr.dataset.discount || 0).toFixed(2)}</td>
+      <td class="num">${parseFloat(tr.dataset.tax || 0).toFixed(2)}</td>
+      <td>${vatName}</td>
+      <td>${currName}</td>
+      <td><span class="badge ${taxIncl ? "badge-yes" : "badge-no"}">${taxIncl ? "Yes" : "No"}</span></td>
+      <td class="num">${parseFloat(tr.dataset.exchangerate || 0).toFixed(4)}</td>`;
+      }
+
+      // ── Corrective invoice config ──────────────────────────────────────────────
+      async function resolveCorrectiveInvoiceData() {
+        const config = await parent.Xrm.WebApi.retrieveMultipleRecords(
+          "array_propertyinvoicetypeconfiguration",
+          `?$select=_array_correctiveinvoicetype_value` +
+            `&$filter=_array_property_value eq ${propertyId} and _array_invoicetype_value eq ${oldInvoiceTypeId}`,
+        );
+        if (!config.entities.length) {
+          await parent.Xrm.Navigation.openAlertDialog({
+            title: "Corrective Invoice Configuration Missing",
+            text: "No corrective invoice configuration was found for this Property and Invoice Type. Please contact the system administrator.",
+          });
+          window.close();
+          return;
+        }
+        correctiveInvoiceTypeId =
+          config.entities[0]._array_correctiveinvoicetype_value;
+        const type = await parent.Xrm.WebApi.retrieveRecord(
+          "array_invoicetype",
+          correctiveInvoiceTypeId,
+          "?$select=_array_invoiceprefix_value",
+        );
+        prefixId = type._array_invoiceprefix_value;
+        const prefix = await parent.Xrm.WebApi.retrieveRecord(
+          "array_invoiceprefix",
+          prefixId,
+          "?$select=array_prefix,array_basevalue",
+        );
+
+        const newBaseValue = prefix.array_basevalue + 1; // increment immediately
+
+        // await parent.Xrm.WebApi.updateRecord("array_invoiceprefix", prefixId, { array_basevalue: newBaseValue })
+
+        prefixBaseValue = newBaseValue;
+        invoiceNumber = newBaseValue;
+        // invoiceNo       = `${prefix.array_prefix}-${prefixBaseValue}`
+        // Preview only — actual value is assigned by the server-side Pre-Operation plugin
+        invoiceNo = `${prefix.array_prefix}${String(prefixBaseValue).padStart(5, "0")}`;
+
+        // Show the preview banner in the header
+        const previewBanner = document.getElementById("invoiceNoPreviewBanner");
+        const previewValue = document.getElementById("invoiceNoPreviewValue");
+        if (previewBanner && previewValue) {
+          previewValue.textContent = invoiceNo;
+          previewBanner.style.display = "block";
+        }
+      }
+
+      // ── Create invoice ─────────────────────────────────────────────────────────
+      async function createInvoice() {
+        const data = {
+          billto_city: document.getElementById("billto_city").value,
+          billto_country: document.getElementById("billto_country").value,
+          billto_name: document.getElementById("billto_name").value,
+          billto_stateorprovince: document.getElementById("billto_state").value,
+          billto_line1: document.getElementById("bill_line1").value,
+          billto_line2: document.getElementById("bill_line2").value,
+          billto_line3: document.getElementById("bill_line3").value,
+          billto_postalcode: document.getElementById("bill_postal").value,
+          datedelivered: window._rawDateDelivered,
+          duedate: window._rawDueDate,
+          msdyn_invoicedate: window._rawInvoiceDate,
+
+          array_frequencystartdate: window._rawFrequencyStartDate,
+          array_frequencyenddate: window._rawFrequencyEndDate,
+
+          array_reasonforcorrection: document.getElementById(
+            "reasonForCorrection",
+          ).value,
+          array_invoicemode: 2,
+          // array_number and array_invoiceno are assigned by the server-side Pre-Operation plugin (KSeF-compliant sequencing)
+          name: document.getElementById("name").value,
+          description: document.getElementById("description").value,
+          array_remainingamount: window._oldRemainingAmount || 0,
+          ...(invoiceIsPaid && {
+            array_amountpaid: window._oldAmountPaid || 0,
+          }),
+          totalamount: window._oldTotalAmount || 0,
+        };
+        // --- ADD THIS CONDITION HERE ---
+        //if (window._oldCredit != null) {
+        //  data.array_credt = window._oldCredit;
+        //}
+        const accountId = document.getElementById("accountLookup").value;
+        if (accountId)
+          data["customerid_account@odata.bind"] = `/accounts(${accountId})`;
+        if (prefixId)
+          data["array_InvoicePrefix@odata.bind"] =
+            `/array_invoiceprefixes(${prefixId})`;
+        if (correctiveInvoiceTypeId)
+          data["array_InvoiceType@odata.bind"] =
+            `/array_invoicetypes(${correctiveInvoiceTypeId})`;
+        if (oldInvoiceId)
+          data["array_OriginalInvoice@odata.bind"] =
+            `/invoices(${oldInvoiceId})`;
+        // Parent Invoice = root of the correction chain
+        // If the immediate original has NO parent, IT is the root → parent = original
+        // If the immediate original already has a parent, inherit that same root
+        const parentInvoiceId = window._oldParentInvoiceId
+          ? window._oldParentInvoiceId.replace(/[{}]/g, "")
+          : oldInvoiceId;
+        data["array_ParentInvoice@odata.bind"] =
+          `/invoices(${parentInvoiceId})`;
+        if (window._oldCurrencyId) {
+          data["transactioncurrencyid@odata.bind"] =
+            `/transactioncurrencies(${window._oldCurrencyId.replace(/[{}]/g, "")})`;
+        }
+
+        const leaseId = document.getElementById("leaseLookup").value;
+        if (leaseId)
+          data["array_LeaseAgreement@odata.bind"] =
+            `/array_leaseagreements(${leaseId})`;
+
+        const propId = document.getElementById("propertyLookup").value;
+        if (propId)
+          data["array_Property@odata.bind"] = `/array_properties(${propId})`;
+
+        const result = await parent.Xrm.WebApi.createRecord("invoice", data);
+        newInvoiceId = result.id;
+        // await parent.Xrm.WebApi.updateRecord("array_invoiceprefix", prefixId, { array_basevalue: prefixBaseValue + 1 })
+        newInvoiceName = invoiceNo || document.getElementById("name").value;
+      }
+
+      // ── Build line payload ─────────────────────────────────────────────────────
+      //   function buildLinePayload(tr) {
+      //     const tax   = parseFloat(tr.dataset.tax || 0)
+      //     const data  = {
+      //       invoicedetailname:         tr.dataset.name,
+      //       quantity:                  parseFloat(tr.dataset.qty),
+      //       priceperunit:              parseFloat(tr.dataset.price),
+      //       productdescription:        tr.dataset.productdescription,
+      //       array_paymentamount:       parseFloat(tr.dataset.paymentamount) || 0,
+
+      //       baseamount:                parseFloat(tr.dataset.baseamount || 0),
+      //       extendedamount:            parseFloat(tr.dataset.extendedamount || 0),
+
+      //       array_taxincluded:         tr.dataset.taxincluded === "true",
+      //       manualdiscountamount:      parseFloat(tr.dataset.discount) || 0,
+      //       tax:                       tax,
+      //       array_currentexchangerate: parseFloat(tr.dataset.exchangerate) || 0,
+      //       isproductoverridden:       true,
+      //       msdyn_linetype:            690970001,
+      //     }
+      //     if (tr.dataset.chargetype) data["array_ChargeType@odata.bind"]      = `/array_chargetypes(${tr.dataset.chargetype})`
+      //     if (tr.dataset.recurring)  data["array_RecurringCharge@odata.bind"] = `/array_recurringcharges(${tr.dataset.recurring})`
+      //     if (tr.dataset.currency)   data["array_PaymentCurrency@odata.bind"] = `/transactioncurrencies(${tr.dataset.currency})`
+      //     if (tr.dataset.vat)        data["array_VAT@odata.bind"]             = `/array_vats(${tr.dataset.vat})`
+      //     return data
+      //   }
+
+      function buildLinePayload(tr) {
+        const qty = parseFloat(tr.dataset.qty) || 0;
+        const price = parseFloat(tr.dataset.price) || 0;
+        const discount = parseFloat(tr.dataset.discount) || 0;
+        const tax = parseFloat(tr.dataset.tax) || 0;
+        const discountInPaymentCurrency =
+          parseFloat(tr.dataset.discountinpaymentcurrency) || 0;
+
+        const baseamount = qty * price;
+        const extendedamount = baseamount - discount;
+
+        const data = {
+          invoicedetailname: tr.dataset.name,
+          quantity: qty,
+          priceperunit: price,
+          productdescription: tr.dataset.productdescription,
+          array_paymentamount: parseFloat(tr.dataset.paymentamount) || 0,
+
+          baseamount: baseamount, // ← calculated, not from dataset
+          extendedamount: extendedamount, // ← calculated, not from dataset
+
+          array_taxincluded: tr.dataset.taxincluded === "true",
+          manualdiscountamount: discount,
+
+          array_discountinpaymentcurrency: discountInPaymentCurrency,
+
+          tax: tax,
+          array_currentexchangerate: parseFloat(tr.dataset.exchangerate) || 0,
+          isproductoverridden: true,
+          ispriceoverridden: true, // ← add this
+          msdyn_linetype: 690970001,
+        };
+
+        if (tr.dataset.chargetype)
+          data["array_ChargeType@odata.bind"] =
+            `/array_chargetypes(${tr.dataset.chargetype})`;
+        if (tr.dataset.recurring)
+          data["array_RecurringCharge@odata.bind"] =
+            `/array_recurringcharges(${tr.dataset.recurring})`;
+        if (tr.dataset.currency)
+          data["array_PaymentCurrency@odata.bind"] =
+            `/transactioncurrencies(${tr.dataset.currency})`;
+        if (tr.dataset.vat)
+          data["array_VAT@odata.bind"] = `/array_vats(${tr.dataset.vat})`;
+        return data;
+      }
+
+      //   async function createLines() {
+      //     for (const tr of document.querySelectorAll("#linesTable tbody tr:not(.empty-row)")) {
+      //       const data = buildLinePayload(tr)
+      //       data["invoiceid@odata.bind"] = `/invoices(${newInvoiceId})`
+      //       if (tr.dataset.id) data["array_OriginalInvoiceProduct@odata.bind"] = `/invoicedetails(${tr.dataset.id})`
+      //       await parent.Xrm.WebApi.createRecord("invoicedetail", data)
+      //     }
+      //     // await parent.Xrm.WebApi.updateRecord("invoice", newInvoiceId, {
+      //     //   totalamount: window._oldTotalAmount || 0
+      //     // })
+
+      // try {
+      //     const calcResult = await parent.Xrm.WebApi.online.execute({
+      //       getMetadata: () => ({
+      //         boundParameter: null,
+      //         parameterTypes: {
+      //           Target: {
+      //             typeName: "mscrm.invoice",
+      //             structuralProperty: 5
+      //           }
+      //         },
+      //         operationType: 0,
+      //         operationName: "CalculatePrice"
+      //       }),
+      //       Target: {
+      //         invoiceid: newInvoiceId,
+      //         "@odata.type": "Microsoft.Dynamics.CRM.invoice"
+      //       }
+      //     })
+
+      //     // Capture what came back
+      //     const responseText = calcResult ? await calcResult.text?.() : "no response body"
+      //     console.log("CalculatePrice status:", calcResult?.ok, calcResult?.status)
+      //     console.log("CalculatePrice response:", responseText)
+
+      //   } catch (err) {
+      //     console.error("CalculatePrice threw:", err.message, err)
+      //   }
+
+      //   // Verify lines after action
+      //   const verify = await parent.Xrm.WebApi.retrieveMultipleRecords(
+      //     "invoicedetail",
+      //     `?$select=invoicedetailname,extendedamount,priceperunit,quantity&$filter=_invoiceid_value eq ${newInvoiceId}`
+      //   )
+      //   console.log("Lines after CalculatePrice:", JSON.stringify(verify.entities, null, 2))
+
+      //   }
+
+      async function createLines() {
+        for (const tr of document.querySelectorAll(
+          "#linesTable tbody tr:not(.empty-row)",
+        )) {
+          const qty = parseFloat(tr.dataset.qty) || 0;
+          const price = parseFloat(tr.dataset.price) || 0;
+          const discount = parseFloat(tr.dataset.discount) || 0;
+          const tax = parseFloat(tr.dataset.tax) || 0;
+          const discountInPaymentCurrency =
+            parseFloat(tr.dataset.discountinpaymentcurrency) || 0; // ← add this
+
+          // Mirror exactly what was on the original line
+          const originalBase = parseFloat(tr.dataset.baseamount) || qty * price;
+          const originalExtended =
+            parseFloat(tr.dataset.extendedamount) || qty * price - discount;
+
+          // STEP 1 — Create the line (D365 will zero out extendedamount here, that's fine)
+          const createData = buildLinePayload(tr);
+          createData["invoiceid@odata.bind"] = `/invoices(${newInvoiceId})`;
+          if (tr.dataset.id) {
+            createData["array_OriginalInvoiceProduct@odata.bind"] =
+              `/invoicedetails(${tr.dataset.id})`;
+          }
+          const created = await parent.Xrm.WebApi.createRecord(
+            "invoicedetail",
+            createData,
+          );
+
+          // STEP 2 — Force the amounts back. Pricing engine doesn't run on updates.
+          await parent.Xrm.WebApi.updateRecord("invoicedetail", created.id, {
+            baseamount: originalBase,
+            extendedamount: originalExtended,
+            priceperunit: price,
+            manualdiscountamount: discount,
+
+            array_discountinpaymentcurrency: discountInPaymentCurrency,
+
+            tax: tax,
+            ispriceoverridden: true,
+            isproductoverridden: true,
+          });
+        }
+
+        // Force the parent invoice total too — same reason
+        await parent.Xrm.WebApi.updateRecord("invoice", newInvoiceId, {
+          totalamount: window._oldTotalAmount || 0,
+          array_remainingamount: window._oldRemainingAmount || 0,
+          totallineitemamount: window._oldTotalLineItemAmount || 0,
+          totaltax: window._oldTotalTax || 0,
+        });
+        // Mark the ORIGINAL invoice as corrected
+await parent.Xrm.WebApi.updateRecord("invoice", oldInvoiceId, {
+  array_iscorrected: true
+});
+      }
+
+      async function clonePaymentLines() {
+        if (!invoiceIsPaid) return;
+
+        const result = await parent.Xrm.WebApi.retrieveMultipleRecords(
+          "array_paymentline",
+          `?$filter=_array_invoice_value eq ${oldInvoiceId}`,
+        );
+
+        for (const paymentLine of result.entities) {
+          const data = {
+            array_amountpaid: paymentLine.array_amountpaid,
+            array_approvalstatus: paymentLine.array_approvalstatus,
+            array_description: paymentLine.array_description,
+            array_invoiceid: paymentLine.array_invoiceid,
+            array_name: paymentLine.array_name,
+            array_originalremainingamount:
+              paymentLine.array_originalremainingamount,
+            array_paymentdate: paymentLine.array_paymentdate,
+            array_paymentid: paymentLine.array_paymentid,
+            array_paymentmethod: paymentLine.array_paymentmethod,
+            array_tenantid: paymentLine.array_tenantid,
+            array_tenantname: paymentLine.array_tenantname,
+            array_transactiontype: paymentLine.array_transactiontype,
+            array_paymentlinetype: paymentLine.array_paymentlinetype,
+            array_paymentlinelifecycle: 590930000,
+          };
+
+          data["array_Invoice@odata.bind"] = `/invoices(${newInvoiceId})`;
+
+          if (paymentLine._array_leaseagreement_value)
+            data["array_LeaseAgreement@odata.bind"] =
+              `/array_leaseagreements(${paymentLine._array_leaseagreement_value})`;
+
+          if (paymentLine._array_paymentreceipt_value)
+            data["array_PaymentReceipt@odata.bind"] =
+              `/array_paymentreceipts(${paymentLine._array_paymentreceipt_value})`;
+
+          // Tenant Lookup (Customer = Account or Contact)
+          if (paymentLine._array_tenantlookup_value) {
+            const tenantType =
+              paymentLine[
+                "_array_tenantlookup_value@Microsoft.Dynamics.CRM.lookuplogicalname"
+              ];
+
+            if (tenantType === "account") {
+              data["array_TenantLookup_account@odata.bind"] =
+                `/accounts(${paymentLine._array_tenantlookup_value})`;
+            } else if (tenantType === "contact") {
+              data["array_TenantLookup_contact@odata.bind"] =
+                `/contacts(${paymentLine._array_tenantlookup_value})`;
+            }
+          }
+
+          if (paymentLine._transactioncurrencyid_value)
+            data["transactioncurrencyid@odata.bind"] =
+              `/transactioncurrencies(${paymentLine._transactioncurrencyid_value})`;
+
+          console.log(data);
+
+          await parent.Xrm.WebApi.createRecord("array_paymentline", data);
+
+          await parent.Xrm.WebApi.updateRecord(
+            "array_paymentline",
+            paymentLine.array_paymentlineid,
+            { array_paymentlinelifecycle: 590930001 },
+          );
+        }
+      }
+
+      // async function correctOldInvoice() {
+
+      //     if (invoiceIsPaid) {
+
+      //         await parent.Xrm.WebApi.updateRecord("invoice", oldInvoiceId, {
+      //             statuscode: 841060001
+      //         });
+
+      //     } else {
+
+      //         await parent.Xrm.WebApi.updateRecord("invoice", oldInvoiceId, {
+      //             statuscode: 126330002
+      //         });
+
+      //     }
+      // }
+
+      // ── Validation ─────────────────────────────────────────────────────────────
+      function validate() {
+        const reasonInput = document.getElementById("reasonForCorrection");
+        const errorEl = document.getElementById("reasonError");
+        errorEl.textContent = "";
+        errorEl.classList.remove("show");
+
+        if (!reasonInput.value.trim()) {
+          errorEl.textContent = "Reason for correction is required.";
+          errorEl.classList.add("show");
+          reasonInput.focus();
+          return false;
+        }
+        return true;
+      }
+
+      // ── Confirmation Dialog ────────────────────────────────────────────────────
+      function requestSubmit() {
+        if (!validate()) return;
+
+        const invName = document.getElementById("name").value;
+        const reason = document.getElementById("reasonForCorrection").value;
+
+        let newTotal = 0;
+        document
+          .querySelectorAll("#linesTable tbody tr:not(.empty-row)")
+          .forEach((tr) => {
+            newTotal += parseFloat(tr.dataset.extendedamount || 0);
+          });
+
+        document.getElementById("confirmTitle").textContent =
+          "Confirm Invoice Correction";
+        document.getElementById("confirmMessage").innerHTML =
+          "You are about to create a <strong>corrected invoice</strong> and cancel the original. " +
+          "This action cannot be undone.";
+
+        document.getElementById("confirmSummary").innerHTML = `
+      <div class="confirm-summary-row">
+        <span class="confirm-summary-label">Original Invoice</span>
+        <span class="confirm-summary-value">${invName || "—"}</span>
+      </div>
+      <div class="confirm-summary-row">
+        <span class="confirm-summary-label">New Invoice No.</span>
+        <span class="confirm-summary-value">${invoiceNo || "—"}</span>
+      </div>
+      <div class="confirm-summary-row">
+        <span class="confirm-summary-label">Total Invoice Amount</span>
+        <span class="confirm-summary-value">${newTotal.toFixed(2)}</span>
+      </div>
+      <div class="confirm-summary-row">
+        <span class="confirm-summary-label">Reason</span>
+        <span class="confirm-summary-value">${reason || "—"}</span>
+      </div>`;
+
+        document.getElementById("confirmOverlay").classList.add("active");
+      }
+
+      function closeConfirm() {
+        document.getElementById("confirmOverlay").classList.remove("active");
+      }
+
+      async function proceedSubmit() {
+        closeConfirm();
+        showSpinner(true);
+        try {
+          await createInvoice();
+          await createLines();
+          //await clonePaymentLines();
+          //await correctOldInvoice()
+
+          // Prefix base value is incremented by the server-side Pre-Operation plugin — no client-side update needed
+          showSpinner(false);
+          showSuccess();
+        } catch (e) {
+          console.error(e);
+          showSpinner(false);
+          alert("Error processing request: " + (e.message || e));
+        }
+      }
+
+      // ── Success popup ──────────────────────────────────────────────────────────
+      function showSuccess() {
+        const invName = document.getElementById("name").value;
+        const today = new Date().toLocaleDateString(undefined, {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        });
+
+        let newTotal = 0;
+        document
+          .querySelectorAll("#linesTable tbody tr:not(.empty-row)")
+          .forEach((tr) => {
+            newTotal += parseFloat(tr.dataset.extendedamount || 0);
+          });
+
+        document.getElementById("successBadgeText").textContent =
+          "Invoice Corrected";
+        document.getElementById("successTitle").textContent =
+          "Corrected Invoice Created";
+        document.getElementById("successMessage").innerHTML =
+          `Invoice <strong>${invoiceNo || invName || "—"}</strong> has been created and the original cancelled.`;
+
+        document.getElementById("successDetails").innerHTML = `
+      <div class="detail-pill"><div class="pill-label">New Invoice</div><div class="pill-value">${invoiceNo || "—"}</div></div>
+      <div class="detail-pill"><div class="pill-label">Amount</div><div class="pill-value">${newTotal.toFixed(2)}</div></div>
+      <div class="detail-pill"><div class="pill-label">Date</div><div class="pill-value">${today}</div></div>`;
+
+        const btn = document.getElementById("openInvoiceBtn");
+        btn.style.display = "block";
+        btn.onclick = () => {
+          parent.Xrm.Navigation.openForm({
+            entityName: "invoice",
+            entityId: newInvoiceId,
+          });
+        };
+
+        document.getElementById("successOverlay").classList.add("active");
+      }
+
+      function closeSuccessAndExit() {
+        window.close();
+      }
+
+      function showSpinner(v) {
+        document.getElementById("spinner").classList.toggle("active", v);
+      }
+    </script>
+  </body>
+</html>
