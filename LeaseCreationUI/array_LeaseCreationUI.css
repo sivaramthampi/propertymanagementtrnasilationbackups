@@ -1,0 +1,1012 @@
+/* ============================================================================
+   LEASE CREATION WIDGET — DESIGN SYSTEM (rebuilt from scratch)
+   Visual target: LeaseCreationWizard mockup. Vanilla CSS, D365 web resource.
+   Every selector below is keyed to a class/id the existing JS already emits,
+   so both static HTML and JS-injected markup pick up the new look.
+   ============================================================================ */
+
+/* ── Design tokens ───────────────────────────────────────────────────────── */
+:root {
+  --blue:#1C6BD4;   --blue-l:#EBF3FF; --blue-mid:#BBDBFF; --blue-dk:#0D4A9E;
+  --green:#2E7D32;  --green-l:#EDF7EE; --green-mid:#A8D5AB;
+  --amber:#7A4F0A;  --amber-l:#FFF8EC; --amber-mid:#FFCF7F;
+  --red:#B91C1C;    --red-l:#FEF2F2;  --red-mid:#FCA5A5;
+  --teal:#0D6E6E;   --teal-l:#E8F8F8; --teal-mid:#6FD0D0;
+  --purple:#5B21B6; --purple-l:#F5F3FF; --purple-mid:#C4B5FD;
+
+  --bg:#F3F5F9;     --surf:#FFFFFF;
+  --border:rgba(0,0,0,0.08); --border-m:rgba(0,0,0,0.14);
+  --text:#111827;   --sub:#4B5563;    --hint:#9CA3AF;
+
+  --radius:12px; --radius-sm:8px; --radius-xs:6px;
+  --shadow:0 1px 3px rgba(16,24,40,0.06);
+  --shadow-lg:0 24px 60px rgba(0,0,0,0.22);
+  --font:'Inter','Segoe UI',system-ui,-apple-system,BlinkMacSystemFont,Roboto,sans-serif;
+}
+
+/* ── Reset ───────────────────────────────────────────────────────────────── */
+* { margin:0; padding:0; box-sizing:border-box; transition-timing-function:cubic-bezier(0.4,0,0.2,1); }
+
+html, body { height:100%; }
+
+/* The app shell is a vertical flex column. NOTE: in this widget's markup,
+   .form-container, .form-body and .stage-navigation are SIBLINGS at <body>
+   level (form-container only wraps the header + step rail), so the column
+   layout lives on <body>, not on .form-container. */
+/* Use percentage height resolved from <html> rather than 100vh. Inside the D365
+   iframe, 100vh is measured against the layout viewport and is often a few px
+   taller than the iframe's real content box, which produced a phantom scrollbar
+   even when content fit. 100% resolves to the actual iframe height. */
+html { height:100%; overflow:hidden; }
+body {
+  font-family:var(--font);
+  background:var(--bg);
+  color:var(--text);
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  display:flex;
+  flex-direction:column;
+  height:100%;
+  overflow:hidden;
+}
+
+.form-container, .form-container * { font-family:var(--font); }
+
+::-webkit-scrollbar { width:10px; height:10px; }
+::-webkit-scrollbar-thumb { background:#D2D6DE; border-radius:6px; border:2px solid var(--bg); }
+::-webkit-scrollbar-thumb:hover { background:#B9BFC9; }
+::-webkit-scrollbar-track { background:transparent; }
+
+/* ============================================================================
+   LOADING SCREEN
+   ============================================================================ */
+#loadingScreen {
+  position:fixed; inset:0; z-index:99999;
+  background:var(--surf);
+  display:flex; flex-direction:column; justify-content:center; align-items:center;
+  gap:18px; transition:opacity 0.3s ease-out;
+}
+#loadingScreen.hidden { opacity:0; pointer-events:none; }
+.loader {
+  width:42px; height:42px; border-radius:50%;
+  border:3px solid var(--blue-l); border-top-color:var(--blue);
+  animation:spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+.loading-text { font-size:13px; font-weight:600; color:var(--sub); letter-spacing:0.01em; }
+
+/* ============================================================================
+   APP SHELL — topbar / rail / body / footer
+   ============================================================================ */
+/* Header + step-rail block only (not the whole app). */
+.form-container {
+  flex-shrink:0;
+  background:transparent;
+}
+
+/* Topbar */
+.form-header {
+  background:var(--surf);
+  border-bottom:1px solid var(--border);
+  height:54px; flex-shrink:0;
+  display:flex; align-items:center;
+  padding:0 22px;
+}
+.header-content { display:flex; align-items:center; gap:10px; width:100%; }
+.header-content h1 {
+  font-size:14px; font-weight:800; color:var(--text); letter-spacing:-0.01em;
+  display:flex; align-items:center; gap:10px;
+}
+/* logo chip injected via ::before for zero-markup-change fallback */
+.header-content h1::before {
+  content:""; width:32px; height:32px; border-radius:8px; flex-shrink:0;
+  background:var(--blue) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z'/%3E%3Cpath d='M14 2v6h6'/%3E%3Cpath d='M16 13H8M16 17H8M10 9H8'/%3E%3C/svg%3E") center/16px no-repeat;
+}
+.header-draft-tag { margin-left:4px; }
+.header-actions { margin-left:auto; display:flex; align-items:center; gap:8px; }
+
+/* ── Step rail ───────────────────────────────────────────────────────────── */
+.stage-progress {
+  background:var(--surf);
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+  padding:0 22px;
+}
+.progress-container {
+  position:relative;
+  height:58px;
+  display:flex; align-items:center;
+  gap:0;
+}
+/* hide the old single full-width progress line (footer carries progress now) */
+.progress-line { display:none; }
+.progress-line-fill { display:none; }
+
+.stage-item {
+  position:relative;
+  display:flex; align-items:center;
+  flex:1; min-width:0;
+  cursor:pointer;
+  gap:7px;
+  background:none; border:none;
+}
+/* connector line after each step */
+.stage-item::after {
+  content:""; flex:1; height:2px; margin:0 6px;
+  background:#EAECF1; border-radius:1px;
+  transition:background 0.2s;
+}
+.stage-item:last-child::after { display:none; }
+
+.stage-circle {
+  width:24px; height:24px; border-radius:50%; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:10px; font-weight:800;
+  background:#EAECF1; color:var(--hint);
+  transition:all 0.15s;
+}
+.stage-label {
+  font-size:11px; font-weight:400; color:var(--hint);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  transition:color 0.15s;
+}
+/* active step */
+.stage-item.active .stage-circle {
+  background:var(--blue); color:#fff;
+  box-shadow:0 0 0 3px var(--blue-l);
+}
+.stage-item.active .stage-label { color:var(--blue); font-weight:700; }
+/* completed step */
+.stage-item.completed .stage-circle { background:var(--green); color:#fff; font-size:0; }
+.stage-item.completed .stage-circle::after {
+  content:""; width:11px; height:11px;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6L9 17l-5-5'/%3E%3C/svg%3E") center/contain no-repeat;
+}
+.stage-item.completed .stage-label { color:var(--green); font-weight:500; }
+.stage-item.completed::after { background:var(--green); }
+/* locked step */
+.stage-item.locked { cursor:not-allowed; opacity:0.55; }
+
+/* ── Body / two-pane layout ──────────────────────────────────────────────── */
+.form-body {
+  flex:1; min-height:0;
+  display:flex;
+  overflow:hidden;
+}
+/* primary scroll column for stage content */
+.form-body > .stage-content,
+.stage-content {
+  display:none;
+}
+.stage-content.active {
+  display:block;
+  flex:1; min-width:0;
+  overflow-y:auto;
+  padding:20px 24px;
+  animation:fadeIn 0.18s ease;
+}
+@keyframes fadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
+
+/* ── Footer / navigation ─────────────────────────────────────────────────── */
+.stage-navigation {
+  background:var(--surf);
+  border-top:1px solid var(--border);
+  flex-shrink:0;
+  padding:10px 22px;
+}
+.stage-nav-content {
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+}
+.stage-nav-left { display:flex; align-items:center; gap:10px; }
+.stage-nav-right { display:flex; align-items:center; gap:8px; }
+
+/* footer progress bar */
+.nav-progress-track {
+  width:180px; height:5px; background:#EAECF1; border-radius:3px; overflow:hidden;
+}
+.nav-progress-fill {
+  height:100%; background:var(--blue); border-radius:3px; width:0;
+  transition:width 0.25s;
+}
+.nav-progress-pct { font-size:11px; font-weight:700; color:var(--blue); min-width:32px; }
+.nav-progress-divider { width:1px; height:14px; background:var(--border); display:inline-block; }
+.nav-progress-label { font-size:11px; color:var(--hint); }
+
+/* ============================================================================
+   CARD / SECTION
+   ============================================================================ */
+.form-section {
+  background:var(--surf);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  margin-bottom:16px;
+  overflow:hidden;
+  box-shadow:var(--shadow);
+}
+.section-content { padding:18px; }
+
+/* section header band */
+.section-title {
+  font-size:13px; font-weight:700; color:var(--text);
+  display:flex; align-items:center; gap:8px;
+  margin:0;
+}
+.section-description {
+  font-size:11px; color:var(--hint); margin:2px 0 16px;
+}
+/* When section-title is the first child of section-content, give it the
+   header-band treatment with a left accent + icon chip. */
+.section-content > .section-title { margin-bottom:2px; }
+
+/* Accent header used at top of a card (optional wrapper .card-head) */
+.card-head {
+  padding:13px 18px;
+  border-bottom:1px solid var(--border);
+  border-left:3px solid var(--blue);
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+}
+.card-head .ch-title { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; color:var(--text); }
+.card-head .ch-icon {
+  width:26px; height:26px; border-radius:7px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(28,107,212,0.09); color:var(--blue);
+}
+.card-head .ch-sub { font-size:11px; color:var(--hint); margin-top:2px; padding-left:34px; }
+
+/* ============================================================================
+   FORM CONTROLS
+   ============================================================================ */
+.form-group { display:flex; flex-direction:column; gap:5px; margin-bottom:14px; }
+.form-group:last-child { margin-bottom:0; }
+
+.form-grid {
+  display:grid; grid-template-columns:1fr 1fr; gap:14px;
+  margin-bottom:14px;
+}
+.form-group.full-width, .form-grid .full-width, .full-width { grid-column:1 / -1; }
+
+label {
+  font-size:11px; font-weight:700; color:var(--sub);
+  letter-spacing:0.04em; text-transform:uppercase;
+}
+label.required::after { content:" *"; color:var(--red); font-weight:700; }
+/* inline `<span class="required">*</span>` markers (used in some modal labels) */
+span.required { color:var(--red); font-weight:700; }
+
+input[type="text"], input[type="number"], input[type="date"],
+input[type="email"], select, textarea {
+  width:100%; font-size:13px; font-family:inherit;
+  padding:8px 11px;
+  border:1.5px solid var(--border);
+  border-radius:var(--radius-sm);
+  background:var(--surf); color:var(--text);
+  outline:none;
+  transition:border-color 0.15s, box-shadow 0.15s;
+}
+input:hover, select:hover, textarea:hover { border-color:var(--border-m); }
+input:focus, select:focus, textarea:focus {
+  border-color:var(--blue);
+  box-shadow:0 0 0 3px var(--blue-l);
+}
+input::placeholder, textarea::placeholder { color:var(--hint); }
+/* Lookup fields are readonly-by-design but must read WHITE like the dropdowns,
+   so exclude them from the grey readonly fill (no specificity battle). */
+input[readonly]:not(.lookup-field), input:disabled, textarea[readonly] {
+  background:#F8F9FC; color:var(--sub); cursor:default;
+}
+select { cursor:pointer; }
+/* Modern styling for the open option list. Native <select> popups only honor a
+   subset of CSS (Chrome/Edge respect background/color/padding on options), so
+   this is best-effort; the closed control is fully styled above. */
+select option {
+  background:var(--surf);
+  color:var(--text);
+  padding:10px 12px;
+  font-size:13px;
+  font-weight:500;
+}
+select option:checked {
+  background:var(--blue-l);
+  color:var(--blue-dk);
+  font-weight:600;
+}
+select option:disabled { color:var(--hint); }
+textarea { resize:vertical; min-height:76px; line-height:1.6; }
+
+/* ── Lookup field (D365 search input) ────────────────────────────────────── */
+.lookup-input { position:relative; display:flex; align-items:stretch; }
+/* Lookup fields are readonly inputs — keep them WHITE like the <select> dropdowns
+   (override the grey input[readonly] fill) and reserve room for the clear + search
+   controls on the right. */
+.lookup-field {
+  padding-right:74px !important; cursor:pointer;
+  background:var(--surf) !important; color:var(--text) !important;
+}
+.lookup-icon {
+  position:absolute; right:6px; top:50%; transform:translateY(-50%);
+  width:28px; height:28px; border-radius:var(--radius-xs);
+  display:flex; align-items:center; justify-content:center;
+  background:transparent; border:none; cursor:pointer;
+  color:var(--hint); transition:background 0.15s, color 0.15s;
+}
+.lookup-icon:hover { background:var(--blue-l); color:var(--blue); }
+.lookup-icon svg circle, .lookup-icon svg line { stroke:currentColor; }
+.lookup-clear-btn {
+  position:absolute; right:44px; top:50%; transform:translateY(-50%);
+  width:20px; height:20px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  background:transparent; border:none; cursor:pointer;
+  color:var(--hint); transition:background 0.15s, color 0.15s;
+}
+.lookup-clear-btn:hover { background:#E1E4EA; color:var(--text); }
+.lookup-clear-btn svg line { stroke:currentColor; }
+
+/* ============================================================================
+   BUTTONS
+   ============================================================================ */
+.btn, .btn-add-large, .btn-primary, .btn-secondary, .btn-outline,
+.btn-success, .btn-delete, .btn-delete-confirm {
+  font-family:inherit; font-size:12px; font-weight:600;
+  padding:7px 14px; border-radius:var(--radius-sm);
+  cursor:pointer; border:1px solid transparent;
+  display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  white-space:nowrap; transition:filter 0.15s, background 0.15s, box-shadow 0.15s;
+  line-height:1.2;
+}
+.btn:active, .btn-primary:active, .btn-add-large:active { transform:translateY(0.5px); }
+
+.btn { background:var(--surf); border-color:var(--border-m); color:var(--text); }
+.btn:hover { background:#F8F9FC; }
+
+.btn-primary { background:var(--blue); border-color:var(--blue); color:#fff; }
+/* explicit background so the combo `.btn.btn-primary` keeps blue on hover
+   (otherwise `.btn:hover{background:#F8F9FC}` leaks through and turns it white) */
+.btn-primary:hover { background:var(--blue); filter:brightness(1.06); box-shadow:0 2px 8px rgba(28,107,212,0.28); }
+
+.btn-secondary { background:#F1F5F9; border-color:#CBD5E1; color:#475569; }
+.btn-secondary:hover { background:#E7ECF2; }
+
+.btn-outline { background:transparent; border-color:var(--blue-mid); color:var(--blue); }
+.btn-outline:hover { background:var(--blue-l); }
+
+.btn-success { background:#16A34A; border-color:#16A34A; color:#fff; }
+.btn-success:hover { background:#16A34A; filter:brightness(1.06); box-shadow:0 2px 8px rgba(22,163,74,0.3); }
+
+.btn-delete, .btn-delete-confirm { background:var(--red-l); border-color:var(--red); color:var(--red); }
+.btn-delete:hover, .btn-delete-confirm:hover { background:#FDE3E3; }
+
+.btn-save { background:#7C3AED; border-color:#7C3AED; color:#fff; }
+.btn-close { background:#FEF3C7; border-color:#FCD34D; color:#92400E; }
+.btn-back  { background:#F1F5F9; border-color:#CBD5E1; color:#475569; }
+.btn-ghost { background:transparent; border-color:transparent; color:var(--sub); }
+.btn-ghost:hover { background:#F1F2F4; }
+
+/* ============================================================================
+   TOASTS / NOTIFICATIONS  (showNotification → div.notification)
+   Modern top-right toast. JS sets inline background per type + white text.
+   ============================================================================ */
+.notification {
+  position:fixed; top:20px; right:20px; z-index:99999;
+  min-width:240px; max-width:380px;
+  padding:13px 18px; border-radius:10px;
+  font-size:13px; font-weight:600; line-height:1.4; color:#fff;
+  box-shadow:0 10px 30px rgba(17,24,39,0.18), 0 2px 6px rgba(17,24,39,0.12);
+  display:flex; align-items:center; gap:10px;
+  animation:toastIn 0.28s cubic-bezier(0.21,1.02,0.73,1) both;
+  word-break:break-word;
+}
+@keyframes toastIn {
+  from { opacity:0; transform:translateX(120%); }
+  to   { opacity:1; transform:translateX(0); }
+}
+@keyframes slideOut {
+  from { opacity:1; transform:translateX(0); }
+  to   { opacity:0; transform:translateX(120%); }
+}
+/* primary "add" with leading + */
+.btn-add-large { background:var(--blue); border-color:var(--blue); color:#fff; font-weight:700; }
+.btn-add-large:hover { filter:brightness(1.06); box-shadow:0 2px 8px rgba(28,107,212,0.28); }
+.btn-add-large > span:first-child { font-size:15px; line-height:1; margin-top:-1px; }
+
+.btn-icon {
+  width:30px; height:30px; padding:0; border-radius:var(--radius-xs);
+  background:transparent; border:1px solid var(--border);
+  display:inline-flex; align-items:center; justify-content:center;
+  cursor:pointer; color:var(--sub); transition:background 0.15s, color 0.15s;
+}
+.btn-icon:hover { background:#F1F2F4; color:var(--text); }
+.btn-view-details {
+  font-size:11px; font-weight:600; padding:5px 12px; border-radius:var(--radius-xs);
+  background:var(--surf); border:1px solid var(--border-m); color:var(--text); cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center; gap:6px; white-space:nowrap;
+}
+.btn-view-details svg { width:14px; height:14px; flex-shrink:0; }
+.btn-view-details:hover { background:#F8F9FC; }
+
+button[disabled], .btn[disabled] { opacity:0.4; cursor:not-allowed; }
+
+/* ============================================================================
+   TAGS / BADGES
+   ============================================================================ */
+.tag, .badge,
+.unit-type-badge, .unit-subtype-badge, .unit-id-badge,
+.review-section-badge {
+  display:inline-flex; align-items:center; gap:4px;
+  font-size:10px; font-weight:700; letter-spacing:0.02em;
+  padding:2px 9px; border-radius:100px; white-space:nowrap;
+}
+.tag-blue,   .unit-type-badge { background:var(--blue-l); color:var(--blue-dk); }
+.tag-green   { background:var(--green-l); color:var(--green); }
+.tag-amber   { background:var(--amber-l); color:var(--amber); }
+.tag-red     { background:var(--red-l); color:var(--red); }
+.tag-teal    { background:var(--teal-l); color:var(--teal); }
+.tag-purple  { background:var(--purple-l); color:var(--purple); }
+.tag-gray, .unit-id-badge, .unit-subtype-badge { background:#F1F2F4; color:#5A6070; }
+
+/* status chips emitted in charge rows */
+.status-complete   { background:var(--green-l); color:var(--green); }
+.status-incomplete { background:var(--amber-l); color:var(--amber); }
+
+/* ============================================================================
+   TABLES (charges / deposits / discounts / options / review)
+   ============================================================================ */
+.charges-table-wrapper, .deposits-table-wrapper {
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  overflow-x:auto;
+  background:var(--surf);
+}
+.charges-table, .deposits-table,
+.review-charges-table, .review-deposits-table,
+table.data-table {
+  width:100%; border-collapse:collapse; font-size:12px;
+  /* keep columns readable; the wrapper scrolls horizontally on narrow screens
+     (e.g. when the PDF preview panel is open) instead of squeezing/wrapping. */
+  min-width:640px;
+}
+.charges-table thead th, .deposits-table thead th,
+.review-charges-table thead th, .review-deposits-table thead th,
+table.data-table thead th {
+  text-align:left; font-size:10px; font-weight:700;
+  letter-spacing:0.05em; text-transform:uppercase; color:var(--blue-dk);
+  padding:9px 14px; background:var(--blue-l);
+  border-bottom:1px solid var(--blue-mid);
+  white-space:nowrap;
+}
+.charges-table tbody td, .deposits-table tbody td,
+.review-charges-table tbody td, .review-deposits-table tbody td,
+table.data-table tbody td {
+  padding:10px 14px; color:var(--text); vertical-align:middle;
+  border-bottom:1px solid var(--border);
+}
+.charges-table tbody tr:last-child td,
+.deposits-table tbody tr:last-child td { border-bottom:none; }
+.charges-table tbody tr:hover, .deposits-table tbody tr:hover { background:#FAFBFC; }
+
+/* Review tables: neutral header (the colored section bar sits directly above,
+   so a blue table header clashes — keep it gray/quiet like the mock). */
+.review-charges-table thead th, .review-deposits-table thead th {
+  color:var(--hint); background:#F7F9FC; border-bottom:1px solid var(--border);
+}
+.review-charges-table tbody tr:hover, .review-deposits-table tbody tr:hover { background:#FAFBFC; }
+/* Review table totals row (tfoot) — aligned + spaced like the body cells. */
+.review-charges-table tfoot td, .review-deposits-table tfoot td {
+  padding:11px 14px; background:#F7F9FC; border-top:1px solid var(--border-m);
+  font-size:12px; color:var(--text); vertical-align:middle;
+}
+
+/* table footer totals row */
+.table-totals {
+  padding:10px 16px; background:#F8F9FC; border-top:1px solid var(--border);
+  display:flex; justify-content:flex-end; gap:18px; font-size:12px; color:var(--sub);
+}
+.table-totals strong { color:var(--text); }
+
+/* row action icons */
+.record-actions { display:flex; gap:8px; align-items:center; }
+.record-actions .edit, .record-actions .delete,
+.action-edit, .action-delete {
+  width:28px; height:28px; border-radius:var(--radius-xs);
+  display:inline-flex; align-items:center; justify-content:center;
+  cursor:pointer; border:none; background:transparent; color:var(--sub);
+  transition:background 0.15s, color 0.15s;
+}
+.record-actions .edit:hover, .action-edit:hover { background:var(--blue-l); color:var(--blue); }
+.record-actions .delete:hover, .action-delete:hover { background:var(--red-l); color:var(--red); }
+
+/* ============================================================================
+   EMPTY STATES
+   ============================================================================ */
+.empty-state {
+  text-align:center; padding:32px 16px; color:var(--hint);
+}
+.empty-icon { font-size:28px; opacity:0.3; display:block; margin-bottom:8px; }
+.empty-state p { font-size:12px; color:var(--hint); margin:0; }
+.empty-hint { font-size:11px; color:var(--hint); }
+.review-empty-state { padding:24px 16px; text-align:center; color:var(--hint); font-size:12px; }
+
+/* ============================================================================
+   UPLOAD / AUTOFILL BAR
+   ============================================================================ */
+.upload-autofill-bar {
+  display:flex; align-items:center; gap:12px;
+  border:2px dashed var(--blue-mid);
+  background:var(--blue-l);
+  border-radius:10px;
+  padding:16px;
+  margin-bottom:16px;
+  cursor:pointer;
+  transition:border-color 0.15s, background 0.15s;
+}
+.upload-autofill-bar:hover { border-color:var(--blue); }
+.upload-autofill-icon {
+  width:36px; height:36px; border-radius:9px; flex-shrink:0;
+  background:var(--blue); color:#fff;
+  display:flex; align-items:center; justify-content:center; order:-1;
+}
+.upload-autofill-icon svg { width:18px; height:18px; }
+.upload-autofill-text { flex:1; font-size:12px; font-weight:700; color:var(--blue); }
+.upload-autofill-text::after {
+  content:"PDF only · One file · AI extracts fields automatically";
+  display:block; font-size:11px; font-weight:500; color:var(--sub); margin-top:2px;
+}
+
+/* ============================================================================
+   TOAST / INFO BANNER (AI hints)
+   ============================================================================ */
+.toast, .info-banner {
+  display:flex; align-items:center; gap:8px;
+  background:var(--blue-l); border:1px solid var(--blue-mid);
+  border-radius:9px; padding:9px 14px; margin-bottom:14px;
+  font-size:12px; font-weight:500; color:var(--blue-dk);
+}
+.toast-green { background:var(--green-l); border-color:var(--green-mid); color:var(--green); }
+.toast-amber { background:var(--amber-l); border-color:var(--amber-mid); color:var(--amber); }
+
+/* ============================================================================
+   MODALS
+   ============================================================================ */
+.modal, .modal-overlay, #optionModalOverlay,
+.delete-confirm-modal {
+  position:fixed; inset:0; z-index:9000;
+  background:rgba(15,23,42,0.45);
+  display:none; align-items:center; justify-content:center;
+  padding:24px;
+}
+.modal.active, .modal.show, .modal[style*="flex"],
+.modal-overlay.active,
+.delete-confirm-modal.active, .delete-confirm-modal.show { display:flex; }
+
+.modal-content, .delete-confirm-content,
+#optionModalOverlay > div {
+  background:var(--surf);
+  border-radius:16px;
+  width:1040px; max-width:94vw; max-height:88vh;
+  display:flex; flex-direction:column; overflow:hidden;
+  box-shadow:var(--shadow-lg);
+  animation:modalIn 0.16s ease;
+}
+/* Lookup/record-list modals (property, unit, tenant, brand, contact, bank,
+   rate-rule, etc.) carry wide multi-column cards — let them grow on large
+   screens instead of staying pinned at a small fixed width. */
+[id$="LookupModal"] .modal-content {
+  width:min(1320px, 84vw) !important; max-width:94vw !important;
+  /* Fixed height so the results list scrolls INSIDE — the modal no longer
+     grows/shrinks (jumps) as search filters the result count. */
+  height:82vh !important;
+}
+@keyframes modalIn { from { opacity:0; transform:translateY(10px) scale(0.99); } to { opacity:1; transform:none; } }
+
+.modal-header, .delete-confirm-header {
+  padding:18px 24px;
+  border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  flex-shrink:0;
+  background:var(--surf) !important;
+}
+.modal-title, .delete-confirm-title {
+  font-size:17px; font-weight:800; color:var(--text) !important; margin:0;
+}
+.modal-close {
+  width:32px; height:32px; border-radius:50%;
+  background:#F1F2F4 !important; border:none; cursor:pointer;
+  color:var(--sub) !important; font-size:18px; line-height:1;
+  display:flex; align-items:center; justify-content:center;
+  transition:background 0.15s;
+}
+.modal-close:hover { background:#E4E6EA !important; }
+
+.modal-body, .delete-confirm-body {
+  padding:22px 24px; overflow-y:auto; flex:1; min-height:0;
+}
+.modal-footer, .delete-confirm-footer {
+  padding:14px 24px; border-top:1px solid var(--border);
+  display:flex; align-items:center; justify-content:flex-end; gap:8px;
+  flex-shrink:0; background:#FAFBFC;
+}
+
+/* section headers inside modals */
+.modal-body h4 {
+  font-size:11px; font-weight:700; color:var(--sub);
+  letter-spacing:0.05em; text-transform:uppercase;
+  margin:0 0 12px;
+  padding-bottom:8px; border-bottom:1px solid var(--border);
+}
+
+/* ============================================================================
+   UNIT CARDS (Stage 2 + lookup modal)
+   ============================================================================ */
+.records-container, .records-list, .unit-cards-grid { display:block; }
+/* Single column by default; on wide screens the Select Units modal is roomy
+   (≈1320px), so show 2 cards per row to use the space. */
+.unit-cards-grid { display:grid; grid-template-columns:1fr; gap:12px; }
+.unit-cards-grid > * { margin-bottom:0; }
+@media (min-width:1280px) { .unit-cards-grid { grid-template-columns:1fr 1fr; } }
+
+.modern-unit-card, .record-card, .unit-selection-card {
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--surf);
+  margin-bottom:9px;
+  overflow:hidden;
+  transition:border-color 0.12s, box-shadow 0.12s;
+}
+.modern-unit-card:hover { box-shadow:var(--shadow); }
+.record-card { cursor:pointer; }
+/* Unit-selection cards share the property-lookup card look + hover. */
+.record-card:hover, .unit-selection-card:hover {
+  border-color:var(--blue); background:var(--blue-l) !important;
+  box-shadow:0 4px 14px rgba(28,107,212,0.14);
+}
+/* header uses the same blue as the drag-&-drop upload bar (var(--blue-l)) so
+   the identity row reads at a glance and stays consistent with the selected/
+   hover wash (which is also blue-l) — no mismatched tint. */
+.unit-selection-card .unit-card-header { background:var(--blue-l); }
+.record-card .record-arrow {
+  width:30px; height:30px; border-radius:50%;
+  background:var(--blue-l); color:var(--blue);
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  transition:background 0.15s, color 0.15s, transform 0.15s;
+}
+.record-card:hover .record-arrow {
+  background:var(--blue); color:#fff; transform:translateX(2px);
+}
+.record-card .record-icon {
+  width:44px; height:44px; border-radius:10px; flex-shrink:0;
+  background:var(--blue-l); color:var(--blue);
+  display:flex; align-items:center; justify-content:center;
+  border:1px solid var(--blue-mid);
+}
+.unit-selection-card { cursor:pointer; transition:border-color 0.15s, box-shadow 0.15s; }
+.modern-unit-card.selected, .record-card.selected, .unit-selection-card.selected {
+  border:2px solid var(--blue); background:var(--blue-l);
+}
+
+.unit-card-header, .record-header {
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  padding:11px 14px; border-bottom:1px solid var(--border);
+  background:#EEF4FD;
+}
+.modern-unit-card.selected .unit-card-header { background:var(--blue-mid); }
+.record-title, .unit-id-badge {
+  display:flex; align-items:center; gap:7px;
+  font-size:13px; font-weight:800; color:var(--text);
+}
+.unit-card-key-info, .unit-card-details, .record-details {
+  display:grid; grid-template-columns:repeat(4,1fr);
+}
+.unit-info-item, .record-detail-item, .detail-item,
+.modern-detail-group {
+  padding:9px 14px; border-right:1px solid var(--border);
+}
+.unit-info-item:last-child, .record-detail-item:last-child { border-right:none; }
+.info-label, .detail-label, .modern-detail-label, .record-detail-item .label {
+  font-size:10px; color:var(--hint); text-transform:uppercase;
+  letter-spacing:0.04em; font-weight:700; margin-bottom:3px;
+}
+.info-value, .detail-value, .modern-detail-value {
+  font-size:13px; font-weight:800; color:var(--text);
+}
+.detail-value .unit-area, .info-value.area { color:var(--blue); }
+.detail-value .unit-rent, .info-value.rent { color:var(--teal); }
+
+.selection-checkbox, .unit-selection-indicator {
+  width:20px; height:20px; border-radius:var(--radius-xs);
+  border:2px solid var(--border-m); background:transparent;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.modern-unit-card.selected .selection-checkbox,
+.modern-unit-card.selected .unit-selection-indicator,
+.unit-selection-card.selected .selection-checkbox,
+.unit-selection-card.selected .unit-selection-indicator {
+  background:var(--blue); border-color:var(--blue); color:#fff;
+}
+
+/* ============================================================================
+   CLAUSE PANELS (Stage 7: CPI / Step / Turnover)
+   ============================================================================ */
+.clause-selection-header { margin-bottom:16px; }
+.clause-selection-header h3 { font-size:14px; font-weight:700; color:var(--text); margin:0 0 4px; }
+.clause-selection-header p { font-size:12px; color:var(--sub); margin:0; }
+
+/* Stage-7 clause selector cards (3-up grid, matches mockup) */
+.clause-select-grid {
+  display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:16px;
+}
+.clause-select-card {
+  position:relative; border:2px solid var(--border); border-radius:12px;
+  padding:16px; cursor:pointer; background:var(--surf);
+  transition:border-color 0.12s, background 0.12s;
+}
+.clause-select-card:hover { border-color:var(--cl,var(--blue-mid)); }
+.clause-select-card.selected {
+  border-color:var(--cl,var(--blue)); background:var(--clL,var(--blue-l));
+}
+.clause-card-check {
+  position:absolute; top:12px; right:12px; width:20px; height:20px; border-radius:6px;
+  border:2px solid var(--border-m); background:transparent;
+  display:flex; align-items:center; justify-content:center; transition:all 0.12s;
+}
+.clause-card-check svg { width:11px; height:11px; opacity:0; }
+.clause-select-card.selected .clause-card-check {
+  border-color:var(--cl,var(--blue)); background:var(--cl,var(--blue));
+}
+.clause-select-card.selected .clause-card-check svg { opacity:1; }
+.clause-card-icon {
+  width:38px; height:38px; border-radius:10px; margin-bottom:10px;
+  background:var(--clL,var(--blue-l)); color:var(--cl,var(--blue));
+  display:flex; align-items:center; justify-content:center;
+}
+.clause-card-icon svg { width:18px; height:18px; }
+.clause-select-card.selected .clause-card-icon { background:var(--cl,var(--blue)); color:#fff; }
+.clause-card-title { font-size:13px; font-weight:700; color:var(--text); margin-bottom:3px; }
+.clause-select-card.selected .clause-card-title { color:var(--cl,var(--blue)); }
+.clause-card-sub { font-size:11px; color:var(--sub); }
+
+/* Stage-7 clause config panels (shown only while the clause is selected) */
+.manual-clauses-wrapper { display:flex; flex-direction:column; gap:12px; }
+.manual-clause-item-wrapper {
+  border:1px solid var(--border); border-left:3px solid var(--cl,var(--blue));
+  border-radius:12px; background:var(--surf); overflow:hidden;
+}
+.manual-clause-checkbox-header {
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:13px 18px; background:var(--clL,var(--blue-l));
+  border-bottom:1px solid rgba(0,0,0,0.07); cursor:pointer;
+}
+.clause-panel-chevron { color:var(--cl,var(--blue)); flex-shrink:0; margin-left:auto; transition:transform 0.15s; }
+.manual-clause-item-wrapper.collapsed .clause-panel-chevron { transform:rotate(-90deg); }
+.manual-clause-item-wrapper.collapsed .manual-clause-details-form { display:none !important; }
+.manual-clause-item-wrapper.collapsed .manual-clause-checkbox-header { border-bottom:none; }
+.clause-panel-head-left { display:flex; align-items:center; gap:10px; }
+.clause-panel-icon {
+  width:26px; height:26px; border-radius:7px; flex-shrink:0;
+  background:var(--cl,var(--blue)); color:#fff;
+  display:flex; align-items:center; justify-content:center;
+}
+.clause-panel-icon svg { width:14px; height:14px; }
+.clause-panel-title { font-size:13px; font-weight:700; color:var(--text); }
+.clause-panel-count { font-size:11px; color:var(--hint); margin-top:1px; }
+.clause-panel-tag {
+  margin-left:auto;
+  font-size:10px; font-weight:700; letter-spacing:0.02em;
+  padding:3px 10px; border-radius:100px;
+  background:rgba(255,255,255,0.65); color:var(--cl,var(--blue)); white-space:nowrap;
+}
+.manual-clause-details-form { padding:16px 18px; background:var(--surf); }
+.manual-clause-details-form .clause-date-input,
+.manual-clause-details-form input[type="date"],
+.manual-clause-details-form input[type="text"],
+.manual-clause-details-form input[type="number"],
+.manual-clause-details-form select,
+.manual-clause-details-form textarea {
+  font-family:inherit; font-size:13px; color:var(--text);
+}
+
+.clause-box {
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:var(--surf);
+  margin-bottom:12px;
+  overflow:hidden;
+}
+.clause-box.active { border-color:var(--green-mid); }
+.instance-title {
+  font-size:11px; font-weight:700; letter-spacing:0.02em; color:var(--sub);
+}
+.add-instance-btn {
+  width:100%; padding:10px; margin-top:4px;
+  border:1.5px dashed var(--cl,var(--blue-mid)); border-radius:var(--radius-sm);
+  background:var(--clL,var(--blue-l)); color:var(--cl,var(--blue));
+  font-size:12px; font-weight:600; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:6px;
+  transition:filter 0.15s;
+}
+.add-instance-btn:hover { filter:brightness(0.97); }
+
+/* clause instance block: Remove button pinned top-right (matches app delete style) */
+.manual-clause-details-form .conditional-fields { position:relative; }
+.remove-instance-btn {
+  position:absolute; top:0; right:0; cursor:pointer;
+  background:var(--red-l); border:1px solid var(--red);
+  padding:4px 10px; border-radius:var(--radius-xs);
+  display:inline-flex; align-items:center; gap:4px;
+  color:var(--red); font-size:11px; font-weight:600;
+}
+.remove-instance-btn:hover { background:#FDE3E3; }
+
+/* toggle switch (custom CPI/step/turnover toggles) */
+.toggle-switch, .custom-cpi-toggle, .custom-step-toggle, .custom-turnover-toggle {
+  position:relative; display:inline-block; width:38px; height:22px;
+}
+.toggle-switch input, .ocr-toggle input, .proration-toggle input,
+.vat-toggle input { position:absolute; opacity:0; width:0; height:0; }
+.slider {
+  position:absolute; inset:0; cursor:pointer; border-radius:100px;
+  background:#CBD2DC; transition:background 0.15s;
+}
+.slider::before {
+  content:""; position:absolute; height:16px; width:16px; left:3px; top:3px;
+  background:#fff; border-radius:50%; transition:transform 0.15s;
+  box-shadow:0 1px 2px rgba(0,0,0,0.2);
+}
+input:checked + .slider { background:var(--blue); }
+input:checked + .slider::before { transform:translateX(16px); }
+
+.conditional-fields, .vat-conditional-field, .secondary-charge-wrapper,
+.sales-threshold-wrapper, .turnover-min-pct-wrapper, .turnover-rate-wrapper,
+.turnover-flat-amount-wrapper, .turnover-end-wrapper, .turnover-start-wrapper,
+.turnover-increase-wrapper, .turnover-min-sales-flat-wrapper,
+.cpi-cycle-start-wrapper, .cpi-cycle-end-wrapper,
+.step-cycle-start-wrapper, .step-cycle-end-wrapper,
+.step-custom-toggle-wrapper, .cpi-custom-toggle-wrapper,
+.percent-field-wrapper, .flat-field-wrapper { margin-top:4px; }
+
+/* ============================================================================
+   DEPOSIT SUGGESTION BOX (Stage 5 modal)
+   ============================================================================ */
+/* NOTE: the deposit suggestion box (#depositSuggestionBox + .deposit-sugg-*)
+   is styled by a scoped <style> block inside the deposit modal in
+   array_LeaseCreationUI.html (it matches the actual emitted DOM structure:
+   #depositSuggestionBox = the box, .deposit-sugg-body = inner content). That
+   block is the single source of truth — recolored to design tokens there —
+   so we intentionally do NOT duplicate .deposit-sugg-* rules here. */
+
+/* ============================================================================
+   REVIEW STAGE (Stage 8)
+   ============================================================================ */
+.review-summary-cards, .summary-stat-card { }
+.review-summary-cards {
+  display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:16px;
+}
+.summary-stat-card {
+  background:rgba(255,255,255,0.7);
+  border:1px solid var(--blue-mid); border-radius:8px; padding:10px 13px;
+}
+.stat-icon {
+  width:32px; height:32px; border-radius:8px;
+  background:var(--blue-l) !important; color:var(--blue);
+  display:flex; align-items:center; justify-content:center; margin-bottom:8px;
+}
+.stat-icon svg { width:18px; height:18px; }
+.stat-label { font-size:10px; font-weight:700; letter-spacing:0.04em; color:var(--sub); text-transform:uppercase; margin-bottom:4px; }
+.stat-value { font-size:17px; font-weight:800; color:var(--blue-dk); }
+.stat-info { font-size:10px; color:var(--sub); margin-top:2px; }
+
+.review-section-card {
+  border:1px solid var(--border); border-left:3px solid var(--acc,var(--blue));
+  border-radius:10px; margin-bottom:12px; overflow:hidden; background:var(--surf);
+}
+.review-section-header {
+  display:flex; align-items:center; justify-content:space-between; gap:9px;
+  padding:11px 16px; background:var(--accL,var(--blue-l));
+  border-bottom:1px solid rgba(0,0,0,0.07);
+}
+.review-section-header-left { display:flex; align-items:center; gap:9px; }
+.review-section-icon {
+  width:28px; height:28px; border-radius:7px; flex-shrink:0;
+  background:var(--acc,var(--blue)) !important; color:#fff !important;
+  display:flex; align-items:center; justify-content:center;
+}
+.review-section-icon svg { width:15px; height:15px; }
+.review-section-header-title { font-size:13px; font-weight:700; color:var(--text); }
+.review-section-badge {
+  background:rgba(0,0,0,0.07) !important; color:var(--acc,var(--blue)) !important;
+  border:none !important;
+  font-size:10px; font-weight:700; padding:3px 10px; border-radius:100px;
+  white-space:nowrap; flex-shrink:0;
+}
+.review-section-body { background:var(--surf); overflow-x:auto; }
+.review-section-body .review-row {
+  display:flex; justify-content:space-between; align-items:baseline; gap:12px;
+  padding:7px 16px; border-bottom:1px solid var(--border);
+}
+.review-section-body .review-row:last-child { border-bottom:none; }
+.review-row .label { font-size:11px; color:var(--hint); font-weight:600; text-transform:uppercase; letter-spacing:0.04em; min-width:140px; }
+.review-row .value { font-size:12px; font-weight:500; color:var(--text); text-align:right; }
+.review-row .value.mono { font-family:monospace; font-weight:700; }
+
+/* ready-to-activate banner (mockup hero) */
+.review-banner {
+  background:var(--green-l); border:1px solid var(--green-mid);
+  border-radius:12px; padding:18px 20px; margin-bottom:16px;
+}
+.review-banner-head { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+.review-banner-check {
+  width:28px; height:28px; flex-shrink:0; color:var(--green);
+  display:flex; align-items:center; justify-content:center;
+}
+.review-banner-check svg { width:20px; height:20px; }
+.review-banner-text { min-width:0; }
+.review-banner-title { font-size:15px; font-weight:800; color:var(--green); }
+.review-banner-sub { font-size:12px; color:var(--sub); margin-top:1px; }
+.review-banner-tag { margin-left:auto; flex-shrink:0; }
+.review-kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+.review-kpi {
+  background:rgba(255,255,255,0.7); border:1px solid var(--green-mid);
+  border-radius:8px; padding:10px 13px;
+}
+.kpi-label {
+  font-size:10px; font-weight:700; letter-spacing:0.04em;
+  color:var(--sub); text-transform:uppercase; margin-bottom:4px;
+}
+.kpi-value { font-size:17px; font-weight:800; color:var(--text); line-height:1.2; }
+.kpi-sub { font-size:10px; color:var(--sub); margin-top:2px; min-height:13px; }
+
+/* dense 2-column label/value grid for the lease-info block (avoids the
+   wasteful full-width label-left/value-right rows from the mockup) */
+.review-grid {
+  display:grid; grid-template-columns:1fr 1fr;
+  gap:14px 28px; padding:18px 20px;
+}
+.review-field { display:flex; flex-direction:column; gap:3px; min-width:0; }
+.review-field.full { grid-column:1 / -1; }
+.review-field .rf-label {
+  font-size:10px; font-weight:700; letter-spacing:0.04em;
+  color:var(--hint); text-transform:uppercase;
+}
+.review-field .rf-value {
+  font-size:13px; font-weight:600; color:var(--text);
+  padding-bottom:7px; border-bottom:1px solid var(--border);
+  overflow-wrap:anywhere; word-break:break-word;
+}
+@media (max-width:680px) { .review-grid { grid-template-columns:1fr; } }
+
+/* ============================================================================
+   PDF VIEWER PANEL (lpv-*)
+   ----------------------------------------------------------------------------
+   The PDF viewer styles itself via a stylesheet it injects at runtime
+   (id="leasePdfStyles", inside array_LeaseCreationUIJS.js → injectStyles()).
+   That injected sheet loads AFTER this file and is the single source of truth
+   for all .lpv-* rules, so we intentionally do NOT duplicate them here to avoid
+   specificity/ordering conflicts. Edit the injected sheet in the JS to retune
+   the panel. (Its colors are aligned to the tokens above.)
+   ============================================================================ */
+
+/* ============================================================================
+   MISC HELPERS
+   ============================================================================ */
+.units-list-section { margin-top:24px; }
+.list-title { font-size:13px; font-weight:700; color:var(--text); display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+.af-chevron { transition:transform 0.15s; }
+.af-chevron.open { transform:rotate(180deg); }
+.expand-icon { transition:transform 0.15s; }
+.expand-icon.open { transform:rotate(180deg); }
+.manual-clause-item-wrapper.expanded .expand-icon { transform:rotate(180deg); }
+
+.text-blue { color:var(--blue); } .text-green { color:var(--green); }
+.text-amber { color:var(--amber); } .text-red { color:var(--red); }
+.text-teal { color:var(--teal); } .text-hint { color:var(--hint); }
+.fw-700 { font-weight:700; } .fw-800 { font-weight:800; }
+
+/* responsive: collapse two-column grids on narrow widths */
+@media (max-width:680px) {
+  .form-grid, .unit-cards-grid { grid-template-columns:1fr; }
+  .unit-card-key-info, .unit-card-details, .record-details { grid-template-columns:1fr 1fr; }
+  .review-summary-cards, .clause-select-grid, .review-kpis { grid-template-columns:1fr; }
+  .stage-label { display:none; }
+}
+@media (max-width:980px) {
+  .clause-select-grid, .review-kpis { grid-template-columns:repeat(2,1fr); }
+}
