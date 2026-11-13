@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Manual Reconciliation</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4f7fa;
+      padding: 20px;
+      color: #1e293b;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+    .header {
+      background: #172554;
+      color: white;
+      padding: 20px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header h2 { font-size: 18px; font-weight: 700; }
+    .header .credit-summary {
+      display: flex;
+      gap: 24px;
+      align-items: center;
+    }
+    .credit-box { text-align: right; }
+    .credit-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.7);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .credit-value { font-size: 20px; font-weight: 800; }
+    .credit-remaining { color: #10b981; }
+    .credit-remaining.warn { color: #f59e0b; }
+    .credit-remaining.error { color: #ef4444; }
+
+    .section { padding: 24px; border-bottom: 1px solid #e5e7eb; }
+    .section:last-child { border-bottom: none; }
+    .section-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #374151;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
+    }
+
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #f3f4f6; vertical-align: middle; }
+    th {
+      background: #f9fafb;
+      color: #374151;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    tbody tr:hover { background: #f9fafb; }
+
+    input[type="text"], input[type="number"] {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+    input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px #eff6ff;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    .btn-success { background: #10b981; color: white; }
+    .btn-success:hover:not(:disabled) { background: #059669; }
+    .btn-success:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-danger { background: #ef4444; color: white; padding: 6px 12px; font-size: 12px; }
+    .btn-danger:hover:not(:disabled) { background: #dc2626; }
+    .btn-warn { background: #f59e0b; color: white; padding: 6px 12px; font-size: 12px; }
+    .btn-warn:hover:not(:disabled) { background: #d97706; }
+    .btn-secondary { background: white; border: 1px solid #d1d5db; color: #4b5563; }
+
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      padding: 20px 24px;
+      background: #f9fafb;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .type-toggle {
+      display: inline-flex;
+      background: #e5e7eb;
+      border-radius: 8px;
+      padding: 3px;
+      gap: 2px;
+      border: 1px solid #d1d5db;
+      width: fit-content;
+    }
+    .type-toggle button {
+      padding: 7px 14px;
+      border: none;
+      background: transparent;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      color: #6b7280;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    .type-toggle button:hover:not(.active) {
+      color: #374151;
+      background: rgba(255,255,255,0.5);
+    }
+    .type-toggle button.active {
+      background: #3b82f6;
+      color: white;
+      box-shadow: 0 2px 4px rgba(59,130,246,0.3);
+    }
+    .type-toggle button.active:hover {
+      background: #2563eb;
+    }
+    .lookup-wrapper { position: relative; width: 100%; }
+    .lookup-input-group {
+      display: flex;
+      align-items: center;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      background: white;
+    }
+    .lookup-input-group:focus-within {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px #eff6ff;
+    }
+    .lookup-input-group input {
+      border: none;
+      flex: 1;
+      background: transparent;
+    }
+    .lookup-input-group input:focus { box-shadow: none; }
+    .lookup-btn {
+      width: 30px;
+      height: 32px;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 0 6px 6px 0;
+      cursor: pointer;
+    }
+    .amount-warning {
+        color: #dc2626;
+        font-size: 11px;
+        font-weight: 600;
+        margin-top: 4px;
+      }
+
+      .amount-invalid {
+        border-color: #dc2626 !important;
+        background: #fef2f2;
+      }
+    .lookup-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: white;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+      max-height: 240px;
+      overflow-y: auto;
+      z-index: 100;
+      margin-top: 4px;
+      display: none;
+    }
+    .lookup-dropdown.show { display: block; }
+    .lookup-item {
+      padding: 10px 12px;
+      cursor: pointer;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 13px;
+    }
+    .lookup-item:hover { background: #eff6ff; }
+    .lookup-item-main { font-weight: 600; }
+    .lookup-item-sub { font-size: 11px; color: #6b7280; margin-top: 2px; }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: #6b7280;
+      font-size: 14px;
+    }
+
+    .add-line-btn {
+      background: white;
+      color: #3b82f6;
+      border: 1px dashed #3b82f6;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .add-line-btn:hover:not(:disabled) { background: #eff6ff; }
+    .add-line-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .existing-badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 10px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      background: #d1fae5;
+      color: #065f46;
+    }
+    .external-badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 10px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    #loadingOverlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    #loadingOverlay.show { display: flex; }
+    .loading-box {
+      background: white;
+      padding: 30px 40px;
+      border-radius: 12px;
+      text-align: center;
+    }
+
+    .desc-textarea {
+      width: 100%;
+      min-height: 60px;
+      padding: 8px 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 13px;
+      resize: vertical;
+    }
+    .desc-textarea:focus {
+      outline: none;
+      border-color: #3b82f6;
+    }
+    .desc-required { border-color: #ef4444 !important; }
+  </style>
+</head>
+<body>
+
+  <div id="loadingOverlay">
+    <div class="loading-box">
+      <div style="font-size: 32px; margin-bottom: 10px;">⏳</div>
+      <div id="loadingText" style="font-weight: 600;">Loading...</div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="header">
+      <div>
+        <h2>Manual Reconciliation</h2>
+        <div style="font-size: 12px; opacity: 0.8; margin-top: 4px;" id="invoiceInfo">Loading invoice...</div>
+      </div>
+      <div class="credit-summary">
+        <div class="credit-box">
+          <div class="credit-label">Outstanding Balance</div>
+          <div class="credit-value" id="totalCredit">0.00</div>
+        </div>
+        <div class="credit-box">
+          <div class="credit-label">Remaining to Reconcile</div>
+          <div class="credit-value credit-remaining" id="remainingCredit">0.00</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section" id="existingSection" style="display: none;">
+      <div class="section-title">Existing Reconciliations</div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 12%;">Date</th>
+            <th style="width: 12%;">Amount</th>
+            <th style="width: 20%;">Invoice</th>
+            <th>Description</th>
+            <th style="width: 10%;">Status</th>
+            <th style="width: 12%;"></th>
+          </tr>
+        </thead>
+        <tbody id="existingBody"></tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <div class="section-title">New Reconciliation</div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 10%;">Type</th>
+            <th style="width: 22%;">Source Invoice (Credit From)</th>
+            <th style="width: 12%;">Available Credit</th>
+            <th style="width: 12%;">Amount</th>
+            <th>Description</th>
+            <th style="width: 5%;"></th>
+          </tr>
+        </thead>
+        <tbody id="newLinesBody">
+          <tr><td colspan="6" class="empty-state">No allocation lines yet. Click "Add Line" below.</td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top: 12px;">
+        <button class="add-line-btn" id="addLineBtn" onclick="Reconciliation.addLine()">+ Add Line</button>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-secondary" onclick="Reconciliation.close()">Cancel</button>
+      <button class="btn btn-success" id="saveBtn" onclick="Reconciliation.save()" disabled>Save Reconciliation</button>
+    </div>
+  </div>
+
+  <script>
+    // Option set values
+    const PAYMENT_SOURCE_RECONCILED = 590930001;
+    const TXN_TYPE_PAYMENT = 590930000;
+    const TXN_TYPE_CREDIT = 590930001;
+    const APPROVAL_STATUS_APPROVED = 126330001;
+
+    const Reconciliation = (function () {
+      let invoiceId = null;
+      let sourceInvoice = null;
+      let sourceCurrencyId = null;
+      let sourceCurrencyCode = null;
+      let outstandingBalance = 0; // A's remaining balance — the ceiling for reconciliation
+      let existingReconciliations = [];
+      let newLines = [];
+      let newLineCounter = 0;
+
+      // ---------- UTILITIES ----------
+      function getUrlParam(name) {
+        const params = new URLSearchParams(window.location.search);
+        let val = params.get(name);
+        if (val) return val;
+        const dataParam = params.get('data');
+        if (dataParam) {
+          const inner = new URLSearchParams(dataParam);
+          val = inner.get(name);
+          if (val) return val;
+        }
+        return null;
+      }
+
+      function escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+          .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+      }
+
+      function fmt(n) {
+        return (n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+
+      function getSymbol(code) {
+        const map = { 'EUR': '€', 'PLN': 'zł', 'USD': '$', 'GBP': '£' };
+        return map[(code || '').toUpperCase()] || code || '';
+      }
+
+      function showLoading(msg) {
+        document.getElementById('loadingText').textContent = msg || 'Loading...';
+        document.getElementById('loadingOverlay').classList.add('show');
+      }
+
+      function hideLoading() {
+        document.getElementById('loadingOverlay').classList.remove('show');
+      }
+
+      // ---------- INIT ----------
+      async function init() {
+        invoiceId = getUrlParam('id');
+        if (!invoiceId) {
+          alert('No invoice ID provided.');
+          return;
+        }
+        invoiceId = invoiceId.replace(/[{}]/g, '');
+
+        showLoading('Loading invoice details...');
+        try {
+          await loadSourceInvoice();
+          await loadExistingReconciliations();
+          renderAll();
+        } catch (err) {
+          console.error(err);
+          alert('Failed to load: ' + (err.message || err));
+        } finally {
+          hideLoading();
+        }
+      }
+
+     async function loadSourceInvoice() {
+  const select = '?$select=invoiceid,array_invoiceno,array_credt,array_remainingamount,array_amountpaid,totalamount,_transactioncurrencyid_value,_customerid_value,_array_leaseagreement_value';
+        const result = await parent.Xrm.WebApi.retrieveRecord('invoice', invoiceId, select);
+        sourceInvoice = result;
+        // A's outstanding balance is the ceiling — how much can still be paid onto it
+        outstandingBalance = result.array_remainingamount || 0;
+        sourceCurrencyId = result._transactioncurrencyid_value || null;
+        sourceCurrencyCode = result['_transactioncurrencyid_value@OData.Community.Display.V1.FormattedValue'] || '';
+      }
+
+      async function loadExistingReconciliations() {
+      const select = '?$select=array_paymentlineid,array_amountpaid,array_paymentdate,array_description,array_isexternalinvoice,createdon';
+      const filter = '&$filter=_array_invoice_value eq ' + invoiceId +
+              ' and array_paymentsource eq ' + PAYMENT_SOURCE_RECONCILED +
+              ' and array_transactiontype eq ' + TXN_TYPE_PAYMENT +
+              ' and array_approvalstatus eq ' + APPROVAL_STATUS_APPROVED +
+              ' and _array_parentreconciliationline_value eq null' +
+              ' and statecode eq 0';
+      const orderBy = '&$orderby=createdon desc';
+      const result = await parent.Xrm.WebApi.retrieveMultipleRecords('array_paymentline', select + filter + orderBy);
+      existingReconciliations = result.entities || [];
+
+      // For each parent line, look up which source invoices donated credit
+      for (const pl of existingReconciliations) {
+        const childSelect = '?$select=array_paymentlineid,array_isexternalinvoice,_array_invoice_value' +
+                            '&$filter=_array_parentreconciliationline_value eq ' + pl.array_paymentlineid +
+                            ' and statecode eq 0';
+        const childRes = await parent.Xrm.WebApi.retrieveMultipleRecords('array_paymentline', childSelect);
+        const children = childRes.entities || [];
+
+        // Collect invoice numbers from in-system children
+        const inSystemChildren = children.filter(function (c) {
+          return !c.array_isexternalinvoice && c._array_invoice_value;
+        });
+        const hasExternal = children.some(function (c) { return c.array_isexternalinvoice; });
+
+        const labels = [];
+        for (const child of inSystemChildren) {
+          try {
+            const inv = await parent.Xrm.WebApi.retrieveRecord('invoice', child._array_invoice_value, '?$select=array_invoiceno');
+            labels.push(inv.array_invoiceno || '-');
+          } catch (e) {
+            console.warn('Could not fetch source invoice ' + child._array_invoice_value + ':', e);
+          }
+        }
+        if (hasExternal) labels.push('External');
+
+        // (No longer needed — Option A always creates external children,
+//  so hasExternal above catches them)
+
+        pl._sourceInvoiceLabels = labels;
+      }
+    }
+
+      // ---------- RENDERING ----------
+      function renderAll() {
+        const symbol = getSymbol(sourceCurrencyCode);
+        document.getElementById('invoiceInfo').textContent =
+          'Invoice: ' + (sourceInvoice.array_invoiceno || sourceInvoice.invoiceid) + '  •  Currency: ' + (sourceCurrencyCode || 'N/A');
+        document.getElementById('totalCredit').textContent = symbol + ' ' + fmt(outstandingBalance);
+
+        const addBtn = document.getElementById('addLineBtn');
+        if (outstandingBalance <= 0 && existingReconciliations.length === 0) {
+          addBtn.disabled = true;
+          addBtn.title = 'This invoice has no outstanding balance to reconcile';
+        } else if (outstandingBalance <= 0) {
+          addBtn.disabled = true;
+          addBtn.title = 'No outstanding balance left';
+        } else {
+          addBtn.disabled = false;
+          addBtn.title = '';
+        }
+
+        renderExisting();
+        renderNewLines();
+        updateRemainingDisplay();
+      }
+
+      function renderExisting() {
+        const section = document.getElementById('existingSection');
+        const tbody = document.getElementById('existingBody');
+        if (existingReconciliations.length === 0) {
+          section.style.display = 'none';
+          return;
+        }
+        section.style.display = 'block';
+        tbody.innerHTML = '';
+        const symbol = getSymbol(sourceCurrencyCode);
+
+        existingReconciliations.forEach(function (r) {
+          const dateStr = r.array_paymentdate ? new Date(r.array_paymentdate).toLocaleDateString() : '-';
+          const amt = fmt(r.array_amountpaid || 0);
+          const desc = escapeHtml(r.array_description || '');
+
+          const tr = document.createElement('tr');
+          const sourceLabels = (r._sourceInvoiceLabels && r._sourceInvoiceLabels.length > 0)
+            ? r._sourceInvoiceLabels.map(escapeHtml).join(', ')
+            : '<em style="color:#9ca3af;">Unknown</em>';
+
+          tr.innerHTML =
+            '<td>' + dateStr + '</td>' +
+            '<td><strong>' + symbol + ' ' + amt + '</strong></td>' +
+            '<td>' + sourceLabels + '</td>' +
+            '<td style="font-size: 12px; color: #6b7280;">' + (desc || '<em>No description</em>') + '</td>' +
+            '<td><span class="existing-badge">Applied</span></td>' +
+            '<td><button class="btn btn-warn" onclick="Reconciliation.unapply(\'' + r.array_paymentlineid + '\')">Unapply</button></td>';
+          tbody.appendChild(tr);
+        });
+      }
+
+      function renderNewLines() {
+        const tbody = document.getElementById('newLinesBody');
+        tbody.innerHTML = '';
+
+        if (newLines.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No allocation lines yet. Click "Add Line" below.</td></tr>';
+          return;
+        }
+
+        newLines.forEach(function (line, idx) {
+          const tr = document.createElement('tr');
+          tr.innerHTML =
+            '<td>' +
+              '<div class="type-toggle">' +
+                '<button class="' + (line.isExternal ? '' : 'active') + '" onclick="Reconciliation.setType(' + idx + ', false)">In-System</button>' +
+                '<button class="' + (line.isExternal ? 'active' : '') + '" onclick="Reconciliation.setType(' + idx + ', true)">External</button>' +
+              '</div>' +
+            '</td>' +
+            '<td>' + renderInvoiceCell(line, idx) + '</td>' +
+            '<td>' + (line.isExternal ? '<span style="color:#9ca3af;">N/A</span>' : ('<span style="color:#6b7280;">' + fmt(line.targetInvoiceCredit || 0) + '</span>')) + '</td>' +
+            '<td>' +
+            '<input type="number" step="0.01" min="0.01" value="' + (line.amount || '') + '"' +
+            'class="' + (!line.isExternal && (parseFloat(line.amount) || 0) > (line.targetInvoiceCredit || 0) + 0.001 ? 'amount-invalid' : '') + '"' +
+            ' onchange="Reconciliation.setAmount(' + idx + ', this.value)" ' +
+            ' onblur="if(this.value) this.value = parseFloat(this.value).toFixed(2)" placeholder="0.00" />' +
+            (!line.isExternal && (parseFloat(line.amount) || 0) > (line.targetInvoiceCredit || 0) + 0.001
+            ? '<div class="amount-warning">Amount exceeds available credit (' + fmt(line.targetInvoiceCredit || 0) + ')</div>'
+            : '') +
+          '</td>' +
+            '<td>' +
+              '<textarea class="desc-textarea' + (line.isExternal && !line.description ? ' desc-required' : '') + '"' +
+              ' placeholder="' + (line.isExternal ? 'Required: external invoice reference / details' : 'Optional description') + '"' +
+              ' onchange="Reconciliation.setDescription(' + idx + ', this.value)">' + escapeHtml(line.description || '') + '</textarea>' +
+            '</td>' +
+            '<td><button class="btn btn-danger" onclick="Reconciliation.removeLine(' + idx + ')">✕</button></td>';
+          tbody.appendChild(tr);
+        });
+      }
+
+      function renderInvoiceCell(line, idx) {
+        if (line.isExternal) {
+          return '<span style="color: #92400e; font-weight: 600;">External invoice</span>' +
+                 '<div style="font-size: 11px; color: #6b7280;">Details in description field</div>';
+        }
+        const displayName = line.targetInvoiceName || '';
+        return '<div class="lookup-wrapper" data-line-idx="' + idx + '">' +
+                 '<div class="lookup-input-group">' +
+                   '<input type="text" value="' + escapeHtml(displayName) + '" placeholder="Search invoice with credit..."' +
+                   ' onfocus="Reconciliation.showInvoiceLookup(' + idx + ')"' +
+                   ' oninput="Reconciliation.filterInvoiceLookup(' + idx + ', this.value)" />' +
+                   '<button class="lookup-btn" onclick="Reconciliation.showInvoiceLookup(' + idx + ')">🔍</button>' +
+                 '</div>' +
+                 '<div class="lookup-dropdown" data-dropdown-idx="' + idx + '"></div>' +
+               '</div>';
+      }
+
+      function updateRemainingDisplay() {
+        const allocated = newLines.reduce(function (sum, l) { return sum + (parseFloat(l.amount) || 0); }, 0);
+        const remaining = outstandingBalance - allocated;
+        const el = document.getElementById('remainingCredit');
+        const symbol = getSymbol(sourceCurrencyCode);
+        el.textContent = symbol + ' ' + fmt(remaining);
+        el.className = 'credit-value credit-remaining';
+        if (remaining < -0.001) el.classList.add('error');
+        else if (Math.abs(remaining) < 0.001) el.classList.add('warn');
+
+        const saveBtn = document.getElementById('saveBtn');
+        const disabled = !canSave(remaining, allocated);
+        saveBtn.disabled = disabled;
+
+        if (disabled) {
+          if (outstandingBalance <= 0) {
+            saveBtn.title = 'No outstanding balance on this invoice';
+          } else if (allocated <= 0) {
+            saveBtn.title = 'Enter an amount to allocate';
+          } else if (remaining < -0.001) {
+            saveBtn.title = 'Over-allocated — reduce amounts to match outstanding balance';
+          } else {
+            saveBtn.title = 'Fill in all required fields';
+          }
+        } else {
+          saveBtn.title = '';
+        }
+      }
+
+      function canSave(remaining, allocated) {
+        if (newLines.length === 0) return false;
+        if (allocated <= 0) return false;
+        if (remaining < -0.001) return false;
+        return newLines.every(function (l) {
+          const amt = parseFloat(l.amount) || 0;
+          if (amt <= 0) return false;
+          if (l.isExternal) return (l.description || '').trim().length > 0;
+          if (!l.targetInvoiceId) return false;
+          // Can't take more credit from target than it has
+          if (amt > (l.targetInvoiceCredit || 0) + 0.001) return false;
+          return true;
+        });
+      }
+
+      // ---------- LINE MANIPULATION ----------
+      function addLine() {
+        newLineCounter++;
+        newLines.push({
+        _tempId: 'new_' + newLineCounter,
+        isExternal: false,
+        targetInvoiceId: null,
+        targetInvoiceName: '',
+        targetInvoiceCredit: 0,
+        targetCustomerId: null,
+        targetCustomerType: null,
+        targetLeaseId: null,
+        amount: '',
+        description: ''
+        });
+        renderNewLines();
+        updateRemainingDisplay();
+      }
+
+      function removeLine(idx) {
+        newLines.splice(idx, 1);
+        renderNewLines();
+        updateRemainingDisplay();
+      }
+
+      function setType(idx, isExternal) {
+        const line = newLines[idx];
+        line.isExternal = isExternal;
+        if (isExternal) {
+        line.targetInvoiceId = null;
+        line.targetInvoiceName = '';
+        line.targetInvoiceCredit = 0;
+        line.targetCustomerId = null;
+        line.targetCustomerType = null;
+        line.targetLeaseId = null;
+        }
+        renderNewLines();
+        updateRemainingDisplay();
+      }
+
+      function setAmount(idx, val) {
+        newLines[idx].amount = val;
+        renderNewLines();
+        updateRemainingDisplay();
+      }
+
+      function setDescription(idx, val) {
+        newLines[idx].description = val;
+        updateRemainingDisplay();
+      }
+
+      // ---------- INVOICE LOOKUP ----------
+      async function showInvoiceLookup(idx) {
+        const dropdown = document.querySelector('[data-dropdown-idx="' + idx + '"]');
+        if (!dropdown) return;
+        dropdown.innerHTML = '<div class="lookup-item">Searching...</div>';
+        dropdown.classList.add('show');
+
+        try {
+          const invoices = await searchInvoices('');
+          renderInvoiceOptions(idx, invoices);
+        } catch (e) {
+          console.error(e);
+          dropdown.innerHTML = '<div class="lookup-item" style="color:red;">Error loading invoices</div>';
+        }
+      }
+
+      async function filterInvoiceLookup(idx, query) {
+        const dropdown = document.querySelector('[data-dropdown-idx="' + idx + '"]');
+        if (!dropdown) return;
+        try {
+          const invoices = await searchInvoices(query || '');
+          renderInvoiceOptions(idx, invoices);
+          dropdown.classList.add('show');
+        } catch (e) {
+          console.error(e);
+          dropdown.innerHTML = '<div class="lookup-item" style="color:red;">Error</div>';
+        }
+      }
+
+      async function searchInvoices(query) {
+        // Show invoices that have credit available (array_credt > 0), same currency, not this invoice
+        const filters = [
+          'invoiceid ne ' + invoiceId,
+          'array_credt ne null and array_credt gt 0',
+          '(statecode eq 0 or statecode eq 2)'
+        ];
+               if (sourceCurrencyId) {
+          filters.push('_transactioncurrencyid_value eq ' + sourceCurrencyId);
+        }
+        // Only invoices belonging to the same customer as the invoice being reconciled
+        if (sourceInvoice && sourceInvoice._customerid_value) {
+          filters.push('_customerid_value eq ' + sourceInvoice._customerid_value);
+        }
+        if (query && query.trim()) {
+          const safe = query.replace(/'/g, "''");
+          filters.push("contains(array_invoiceno,'" + safe + "')");
+        }
+        const select = '?$select=invoiceid,array_invoiceno,array_credt,array_remainingamount,totalamount,_customerid_value,_array_leaseagreement_value';        const filter = '&$filter=' + filters.join(' and ');
+        const orderBy = '&$orderby=array_invoiceno asc&$top=50';
+        const result = await parent.Xrm.WebApi.retrieveMultipleRecords('invoice', select + filter + orderBy);
+        return result.entities || [];
+      }
+
+      function renderInvoiceOptions(idx, invoices) {
+        const dropdown = document.querySelector('[data-dropdown-idx="' + idx + '"]');
+        if (!dropdown) return;
+
+        const alreadyPicked = new Set(
+          newLines.filter(function (l, i) { return i !== idx && !l.isExternal && l.targetInvoiceId; })
+                  .map(function (l) { return l.targetInvoiceId; })
+        );
+        const filtered = invoices.filter(function (inv) { return !alreadyPicked.has(inv.invoiceid); });
+
+        if (filtered.length === 0) {
+          dropdown.innerHTML = '<div class="lookup-item" style="color:#6b7280;">No invoices with credit available</div>';
+          return;
+        }
+
+        dropdown.innerHTML = '';
+        filtered.forEach(function (inv) {
+          const custName = inv['_customerid_value@OData.Community.Display.V1.FormattedValue'] || '-';
+          const credit = fmt(inv.array_credt || 0);
+          const item = document.createElement('div');
+          item.className = 'lookup-item';
+          item.innerHTML =
+            '<div class="lookup-item-main">' + escapeHtml(inv.array_invoiceno || '-') + '</div>' +
+            '<div class="lookup-item-sub">Customer: ' + escapeHtml(custName) +
+              ' &nbsp;•&nbsp; Available Credit: ' + credit + '</div>';
+          item.onclick = function () { selectInvoice(idx, inv); };
+          dropdown.appendChild(item);
+        });
+      }
+
+      function selectInvoice(idx, inv) {
+        const line = newLines[idx];
+        line.targetInvoiceId = inv.invoiceid;
+        line.targetInvoiceName = inv.array_invoiceno || inv.invoiceid;
+        line.targetInvoiceCredit = inv.array_credt || 0;
+        line.targetCustomerId = inv._customerid_value || null;
+        line.targetCustomerType = inv['_customerid_value@Microsoft.Dynamics.CRM.lookuplogicalname'] || null;
+        line.targetLeaseId = inv._array_leaseagreement_value || null;
+        document.querySelectorAll('.lookup-dropdown').forEach(function (d) { d.classList.remove('show'); });
+        renderNewLines();
+        updateRemainingDisplay();
+      }
+
+      document.addEventListener('click', function (e) {
+        if (!e.target.closest('.lookup-wrapper')) {
+          document.querySelectorAll('.lookup-dropdown').forEach(function (d) { d.classList.remove('show'); });
+        }
+      });
+
+      // ---------- SAVE ----------
+      async function save() {
+        const confirmed = await parent.Xrm.Navigation.openConfirmDialog({
+          title: 'Confirm Reconciliation',
+          text: 'Save ' + newLines.length + ' reconciliation line(s)? This will reduce credit on the selected source invoices and apply payment to this invoice.',
+          confirmButtonLabel: 'Save',
+          cancelButtonLabel: 'Cancel'
+        }, { height: 240, width: 500 });
+        if (!confirmed.confirmed) return;
+
+        showLoading('Saving reconciliation...');
+        try {
+          const totalAllocated = newLines.reduce(function (s, l) { return s + parseFloat(l.amount); }, 0);
+          const paymentDate = new Date().toISOString().split('T')[0];
+
+          // 1. PARENT: Payment line on Invoice A (source being paid)
+          //    Records the full incoming amount from reconciliation
+         // Build parent description from the user-entered child descriptions
+            const childDescriptions = newLines
+            .map(function (l) { return (l.description || '').trim(); })
+            .filter(function (d) { return d.length > 0; });
+            const parentDescription = childDescriptions.length > 0
+            ? childDescriptions.join(' | ')
+            : '';
+
+            const parentPayload = {
+            'array_amountpaid': totalAllocated,
+            'array_paymentdate': paymentDate,
+            'array_paymentsource': PAYMENT_SOURCE_RECONCILED,
+            'array_approvalstatus': APPROVAL_STATUS_APPROVED,
+            'array_transactiontype': TXN_TYPE_PAYMENT,
+            'array_isexternalinvoice': false,
+            'array_description': parentDescription,
+            'array_Invoice@odata.bind': '/invoices(' + invoiceId + ')'
+          };
+          if (sourceCurrencyId) {
+            parentPayload['transactioncurrencyid@odata.bind'] = '/transactioncurrencies(' + sourceCurrencyId + ')';
+          }
+          if (sourceInvoice._customerid_value) {
+            const custType = sourceInvoice['_customerid_value@Microsoft.Dynamics.CRM.lookuplogicalname'];
+            if (custType === 'account') {
+                parentPayload['array_TenantLookup_account@odata.bind'] = '/accounts(' + sourceInvoice._customerid_value + ')';
+            } else if (custType === 'contact') {
+                parentPayload['array_TenantLookup_contact@odata.bind'] = '/contacts(' + sourceInvoice._customerid_value + ')';
+            }
+            }
+            // Bind source invoice's lease agreement
+            if (sourceInvoice._array_leaseagreement_value) {
+            parentPayload['array_LeaseAgreement@odata.bind'] = '/array_leaseagreements(' + sourceInvoice._array_leaseagreement_value + ')';
+            }
+            const parentResult = await parent.Xrm.WebApi.createRecord('array_paymentline', parentPayload);
+          const parentId = parentResult.id;
+
+          // 2. CHILDREN: Create for every allocation, in-system AND external.
+          //    - In-system: child links to target invoice, adjusts target's credit
+          //    - External: child records the external reference, no invoice/credit binding
+          for (const line of newLines) {
+            const amt = parseFloat(line.amount);
+
+            const childPayload = {
+              'array_amountpaid': amt,
+              'array_paymentdate': paymentDate,
+              'array_paymentsource': PAYMENT_SOURCE_RECONCILED,
+              'array_isexternalinvoice': !!line.isExternal,
+              'array_approvalstatus': APPROVAL_STATUS_APPROVED,
+              'array_transactiontype': TXN_TYPE_PAYMENT,
+              'array_description': line.description || '',
+              'array_ParentReconciliationLine@odata.bind': '/array_paymentlines(' + parentId + ')'
+            };
+            if (sourceCurrencyId) {
+              childPayload['transactioncurrencyid@odata.bind'] = '/transactioncurrencies(' + sourceCurrencyId + ')';
+            }
+
+            // In-system: bind target invoice, customer, lease + adjust credit
+            if (!line.isExternal && line.targetInvoiceId) {
+              childPayload['array_Invoice@odata.bind'] = '/invoices(' + line.targetInvoiceId + ')';
+              if (line.targetCustomerId && line.targetCustomerType === 'account') {
+                childPayload['array_TenantLookup_account@odata.bind'] = '/accounts(' + line.targetCustomerId + ')';
+              } else if (line.targetCustomerId && line.targetCustomerType === 'contact') {
+                childPayload['array_TenantLookup_contact@odata.bind'] = '/contacts(' + line.targetCustomerId + ')';
+              }
+              if (line.targetLeaseId) {
+                childPayload['array_LeaseAgreement@odata.bind'] = '/array_leaseagreements(' + line.targetLeaseId + ')';
+              }
+            }
+            // External: no invoice/customer/lease binding, description is the audit record
+
+            await parent.Xrm.WebApi.createRecord('array_paymentline', childPayload);
+
+            // Adjust credit only for in-system lines (external has no invoice to touch)
+            if (!line.isExternal && line.targetInvoiceId) {
+              await adjustCreditLine(line.targetInvoiceId, -amt);
+            }
+          }
+
+          // 3. Apply payment to SOURCE (Invoice A): reduce remaining, increase paid
+          const srcInv = await parent.Xrm.WebApi.retrieveRecord('invoice', invoiceId,
+            '?$select=totalamount,array_amountpaid,array_remainingamount');
+          const newSrcPaid = (srcInv.array_amountpaid || 0) + totalAllocated;
+          let newSrcRemaining = (srcInv.array_remainingamount || 0) - totalAllocated;
+          if (newSrcRemaining < 0) newSrcRemaining = 0;
+
+          const srcUpdate = {
+            'array_amountpaid': newSrcPaid,
+            'array_remainingamount': newSrcRemaining
+          };
+
+          if (newSrcRemaining <= 0.001) {
+            // Fully paid → Paid state with Complete status
+            srcUpdate.statecode = 2;
+            srcUpdate.statuscode = 100001;
+          } else {
+            // Partially paid → Paid state with Partial status
+            srcUpdate.statecode = 2;
+            srcUpdate.statuscode = 100002;
+          }
+
+          await parent.Xrm.WebApi.updateRecord('invoice', invoiceId, srcUpdate);
+
+          hideLoading();
+          await parent.Xrm.Navigation.openAlertDialog({
+            title: 'Success',
+            text: 'Reconciliation saved successfully.'
+          });
+        await refreshParentAndClose();
+        } catch (err) {
+          hideLoading();
+          console.error(err);
+          await parent.Xrm.Navigation.openErrorDialog({
+            message: 'Save failed: ' + (err.message || err)
+          });
+        }
+      }
+      /**
+       * Adjusts an invoice's credit by `delta` (negative to consume, positive to restore).
+       * - Sums all active credit lines on the invoice
+       * - Deactivates them
+       * - Creates one new consolidated credit line for (currentTotal + delta)
+       * The array_credt field itself is updated by an external flow that watches credit lines.
+       */
+      async function adjustCreditLine(invId, delta) {
+        const query = '?$select=array_paymentlineid,array_amountpaid' +
+                      '&$filter=_array_invoice_value eq ' + invId +
+                      ' and array_transactiontype eq ' + TXN_TYPE_CREDIT +
+                      ' and statecode eq 0' +
+                      '&$orderby=createdon asc';
+        const res = await parent.Xrm.WebApi.retrieveMultipleRecords('array_paymentline', query);
+        const activeCredits = res.entities || [];
+
+        const currentTotal = activeCredits.reduce(function (s, c) { return s + (c.array_amountpaid || 0); }, 0);
+        const newTotal = currentTotal + delta;
+
+        // Deactivate all existing active credit lines
+        for (const cl of activeCredits) {
+          await parent.Xrm.WebApi.updateRecord('array_paymentline', cl.array_paymentlineid, {
+            'statecode': 1,
+            'statuscode': 2
+          });
+        }
+
+        // Create a new consolidated credit line (only if > 0)
+        if (newTotal > 0.001) {
+        const inv = await parent.Xrm.WebApi.retrieveRecord('invoice', invId,
+            '?$select=_transactioncurrencyid_value,_customerid_value,_array_leaseagreement_value');
+
+          const newCreditLine = {
+            'array_amountpaid': newTotal,
+            'array_paymentdate': new Date().toISOString().split('T')[0],
+            'array_transactiontype': TXN_TYPE_CREDIT,
+            'array_approvalstatus': APPROVAL_STATUS_APPROVED,
+            'array_description': delta < 0
+              ? 'Credit reduced by manual reconciliation'
+              : 'Credit restored from unapplied reconciliation',
+            'array_Invoice@odata.bind': '/invoices(' + invId + ')'
+          };
+          if (inv._transactioncurrencyid_value) {
+            newCreditLine['transactioncurrencyid@odata.bind'] = '/transactioncurrencies(' + inv._transactioncurrencyid_value + ')';
+          }
+          if (inv._customerid_value) {
+            const custType = inv['_customerid_value@Microsoft.Dynamics.CRM.lookuplogicalname'];
+            if (custType === 'account') {
+                newCreditLine['array_TenantLookup_account@odata.bind'] = '/accounts(' + inv._customerid_value + ')';
+            } else if (custType === 'contact') {
+                newCreditLine['array_TenantLookup_contact@odata.bind'] = '/contacts(' + inv._customerid_value + ')';
+            }
+            }
+            if (inv._array_leaseagreement_value) {
+            newCreditLine['array_LeaseAgreement@odata.bind'] = '/array_leaseagreements(' + inv._array_leaseagreement_value + ')';
+            }
+            await parent.Xrm.WebApi.createRecord('array_paymentline', newCreditLine);
+        }
+      }
+            /**
+       * Creates an inactive copy of a payment line (for audit trail) before deletion.
+       * Copies all meaningful fields including lookups. The snapshot is deactivated
+       * immediately so it doesn't show up in active views but is preserved for history.
+       */
+      async function snapshotPaymentLine(lineId) {
+        // Fetch the full line with all fields we need to copy
+        const select = '?$select=array_amountpaid,array_paymentdate,array_description,' +
+                       'array_tenantname,array_paymentid,array_transactiontype,' +
+                       'array_paymentsource,array_approvalstatus,array_isexternalinvoice,' +
+                       'array_originalremainingamount,' +
+                       '_array_invoice_value,_array_paymentreceipt_value,' +
+                       '_transactioncurrencyid_value,_array_leaseagreement_value,' +
+                       '_array_tenantlookup_value,_array_parentreconciliationline_value';
+        const line = await parent.Xrm.WebApi.retrieveRecord('array_paymentline', lineId, select);
+
+                const snapshot = {
+          'array_amountpaid': line.array_amountpaid,
+          'array_paymentdate': line.array_paymentdate,
+          'array_description': (line.array_description || '') + ' [SNAPSHOT: unapplied reconciliation]',
+          'array_tenantname': line.array_tenantname,
+          'array_paymentid': line.array_paymentid,
+          'array_transactiontype': line.array_transactiontype,
+          'array_paymentsource': line.array_paymentsource,
+          'array_approvalstatus': line.array_approvalstatus,
+          'array_isexternalinvoice': line.array_isexternalinvoice,
+          'array_originalremainingamount': line.array_originalremainingamount
+        };
+
+        // Bind lookups if present
+        if (line._array_invoice_value) {
+          snapshot['array_Invoice@odata.bind'] = '/invoices(' + line._array_invoice_value + ')';
+        }
+        if (line._array_paymentreceipt_value) {
+          snapshot['array_PaymentReceipt@odata.bind'] = '/array_paymentreceipts(' + line._array_paymentreceipt_value + ')';
+        }
+        if (line._transactioncurrencyid_value) {
+          snapshot['transactioncurrencyid@odata.bind'] = '/transactioncurrencies(' + line._transactioncurrencyid_value + ')';
+        }
+        if (line._array_leaseagreement_value) {
+          snapshot['array_LeaseAgreement@odata.bind'] = '/array_leaseagreements(' + line._array_leaseagreement_value + ')';
+        }
+        // Tenant lookup is polymorphic
+        const tenantType = line['_array_tenantlookup_value@Microsoft.Dynamics.CRM.lookuplogicalname'];
+        if (line._array_tenantlookup_value && tenantType === 'account') {
+          snapshot['array_TenantLookup_account@odata.bind'] = '/accounts(' + line._array_tenantlookup_value + ')';
+        } else if (line._array_tenantlookup_value && tenantType === 'contact') {
+          snapshot['array_TenantLookup_contact@odata.bind'] = '/contacts(' + line._array_tenantlookup_value + ')';
+        }
+        // Parent reconciliation link — preserve so audit chain stays traceable
+        if (line._array_parentreconciliationline_value) {
+          snapshot['array_ParentReconciliationLine@odata.bind'] = '/array_paymentlines(' + line._array_parentreconciliationline_value + ')';
+        }
+
+                // Create snapshot, then immediately deactivate
+        const created = await parent.Xrm.WebApi.createRecord('array_paymentline', snapshot);
+        await parent.Xrm.WebApi.updateRecord('array_paymentline', created.id, {
+          'statecode': 1,
+          'statuscode': 2
+        });
+      }
+      // ---------- UNAPPLY ----------
+      async function unapply(parentLineId) {
+        const confirmed = await parent.Xrm.Navigation.openConfirmDialog({
+          title: 'Confirm Unapply',
+          text: 'Reverse this reconciliation? The payment will be reversed on this invoice and credit restored on source invoice(s) (in-system only).',
+          confirmButtonLabel: 'Unapply',
+          cancelButtonLabel: 'Cancel'
+        }, { height: 260, width: 520 });
+        if (!confirmed.confirmed) return;
+
+        showLoading('Unapplying reconciliation...');
+        try {
+          // 1. Load parent + children
+          const parentRec = await parent.Xrm.WebApi.retrieveRecord('array_paymentline', parentLineId,
+            '?$select=array_paymentlineid,array_amountpaid');
+
+          const childQuery = '?$select=array_paymentlineid,array_amountpaid,array_isexternalinvoice,_array_invoice_value' +
+                             '&$filter=_array_parentreconciliationline_value eq ' + parentLineId +
+                             ' and statecode eq 0';
+          const childResult = await parent.Xrm.WebApi.retrieveMultipleRecords('array_paymentline', childQuery);
+          const children = childResult.entities || [];
+
+                      // Total to reverse = the parent's amount (works for both mixed and all-external cases)
+            let totalReversed = parentRec.array_amountpaid || 0;
+
+            // 2. For each child: restore target invoice's credit (in-system only), then delete
+            for (const child of children) {
+              const amt = child.array_amountpaid || 0;
+            const isExternal = child.array_isexternalinvoice === true;
+            const targetInvId = child._array_invoice_value; // The target that donated credit
+            if (!isExternal && targetInvId) {
+              try {
+                // Restore credit: creates new consolidated line with old + amt, deactivates old lines
+                // Widget doesn't touch array_credt — flow recalculates it
+                await adjustCreditLine(targetInvId, amt);
+              } catch (e) {
+                console.warn('Could not restore credit on target invoice ' + targetInvId + ':', e);
+              }
+            }
+                        // External children: just delete, no invoice to update
+
+            // Snapshot child for audit BEFORE deleting
+            try {
+              await snapshotPaymentLine(child.array_paymentlineid);
+            } catch (e) {
+              console.warn('Snapshot failed for child ' + child.array_paymentlineid + ':', e);
+            }
+            await parent.Xrm.WebApi.deleteRecord('array_paymentline', child.array_paymentlineid);
+          }
+          // 3. Reverse the payment on source invoice A
+          const srcInv = await parent.Xrm.WebApi.retrieveRecord('invoice', invoiceId,
+            '?$select=array_amountpaid,array_remainingamount,totalamount,statecode,statuscode');
+          const newSrcPaid = Math.max(0, (srcInv.array_amountpaid || 0) - totalReversed);
+          const newSrcRemaining = (srcInv.array_remainingamount || 0) + totalReversed;
+
+          // Check if any OTHER active reconciliations remain on this invoice
+          // (excluding the one we're currently unapplying, which is still active until we delete it below)
+          const remainingReconQuery = '?$select=array_paymentlineid&$top=1' +
+            '&$filter=_array_invoice_value eq ' + invoiceId +
+            ' and array_paymentsource eq ' + PAYMENT_SOURCE_RECONCILED +
+            ' and array_transactiontype eq ' + TXN_TYPE_PAYMENT +
+            ' and _array_parentreconciliationline_value eq null' +
+            ' and statecode eq 0' +
+            ' and array_paymentlineid ne ' + parentLineId;
+          const remainingReconResult = await parent.Xrm.WebApi.retrieveMultipleRecords('array_paymentline', remainingReconQuery);
+          const hasOtherReconciliations = (remainingReconResult.entities || []).length > 0;
+
+          // If invoice is currently Paid (state=2), we MUST move it out of Paid state before
+          // we can set any Active statuscode. Otherwise Dataverse throws state/status mismatch.
+          const currentlyPaid = srcInv.statecode === 2;
+
+          const srcUpdate = {
+            'array_amountpaid': newSrcPaid,
+            'array_remainingamount': newSrcRemaining
+          };
+
+          if (hasOtherReconciliations) {
+            // Other reconciliations still exist — just update amounts, don't touch status
+            // If invoice is currently Paid and still has a remaining balance, keep it Paid/Partial
+            if (currentlyPaid && newSrcRemaining > 0.001) {
+              srcUpdate.statecode = 2;
+              srcUpdate.statuscode = 100002; // Partial
+            }
+            // Otherwise leave status alone
+          } else {
+            // This was the LAST reconciliation — revert status based on final amounts
+            if (newSrcPaid <= 0.001) {
+              // Fully reversed — back to Billed
+              srcUpdate.statecode = 0;
+              srcUpdate.statuscode = 4;
+            } else if (newSrcRemaining <= 0.001) {
+              // Still fully paid (edge case)
+              srcUpdate.statecode = 2;
+              srcUpdate.statuscode = 100001;
+            } else {
+              // Partial payment remains — Paid state with Partial status
+              srcUpdate.statecode = 2;
+              srcUpdate.statuscode = 100002;
+            }
+          }
+
+          await parent.Xrm.WebApi.updateRecord('invoice', invoiceId, srcUpdate);
+
+        // 4. Snapshot the parent for audit, then delete
+          try {
+            await snapshotPaymentLine(parentLineId);
+          } catch (e) {
+            console.warn('Snapshot failed for parent ' + parentLineId + ':', e);
+          }
+          await parent.Xrm.WebApi.deleteRecord('array_paymentline', parentLineId);
+
+          hideLoading();
+          await parent.Xrm.Navigation.openAlertDialog({
+            title: 'Success',
+            text: 'Reconciliation reversed successfully.'
+          });
+
+          // Reload widget state
+          await loadSourceInvoice();
+          await loadExistingReconciliations();
+          renderAll();
+
+          try {
+            if (parent && parent.Xrm && parent.Xrm.Page && parent.Xrm.Page.data) {
+              parent.Xrm.Page.data.refresh(false);
+            }
+          } catch (e) { /* non-fatal */ }
+
+        } catch (err) {
+          hideLoading();
+          console.error(err);
+          await parent.Xrm.Navigation.openErrorDialog({
+            message: 'Unapply failed: ' + (err.message || err)
+          });
+        }
+      }
+
+     async function refreshParentAndClose() {
+        try {
+          if (parent && parent.Xrm && parent.Xrm.Page && parent.Xrm.Page.data) {
+            await parent.Xrm.Page.data.refresh(false);
+          }
+        } catch (e) {
+          console.warn('Form refresh failed:', e);
+        }
+
+        close();
+      }
+
+      function close() {
+        try { window.close(); } catch (e) { /* ignore */ }
+      }
+
+      return {
+        init: init,
+        addLine: addLine,
+        removeLine: removeLine,
+        setType: setType,
+        setAmount: setAmount,
+        setDescription: setDescription,
+        showInvoiceLookup: showInvoiceLookup,
+        filterInvoiceLookup: filterInvoiceLookup,
+        save: save,
+        unapply: unapply,
+        close: close
+      };
+    })();
+
+    window.addEventListener('DOMContentLoaded', Reconciliation.init);
+  </script>
+</body>
+</html>
