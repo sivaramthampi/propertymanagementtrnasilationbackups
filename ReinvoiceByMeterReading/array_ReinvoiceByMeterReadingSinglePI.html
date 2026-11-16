@@ -1,0 +1,5080 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reinvoice Options</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family:
+          "Segoe UI",
+          -apple-system,
+          BlinkMacSystemFont,
+          sans-serif;
+        color: #323130;
+        background: white;
+        min-height: 100vh;
+      }
+      /* Fills the dialog from the top — the dialog itself is the frame */
+      .container {
+        background: white;
+        width: 100%;
+        padding: 24px 28px;
+        animation: slideIn 0.3s ease-out;
+      }
+      @media (max-width: 900px) {
+        .container {
+          padding: 20px 16px;
+        }
+        .split-summary {
+          grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        }
+      }
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      h2 {
+        color: #1a1a1a;
+        margin-bottom: 24px;
+        font-size: 20px;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+      }
+      h3 {
+        color: #1a1a1a;
+        margin-bottom: 16px;
+        margin-top: 32px;
+        font-size: 16px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .section-divider {
+        height: 1px;
+        background: linear-gradient(to right, #e0e0e0, transparent);
+        margin: 24px 0;
+      }
+      .options-container {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 24px;
+        padding: 4px;
+        background: #f5f5f5;
+        border-radius: 8px;
+      }
+      .radio-option {
+        flex: 1;
+        position: relative;
+      }
+      .radio-option input[type="radio"] {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+      .radio-label {
+        display: block;
+        padding: 10px 16px;
+        text-align: center;
+        font-size: 14px;
+        font-weight: 500;
+        color: #666;
+        cursor: pointer;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+        user-select: none;
+      }
+      .radio-option input[type="radio"]:checked + .radio-label {
+        background: white;
+        color: #1a1a1a;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+      .radio-option:hover .radio-label {
+        color: #1a1a1a;
+      }
+      .form-container {
+        display: none;
+      }
+      .form-container.active {
+        display: block;
+        animation: fadeIn 0.2s ease-in;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      .form-group {
+        margin-bottom: 20px;
+      }
+      .form-group label {
+        display: block;
+        color: #333;
+        font-weight: 500;
+        margin-bottom: 8px;
+        font-size: 14px;
+      }
+      .form-group input,
+      .form-group select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+        font-size: 14px;
+        transition: all 0.2s ease;
+        background: white;
+        font-family: inherit;
+      }
+      .form-group input:focus,
+      .form-group select:focus {
+        outline: none;
+        border-color: #0066ff;
+        box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.1);
+      }
+      .form-group input[readonly] {
+        background: #fafafa;
+        cursor: pointer;
+      }
+      .form-group input[readonly]:hover {
+        border-color: #d0d0d0;
+      }
+      .form-group input[disabled] {
+        background: #f0f4ff;
+        color: #555;
+        cursor: not-allowed;
+        border-color: #c5d3f5;
+      }
+      .required::after {
+        content: " *";
+        color: #ff3b30;
+      }
+      .button-container {
+        display: flex;
+        gap: 12px;
+        margin-top: 28px;
+      }
+      .btn {
+        flex: 1;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: inherit;
+      }
+      .btn-submit {
+        background: #0066ff;
+        color: white;
+      }
+      .btn-submit:hover:not(:disabled) {
+        background: #0052cc;
+      }
+      .btn-submit:active:not(:disabled) {
+        transform: scale(0.98);
+      }
+      .btn-submit:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        background: #9eb8e8;
+      }
+      .btn-secondary {
+        background: #f0f4ff;
+        color: #0052cc;
+        border: 1px solid #c5d3f5;
+      }
+      .btn-secondary:hover {
+        background: #e4ecff;
+      }
+      /* ── Split Preview Modal ── */
+      .split-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1100;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.2s ease;
+      }
+      .split-overlay.active {
+        display: flex;
+      }
+      .split-modal {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        max-width: 860px;
+        width: 94%;
+        max-height: 88vh;
+        display: flex;
+        flex-direction: column;
+        animation: slideInScale 0.2s ease;
+      }
+      .split-modal-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .split-modal-title {
+        font-size: 17px;
+        font-weight: 700;
+        color: #111827;
+      }
+      .split-modal-close {
+        background: none;
+        border: none;
+        font-size: 22px;
+        color: #9ca3af;
+        cursor: pointer;
+        line-height: 1;
+      }
+      .split-modal-close:hover {
+        color: #374151;
+      }
+      .split-modal-body {
+        padding: 20px 24px;
+        overflow-y: auto;
+      }
+      .split-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+      .split-kpi {
+        background: #f8fafc;
+        border: 1px solid #eef2f7;
+        border-radius: 8px;
+        padding: 10px 12px;
+      }
+      .split-kpi-label {
+        display: block;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        color: #6b7280;
+        margin-bottom: 4px;
+      }
+      .split-kpi-val {
+        font-size: 15px;
+        font-weight: 600;
+        color: #111827;
+      }
+      .split-groups {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .split-group {
+        border: 1px solid #e6eaf0;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      .split-group-header {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        background: #f8fafc;
+        border: none;
+        cursor: pointer;
+        text-align: left;
+        font-size: 13px;
+      }
+      .split-group-header:hover {
+        background: #eef2f9;
+      }
+      .split-group-caret {
+        width: 14px;
+        color: #6b7280;
+        font-size: 11px;
+      }
+      .split-group-badge {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        padding: 2px 7px;
+        border-radius: 10px;
+      }
+      .grp-badge-lease {
+        background: #e8f0ff;
+        color: #1d4ed8;
+      }
+      .grp-badge-acct {
+        background: #fff4e5;
+        color: #b45309;
+      }
+      .grp-badge-common {
+        background: #eef2f7;
+        color: #4b5563;
+      }
+      .split-group-title {
+        font-weight: 600;
+        color: #111827;
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .split-group-count {
+        font-size: 11px;
+        color: #9ca3af;
+      }
+      .split-group-subtotal {
+        font-weight: 700;
+        color: #166534;
+        min-width: 90px;
+        text-align: right;
+      }
+      .split-group-body {
+        padding: 0 10px 8px;
+        overflow-x: auto; /* wide tables scroll sideways on narrow dialogs */
+        -webkit-overflow-scrolling: touch;
+      }
+      .split-group-body .meter-table th,
+      .split-group-body .meter-table td {
+        white-space: nowrap;
+      }
+      .split-grandtotal {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 14px;
+        padding: 12px 14px;
+        background: #f0f7f2;
+        border: 1px solid #cfe8d8;
+        border-radius: 8px;
+        font-weight: 700;
+        color: #111827;
+      }
+      .split-grandtotal span:last-child {
+        color: #166534;
+        font-size: 15px;
+      }
+      /* ── Icons (inline SVG, see ICON in the script) ── */
+      .ico {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 0;
+      }
+      .ico svg,
+      .split-group-caret svg,
+      .refresh-icon svg,
+      .reading-id-link-icon svg,
+      .modal-icon svg,
+      .allocation-modal-close svg {
+        width: 1em;
+        height: 1em;
+        flex-shrink: 0;
+      }
+      .split-group-caret {
+        display: inline-flex;
+        align-items: center;
+      }
+      .split-group-caret svg {
+        transition: transform 0.15s ease;
+      }
+      .split-group-caret.open svg {
+        transform: rotate(90deg);
+      }
+      h3 .ico {
+        color: #2563eb;
+      }
+      .no-readings-banner-icon {
+        color: #4f6bd8;
+      }
+      .all-ineligible-banner-icon {
+        color: #1e40af;
+      }
+      .ineligible-info-banner-icon,
+      .field-note-inline .ico {
+        color: #1d4ed8;
+      }
+      .allocation-modal-notice-icon {
+        color: #d97706;
+      }
+      .error-message {
+        color: #ff3b30;
+        font-size: 13px;
+        margin-top: 6px;
+        display: none;
+      }
+      .error-message.show {
+        display: block;
+      }
+      .date-hint {
+        font-size: 11px;
+        color: #6b7280;
+        margin-top: 4px;
+        display: none;
+      }
+      .field-label-row {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+      .field-label-row label {
+        margin-bottom: 0;
+      }
+      .field-note-inline {
+        font-size: 11px;
+        color: #6b7280;
+        font-weight: 400;
+        line-height: 1.4;
+        text-align: right;
+        white-space: normal;
+      }
+      .date-hint.error {
+        color: #dc2626;
+        font-weight: 600;
+      }
+
+      /* ── General Modal ── */
+      .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.2s ease;
+      }
+      .modal-overlay.active {
+        display: flex;
+      }
+      @keyframes slideInScale {
+        from {
+          transform: scale(0.95);
+          opacity: 0;
+        }
+        to {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      .modal {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow:
+          0 20px 25px -5px rgba(0, 0, 0, 0.1),
+          0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        max-width: 450px;
+        width: 90%;
+        animation: slideInScale 0.2s ease;
+      }
+      .modal-header {
+        padding: 24px 24px 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .modal-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        flex-shrink: 0;
+      }
+      .modal-icon.success {
+        background: #f0fdf4;
+        color: #16a34a;
+      }
+      .modal-icon.error {
+        background: #fef2f2;
+        color: #dc2626;
+      }
+      .modal-icon.warning {
+        background: #fef3c7;
+        color: #d97706;
+      }
+      .modal-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #111827;
+      }
+      .modal-body {
+        padding: 0 24px 24px;
+        color: #6b7280;
+        font-size: 14px;
+        line-height: 1.6;
+      }
+      .modal-footer {
+        padding: 16px 24px;
+        border-top: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+      }
+      .modal-btn {
+        padding: 8px 20px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+      }
+      .modal-btn-primary {
+        background: #2563eb;
+        color: #fff;
+      }
+      .modal-btn-primary:hover {
+        background: #1d4ed8;
+      }
+
+      /* ── Meter Readings Subgrid ── */
+      .subgrid-container {
+        margin-top: 32px;
+        animation: fadeIn 0.3s ease-in;
+      }
+      .subgrid-container.hidden {
+        display: none;
+      }
+      .subgrid-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+      }
+      .record-count {
+        color: #666;
+        font-size: 13px;
+        font-weight: 500;
+        padding: 4px 10px;
+        background: #f5f5f5;
+        border-radius: 12px;
+      }
+      .table-wrapper {
+        overflow-x: auto;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        background: white;
+      }
+      .meter-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        min-width: 560px;
+      }
+      .meter-table thead {
+        background: #fafafa;
+        border-bottom: 2px solid #e0e0e0;
+      }
+      .meter-table th {
+        padding: 12px 16px;
+        text-align: left;
+        font-weight: 600;
+        color: #333;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+        border-right: 1px solid #e8e8e8;
+      }
+      .meter-table th:last-child {
+        border-right: none;
+      }
+      .meter-table tbody tr {
+        border-bottom: 1px solid #f0f0f0;
+        transition: background-color 0.15s ease;
+      }
+      .meter-table tbody tr:hover {
+        background: #f8f9fa;
+      }
+      .meter-table tbody tr:last-child {
+        border-bottom: none;
+      }
+      .meter-table td {
+        padding: 14px 16px;
+        color: #1a1a1a;
+        vertical-align: middle;
+        border-right: 1px solid #f0f0f0;
+      }
+      .meter-table td:last-child {
+        border-right: none;
+      }
+      .meter-table td.id-cell {
+        font-weight: 500;
+        color: #0066ff;
+        text-align: left;
+      }
+      .meter-table td.meter-cell {
+        text-align: left;
+      }
+      .meter-table td.numeric-cell {
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+      }
+      .meter-table td.amount-cell {
+        font-weight: 600;
+        text-align: center;
+        color: #2e7d32;
+      }
+      .meter-table td.action-cell {
+        text-align: center;
+        white-space: nowrap;
+      }
+      .meter-groups {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .meter-group {
+        border: 1px solid #e6eaf0;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      .meter-group-body {
+        padding: 0 10px 8px;
+        overflow-x: auto;
+      }
+      .meter-table tbody tr.row-incomplete {
+        background: #fffbf0;
+        border-left: 3px solid #f59e0b;
+      }
+      .meter-table tbody tr.row-incomplete:hover {
+        background: #fff8e6;
+      }
+      .meter-table tbody tr.row-incomplete td:first-child {
+        padding-left: 13px;
+      }
+      .meter-table td.cell-missing {
+        background: #fff3cd;
+        color: #92400e;
+        text-align: center;
+        padding: 0;
+      }
+      .missing-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: #fef3c7;
+        border: 1px solid #fcd34d;
+        color: #92400e;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 4px 8px;
+        border-radius: 20px;
+        white-space: nowrap;
+      }
+      .row-warning-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        background: #fef3c7;
+        border: 1px solid #fcd34d;
+        color: #b45309;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 6px;
+        border-radius: 10px;
+        margin-top: 4px;
+        letter-spacing: 0.3px;
+      }
+      .meter-table tbody tr.row-complete {
+        border-left: 3px solid #4ade80;
+      }
+      .meter-table tbody tr.row-complete td:first-child {
+        padding-left: 13px;
+      }
+      .reading-id-link {
+        color: #0066ff;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+        background: none;
+        border: none;
+        padding: 0;
+        font-size: inherit;
+        font-family: inherit;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .reading-id-link:hover {
+        text-decoration: underline;
+        color: #0052cc;
+      }
+      .reading-id-link-icon {
+        font-size: 10px;
+        opacity: 0.6;
+      }
+
+      /* ── Banners ── */
+      .incomplete-warning-banner {
+        display: none;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 14px 16px;
+        background: #fffbf0;
+        border: 1.5px solid #fcd34d;
+        border-radius: 8px;
+        margin-top: 20px;
+        animation: fadeIn 0.25s ease-in;
+      }
+      .incomplete-warning-banner.show {
+        display: flex;
+      }
+      .incomplete-warning-banner-icon {
+        font-size: 18px;
+        flex-shrink: 0;
+        margin-top: 1px;
+      }
+      .incomplete-warning-banner-body {
+        flex: 1;
+      }
+      .incomplete-warning-banner-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: #92400e;
+        margin-bottom: 3px;
+      }
+      .incomplete-warning-banner-subtitle {
+        font-size: 12px;
+        color: #b45309;
+        line-height: 1.5;
+      }
+      .ineligible-info-banner {
+        display: none;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 12px 16px;
+        background: #eff6ff;
+        border: 1.5px solid #93c5fd;
+        border-radius: 8px;
+        margin-bottom: 12px;
+        animation: fadeIn 0.25s ease-in;
+      }
+      .ineligible-info-banner.show {
+        display: flex;
+      }
+      .ineligible-info-banner-icon {
+        font-size: 16px;
+        flex-shrink: 0;
+        margin-top: 1px;
+      }
+      .ineligible-info-banner-body {
+        flex: 1;
+      }
+      .ineligible-info-banner-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: #1e40af;
+        margin-bottom: 2px;
+      }
+      .ineligible-info-banner-subtitle {
+        font-size: 12px;
+        color: #1d4ed8;
+        line-height: 1.5;
+      }
+      .all-ineligible-banner {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        padding: 32px 24px;
+        background: #eff6ff;
+        border: 1.5px dashed #93c5fd;
+        border-radius: 10px;
+        text-align: center;
+        animation: fadeIn 0.3s ease-in;
+      }
+      .all-ineligible-banner.show {
+        display: flex;
+      }
+      .all-ineligible-banner-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: #dbeafe;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+      }
+      .all-ineligible-banner-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: #1e3a8a;
+      }
+      .all-ineligible-banner-subtitle {
+        font-size: 13px;
+        color: #1e40af;
+        max-width: 460px;
+        line-height: 1.6;
+      }
+      .no-readings-banner {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        padding: 40px 32px;
+        background: #f8f9ff;
+        border: 1.5px dashed #b3c6f7;
+        border-radius: 10px;
+        text-align: center;
+        animation: fadeIn 0.3s ease-in;
+      }
+      .no-readings-banner.show {
+        display: flex;
+      }
+      .no-readings-banner-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        background: #e8eeff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 26px;
+      }
+      .no-readings-banner-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: #1a1a1a;
+        letter-spacing: -0.01em;
+      }
+      .no-readings-banner-subtitle {
+        font-size: 13px;
+        color: #666;
+        max-width: 380px;
+        line-height: 1.6;
+      }
+
+      /* ── Legend ── */
+      .table-legend {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 8px;
+        font-size: 12px;
+        color: #666;
+      }
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .legend-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 2px;
+        flex-shrink: 0;
+      }
+      .legend-dot.ok {
+        background: #dcfce7;
+        border: 1.5px solid #4ade80;
+      }
+      .legend-dot.warn {
+        background: #fef3c7;
+        border: 1.5px solid #fcd34d;
+      }
+
+      /* ── Loader ── */
+      .loader-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 2000;
+        align-items: center;
+        justify-content: center;
+      }
+      .loader-overlay.active {
+        display: flex;
+      }
+      .loader-container {
+        background: #fff;
+        border-radius: 12px;
+        padding: 40px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+      }
+      .loader-spinner {
+        width: 50px;
+        height: 50px;
+        border: 4px solid #e5e7eb;
+        border-top-color: #2563eb;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      .loader-text {
+        font-size: 16px;
+        font-weight: 600;
+        color: #374151;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* ── States ── */
+      .empty-state {
+        padding: 48px 24px;
+        text-align: center;
+        color: #999;
+      }
+      .empty-state-icon {
+        font-size: 48px;
+        margin-bottom: 12px;
+        opacity: 0.3;
+      }
+      .empty-state-text {
+        font-size: 14px;
+        color: #666;
+      }
+      .loading-state {
+        padding: 48px 24px;
+        text-align: center;
+        color: #666;
+      }
+      .loading-spinner {
+        width: 32px;
+        height: 32px;
+        border: 3px solid #f0f0f0;
+        border-top-color: #0066ff;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin: 0 auto 12px;
+      }
+      .loading-text {
+        font-size: 14px;
+        color: #666;
+      }
+      .error-state {
+        padding: 24px;
+        background: #fff3f3;
+        border: 1px solid #ffcdd2;
+        border-radius: 6px;
+        color: #c62828;
+        font-size: 14px;
+        text-align: center;
+      }
+
+      /* ── Subgrid actions ── */
+      .subgrid-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .btn-refresh {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 11px;
+        background: white;
+        border: 1px solid #d0d0d0;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 500;
+        color: #444;
+        cursor: pointer;
+        transition: all 0.18s ease;
+        font-family: inherit;
+      }
+      .btn-refresh:hover {
+        background: #f5f5f5;
+        border-color: #aaa;
+        color: #111;
+      }
+      .btn-refresh:active {
+        transform: scale(0.97);
+      }
+      .btn-refresh:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .btn-refresh.spinning .refresh-icon {
+        animation: spin 0.7s linear infinite;
+      }
+      .refresh-icon {
+        display: inline-block;
+        font-size: 13px;
+        line-height: 1;
+      }
+
+      /* ── See Allocation Button ── */
+      .btn-allocation {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 10px;
+        background: #f0f4ff;
+        border: 1px solid #c5d3f5;
+        border-radius: 5px;
+        font-size: 11px;
+        font-weight: 600;
+        color: #2563eb;
+        cursor: pointer;
+        transition: all 0.18s ease;
+        font-family: inherit;
+        white-space: nowrap;
+      }
+      .btn-allocation svg {
+        width: 12px;
+        height: 12px;
+      }
+      .btn-allocation:hover {
+        background: #dbeafe;
+        border-color: #93c5fd;
+        color: #1d4ed8;
+      }
+      .btn-allocation:active {
+        transform: scale(0.97);
+      }
+
+      /* ── Allocation Modal — UPDATED FOR RESPONSIVENESS ── */
+      .allocation-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1500;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.2s ease;
+        padding: 12px;
+      }
+      .allocation-overlay.active {
+        display: flex;
+      }
+      .allocation-modal {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow:
+          0 20px 25px -5px rgba(0, 0, 0, 0.15),
+          0 10px 10px -5px rgba(0, 0, 0, 0.06);
+        width: 100%;
+        max-width: 700px;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        animation: slideInScale 0.2s ease;
+      }
+      .allocation-modal-header {
+        padding: 16px 20px 14px;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        flex-shrink: 0;
+      }
+      .allocation-modal-title-block {
+        flex: 1;
+        min-width: 0;
+      }
+      .allocation-modal-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .allocation-modal-subtitle {
+        font-size: 12px;
+        color: #6b7280;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .allocation-modal-close {
+        width: 30px;
+        height: 30px;
+        border: none;
+        background: #f3f4f6;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        color: #6b7280;
+        transition: all 0.15s;
+        flex-shrink: 0;
+      }
+      .allocation-modal-close:hover {
+        background: #e5e7eb;
+        color: #111827;
+      }
+      .allocation-modal-body {
+        padding: 16px 20px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        flex: 1;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* ── Allocation Table — UPDATED FOR RESPONSIVENESS ── */
+      .allocation-table-wrapper {
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        overflow: hidden;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .allocation-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        min-width: 380px;
+      }
+      .allocation-table thead {
+        background: #f8faff;
+        border-bottom: 2px solid #e0e0e0;
+      }
+      .allocation-table th {
+        padding: 10px 12px;
+        text-align: left;
+        font-weight: 600;
+        color: #374151;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+        border-right: 1px solid #e8e8e8;
+      }
+      .allocation-table th:last-child {
+        border-right: none;
+      }
+      .allocation-table tbody tr {
+        border-bottom: 1px solid #f0f0f0;
+        transition: background-color 0.12s ease;
+      }
+      .allocation-table tbody tr:last-child {
+        border-bottom: none;
+      }
+      .allocation-table tbody tr:hover {
+        background: #f8f9fa;
+      }
+      .allocation-table td {
+        padding: 10px 12px;
+        color: #1a1a1a;
+        vertical-align: middle;
+        border-right: 1px solid #f0f0f0;
+        max-width: 160px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .allocation-table td:last-child {
+        border-right: none;
+      }
+      .allocation-table td.alloc-name-cell {
+        font-weight: 500;
+        max-width: 140px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .allocation-table td.alloc-lease-cell {
+        color: #555;
+        font-size: 12px;
+        max-width: 130px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .allocation-table td.alloc-pct-cell {
+        text-align: center;
+        font-weight: 600;
+        color: #2563eb;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+      .allocation-table td.alloc-amt-cell {
+        text-align: right;
+        font-weight: 600;
+        color: #2e7d32;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+      .alloc-type-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+      .alloc-type-badge.account {
+        background: #fef3c7;
+        color: #92400e;
+      }
+      .alloc-type-badge.lease {
+        background: #dcfce7;
+        color: #166534;
+      }
+      .alloc-type-badge.unit {
+        background: #ede9fe;
+        color: #5b21b6;
+      }
+      .alloc-type-badge.contact {
+        background: #e0f2fe;
+        color: #075985;
+      }
+      .allocation-total-row {
+        background: #f8faff;
+        border-top: 2px solid #e0e0e0 !important;
+      }
+      .allocation-total-row td {
+        font-weight: 700;
+        color: #111827;
+        white-space: nowrap;
+      }
+      .allocation-total-row td.alloc-pct-cell {
+        color: #1d4ed8;
+      }
+      .allocation-total-row td.alloc-amt-cell {
+        color: #166534;
+      }
+      .allocation-state {
+        padding: 36px 24px;
+        text-align: center;
+        color: #666;
+      }
+      .allocation-spinner {
+        width: 28px;
+        height: 28px;
+        border: 3px solid #f0f0f0;
+        border-top-color: #2563eb;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin: 0 auto 10px;
+      }
+      .allocation-state-text {
+        font-size: 13px;
+        color: #6b7280;
+      }
+
+      @media (max-width: 600px) {
+        .container {
+          padding: 20px;
+        }
+        h2 {
+          font-size: 18px;
+          margin-bottom: 20px;
+        }
+        h3 {
+          font-size: 14px;
+        }
+        .meter-table {
+          min-width: 100%;
+          font-size: 11px;
+        }
+        .meter-table th,
+        .meter-table td {
+          padding: 10px 8px;
+        }
+        .meter-table th {
+          font-size: 10px;
+        }
+        /* Allocation modal mobile overrides */
+        .allocation-overlay {
+          padding: 8px;
+          align-items: flex-end;
+        }
+        .allocation-modal {
+          max-width: 100%;
+          max-height: 85vh;
+          border-radius: 12px 12px 8px 8px;
+        }
+        .allocation-modal-header {
+          padding: 14px 16px 12px;
+        }
+        .allocation-modal-title {
+          font-size: 14px;
+        }
+        .allocation-modal-body {
+          padding: 12px 14px;
+        }
+        .allocation-table {
+          font-size: 11px;
+          min-width: 320px;
+        }
+        .allocation-table th,
+        .allocation-table td {
+          padding: 8px 8px;
+        }
+        .allocation-table th {
+          font-size: 10px;
+        }
+        .alloc-type-badge {
+          font-size: 9px;
+          padding: 2px 6px;
+        }
+      }
+
+      .allocation-modal-notice {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 10px 14px;
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        border-radius: 6px;
+        margin-bottom: 14px;
+        flex-shrink: 0;
+      }
+      .allocation-modal-notice-icon {
+        font-size: 15px;
+        flex-shrink: 0;
+        margin-top: 1px;
+      }
+      .allocation-modal-notice-text {
+        font-size: 12px;
+        color: #92400e;
+        line-height: 1.5;
+      }
+      .allocation-modal-notice-text strong {
+        font-weight: 600;
+        display: block;
+        margin-bottom: 2px;
+        color: #78350f;
+      }
+
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- No Meter Readings Banner -->
+      <div class="no-readings-banner" id="noReadingsBanner">
+        <div class="no-readings-banner-icon"><span class="ico" data-icon="clipboard"></span></div>
+        <div class="no-readings-banner-title">No Meter Readings Available</div>
+        <div class="no-readings-banner-subtitle">
+          There are no active meter readings linked to this purchase invoice.
+          Reinvoicing requires at least one active meter reading to proceed.
+        </div>
+      </div>
+
+      <!-- Main content -->
+      <div id="mainContent" style="display: none">
+        <h2>Select Reinvoice Type</h2>
+        <div class="options-container">
+          <div class="radio-option">
+            <input
+              type="radio"
+              id="invoiceOption"
+              name="reinvoiceType"
+              value="invoice"
+              onchange="selectOption('invoice')"
+            />
+            <label for="invoiceOption" class="radio-label">Invoice</label>
+          </div>
+          <div class="radio-option">
+            <input
+              type="radio"
+              id="chargeOption"
+              name="reinvoiceType"
+              value="charge"
+              onchange="selectOption('charge')"
+            />
+            <label for="chargeOption" class="radio-label"
+              >Recurring Charge</label
+            >
+          </div>
+        </div>
+
+        <!-- Invoice Form -->
+        <div class="form-container" id="invoiceForm">
+          <div class="form-group" style="display: none">
+            <label for="invoiceType">Invoice Type</label>
+            <input
+              type="text"
+              id="invoiceType"
+              placeholder="Select invoice type..."
+              readonly
+              onclick="openLookup('array_invoicetype', 'invoice')"
+            />
+            <input type="hidden" id="invoiceTypeId" />
+            <div class="error-message" id="invoiceTypeError">
+              Please select an invoice type
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="invoiceDate" class="required">Invoice Date</label>
+            <input
+              type="date"
+              id="invoiceDate"
+              onchange="onInvoiceDateChange()"
+            />
+            <div class="error-message" id="invoiceDateError">
+              Please select an invoice date
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="field-label-row">
+              <label for="dueDate">Due Date</label>
+              <span class="field-note-inline"
+                >(<span class="ico" data-icon="info"></span> Applies only to linked External Accounts. If a lease
+                exists, the due date is determined by the Lease Reinvoice
+                Payment Terms.)</span
+              >
+            </div>
+            <input type="date" id="dueDate" onchange="onDueDateChange()" />
+            <div class="date-hint" id="dueDateHint"></div>
+            <div class="error-message" id="dueDateError">
+              Please select a due date
+            </div>
+          </div>
+        </div>
+
+        <!-- Charge Form -->
+        <div class="form-container" id="chargeForm">
+          <div class="form-group" style="display: none">
+            <label for="chargeType">Charge Type</label>
+            <select id="chargeType" onchange="onChargeTypeChange()">
+              <option value="">Loading charge types...</option>
+            </select>
+            <input type="hidden" id="chargeTypeId" />
+            <div class="error-message" id="chargeTypeError">
+              Please select a charge type
+            </div>
+          </div>
+          <div class="form-group" style="display: none">
+            <label for="chargeInvoiceType">Invoice Type</label>
+            <input
+              type="text"
+              id="chargeInvoiceType"
+              placeholder="Auto-populated from charge type..."
+              readonly
+              disabled
+            />
+            <input type="hidden" id="chargeInvoiceTypeId" />
+            <div class="error-message" id="chargeInvoiceTypeError">
+              Please select a charge type first to populate Invoice Type
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="frequency" class="required">Frequency</label>
+            <select id="frequency" onchange="onFrequencyChange()">
+              <option value="">Select frequency</option>
+              <option value="126330003">Daily</option>
+              <option value="126330004">Weekly</option>
+              <option value="126330000">Monthly</option>
+              <option value="126330005">Quarterly</option>
+              <option value="126330002">One Time Charge</option>
+              <option value="126330001">Annual</option>
+            </select>
+            <div class="error-message" id="frequencyError">
+              Please select a frequency
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="startDate" class="required">Start Date</label>
+            <input type="date" id="startDate" />
+            <div class="error-message" id="startDateError">
+              Please select a start date
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="chargeGenDate" class="required"
+              >Invoice Generation Date</label
+            >
+            <input type="date" id="chargeGenDate" />
+            <div class="error-message" id="chargeGenDateError">
+              Please select an invoice generation date
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="installments" class="required"
+              >Number of Installments</label
+            >
+            <input
+              type="number"
+              id="installments"
+              placeholder="Enter number"
+              min="1"
+            />
+            <div class="error-message" id="installmentsError">
+              Please enter number of installments
+            </div>
+          </div>
+          <div class="form-group" style="display: none">
+            <label for="dueDateRule">Due Date Rule</label>
+            <select id="dueDateRule">
+              <option value="">Loading...</option>
+            </select>
+            <div class="error-message" id="dueDateRuleError">
+              Please select a due date rule
+            </div>
+          </div>
+          <div class="form-group" style="display: none">
+            <label for="dueInDays">Due In Days</label>
+            <input
+              type="number"
+              id="dueInDays"
+              value="1"
+              placeholder="Enter number of days"
+              min="0"
+            />
+            <div class="error-message" id="dueInDaysError">
+              Please enter due in days
+            </div>
+          </div>
+        </div>
+
+        <!-- Meter Readings Subgrid -->
+        <div class="subgrid-container hidden" id="meterReadingsSection">
+          <div class="section-divider"></div>
+          <div class="subgrid-header">
+            <h3><span class="ico" data-icon="chart"></span> Meter Readings</h3>
+            <div class="subgrid-actions">
+              <button
+                class="btn-refresh"
+                id="refreshBtn"
+                onclick="refreshMeterReadings()"
+                title="Refresh meter readings"
+              >
+                <span class="refresh-icon"><span class="ico" data-icon="refresh"></span></span> Refresh
+              </button>
+              <span class="record-count" id="recordCount">0 records</span>
+            </div>
+          </div>
+
+          <div class="ineligible-info-banner" id="ineligibleInfoBanner">
+            <div class="ineligible-info-banner-icon"><span class="ico" data-icon="info"></span></div>
+            <div class="ineligible-info-banner-body">
+              <div
+                class="ineligible-info-banner-title"
+                id="ineligibleInfoBannerTitle"
+              ></div>
+              <div
+                class="ineligible-info-banner-subtitle"
+                id="ineligibleInfoBannerSubtitle"
+              ></div>
+            </div>
+          </div>
+
+          <div class="all-ineligible-banner" id="allIneligibleBanner">
+            <div class="all-ineligible-banner-icon"><span class="ico" data-icon="ban"></span></div>
+            <div class="all-ineligible-banner-title">
+              No Eligible Meter Readings for Recurring Charge
+            </div>
+            <div class="all-ineligible-banner-subtitle">
+              All meter readings linked to this purchase invoice have meters
+              configured with a meter association type that is not eligible for
+              recurring charges. Switch to <strong>Invoice</strong> mode to
+              reinvoice these readings, or update the meter associations.
+            </div>
+          </div>
+
+          <div class="table-legend" id="tableLegend" style="display: none">
+            <span class="legend-item"
+              ><span class="legend-dot ok"></span>Complete reading — will be
+              invoiced</span
+            >
+            <span class="legend-item"
+              ><span class="legend-dot warn"></span>Incomplete — will be
+              skipped</span
+            >
+          </div>
+
+          <div class="table-wrapper" id="tableWrapper">
+            <div id="loadingState" class="loading-state">
+              <div class="loading-spinner"></div>
+              <div class="loading-text">Loading meter readings...</div>
+            </div>
+            <div id="errorState" class="error-state" style="display: none">
+              Failed to load meter readings. Please try again.
+            </div>
+            <div id="emptyState" class="empty-state" style="display: none">
+              <div class="empty-state-icon"><span class="ico" data-icon="inbox"></span></div>
+              <div class="empty-state-text">
+                No active meter readings found for this purchase invoice
+              </div>
+            </div>
+            <div
+              id="meterGroups"
+              class="meter-groups"
+              style="display: none"
+            ></div>
+          </div>
+        </div>
+
+        <!-- Reinvoice Preview — calculated on load like the split flow (read-only) -->
+        <div class="subgrid-container hidden" id="splitPreviewSection">
+          <div class="section-divider"></div>
+          <div class="subgrid-header">
+            <h3><span class="ico" data-icon="calculator"></span> Reinvoice Preview</h3>
+            <div class="subgrid-actions">
+              <button
+                class="btn-refresh"
+                id="previewRefreshBtn"
+                onclick="loadSplitPreview()"
+                title="Recalculate the preview"
+              >
+                <span class="refresh-icon"><span class="ico" data-icon="refresh"></span></span> Recalculate
+              </button>
+            </div>
+          </div>
+          <div id="splitPreviewBody"></div>
+        </div>
+
+        <div class="button-container">
+          <button
+            class="btn btn-submit"
+            id="submitBtn"
+            onclick="submitReinvoice()"
+          >
+            Re-invoice
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loader Overlay -->
+    <div class="loader-overlay" id="loaderOverlay">
+      <div class="loader-container">
+        <div class="loader-spinner"></div>
+        <div class="loader-text" id="loaderText">
+          Processing, please wait...
+        </div>
+      </div>
+    </div>
+
+    <!-- General Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+      <div class="modal">
+        <div class="modal-header">
+          <div class="modal-icon" id="modalIcon"><span class="ico" data-icon="check"></span></div>
+          <div class="modal-title" id="modalTitle">Success</div>
+        </div>
+        <div class="modal-body" id="modalBody"></div>
+        <div class="modal-footer">
+          <button class="modal-btn modal-btn-primary" id="modalOkBtn">
+            OK
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Allocation Popup -->
+    <div class="allocation-overlay" id="allocationOverlay">
+      <div class="allocation-modal">
+        <div class="allocation-modal-header">
+          <div class="allocation-modal-title-block">
+            <div class="allocation-modal-title" id="allocationModalTitle">
+              Meter Allocation
+            </div>
+            <div
+              class="allocation-modal-subtitle"
+              id="allocationModalSubtitle"
+            ></div>
+          </div>
+          <button
+            class="allocation-modal-close"
+            onclick="closeAllocationPopup()"
+            title="Close"
+          >
+            <span class="ico" data-icon="x"></span>
+          </button>
+        </div>
+        <div class="allocation-modal-body" id="allocationModalBody">
+          <div class="allocation-state">
+            <div class="allocation-spinner"></div>
+            <div class="allocation-state-text">Loading allocations...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ─────────── ICONS (inline SVG, stroke = currentColor) ───────────
+      const svgIcon = (body) =>
+        `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
+      const ICON = {
+        info: svgIcon('<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>'),
+        alert: svgIcon('<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/>'),
+        check: svgIcon('<path d="M20 6 9 17l-5-5"/>'),
+        x: svgIcon('<path d="M18 6 6 18M6 6l12 12"/>'),
+        clipboard: svgIcon('<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>'),
+        chart: svgIcon('<path d="M18 20V10M12 20V4M6 20v-6"/>'),
+        ban: svgIcon('<circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 14.14 14.14"/>'),
+        inbox: svgIcon('<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>'),
+        calculator: svgIcon('<rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/>'),
+        link: svgIcon('<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>'),
+        refresh: svgIcon('<path d="M21 12a9 9 0 1 1-2.64-6.36L21 8"/><path d="M21 3v5h-5"/>'),
+        external: svgIcon('<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6M10 14 21 3"/>'),
+        chevron: svgIcon('<path d="m9 18 6-6-6-6"/>'),
+      };
+      document
+        .querySelectorAll("[data-icon]")
+        .forEach((el) => (el.innerHTML = ICON[el.dataset.icon] || ""));
+
+      // ─────────── CONFIG ───────────
+      const INELIGIBLE_METER_ASSOCIATION_TYPE = 126330002;
+
+      // ─────────── STATE ───────────
+      let selectedOption = null;
+      let purchaseInvoiceId = null;
+      let sourceContext = null;
+      let contextData = {};
+      let meterReadings = [];
+      let categoryMap = {};
+      let ineligibleMeterIds = new Set();
+      let hasIncompleteReadings = false;
+      let propertyChargeTypeMap = {};
+      let reinvoiceFlowUrl = null;
+      let reinvoiceAlreadyRun = false; // set by the preview: Recalc = No + saved line items
+      let lastPreviewResult = null; // re-rendered when the reinvoice type changes
+
+      // ─────────── ENV ───────────
+      async function getEnvironmentVariables() {
+        try {
+          const parentXrm = getParentXrm();
+          if (!parentXrm) return;
+          const query =
+            "?$select=schemaname,defaultvalue&$expand=environmentvariabledefinition_environmentvariablevalue($select=value)&$filter=schemaname eq 'array_ReinvoiceFlowvariableSingle'";
+          const result = await parentXrm.WebApi.retrieveMultipleRecords(
+            "environmentvariabledefinition",
+            query,
+          );
+          if (!result || !result.entities || result.entities.length === 0)
+            return;
+          const entity = result.entities[0];
+          const vals =
+            entity["environmentvariabledefinition_environmentvariablevalue"];
+          // current value, else the default value (e.g. right after a solution import)
+          reinvoiceFlowUrl =
+            (vals && vals.length > 0 && vals[0].value) ||
+            entity.defaultvalue ||
+            null;
+        } catch (error) {
+          console.error("getEnvironmentVariables error:", error);
+        }
+      }
+
+      function getParentXrm() {
+        if (window.parent && window.parent.Xrm) return window.parent.Xrm;
+        if (window.top && window.top.Xrm) return window.top.Xrm;
+        if (window.opener && window.opener.Xrm) return window.opener.Xrm;
+        return null;
+      }
+
+      // ─────────── GENERAL MODAL ───────────
+      function showModal(message, type, onOk) {
+        const overlay = document.getElementById("modalOverlay");
+        const icon = document.getElementById("modalIcon");
+        const title = document.getElementById("modalTitle");
+        const body = document.getElementById("modalBody");
+        const okBtn = document.getElementById("modalOkBtn");
+        if (type === "success") {
+          icon.className = "modal-icon success";
+          icon.innerHTML = ICON.check;
+          title.textContent = "Success";
+        } else if (type === "warning") {
+          icon.className = "modal-icon warning";
+          icon.innerHTML = ICON.alert;
+          title.textContent = "Warning";
+        } else {
+          icon.className = "modal-icon error";
+          icon.innerHTML = ICON.x;
+          title.textContent = "Error";
+        }
+        body.textContent = message;
+        overlay.classList.add("active");
+        okBtn.onclick = function () {
+          overlay.classList.remove("active");
+          if (typeof onOk === "function") onOk();
+        };
+      }
+      document
+        .getElementById("modalOverlay")
+        .addEventListener("click", function (e) {
+          if (e.target === this) this.classList.remove("active");
+        });
+
+      // ─────────── DATE HELPERS ───────────
+      function getFirstDayOfCurrentMonth() {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, "0");
+        return `${y}-${m}-01`;
+      }
+      function setMinDates() {
+        const today = new Date().toISOString().split("T")[0];
+        const firstOfMonth = getFirstDayOfCurrentMonth();
+        ["invoiceDate", "dueDate"].forEach(function (id) {
+          const el = document.getElementById(id);
+          if (el) el.min = today;
+        });
+        const tomorrow = new Date(Date.now() + 86400000)
+          .toISOString()
+          .split("T")[0];
+        const cg = document.getElementById("chargeGenDate");
+        if (cg) cg.min = tomorrow;
+        const sd = document.getElementById("startDate");
+        if (sd) sd.min = firstOfMonth;
+      }
+      function onInvoiceDateChange() {
+        var v = document.getElementById("invoiceDate").value,
+          dd = document.getElementById("dueDate"),
+          h = document.getElementById("dueDateHint");
+        if (v) {
+          dd.min = v;
+          if (dd.value && dd.value < v) {
+            dd.value = "";
+            h.textContent =
+              "Due date was cleared — it must be on or after the invoice date (" +
+              formatDisplayDate(v) +
+              ").";
+            h.className = "date-hint error";
+          } else {
+            h.textContent = "Must be on or after " + formatDisplayDate(v) + ".";
+            h.className = "date-hint";
+          }
+          h.style.display = "block";
+        } else {
+          dd.min = new Date().toISOString().split("T")[0];
+          h.style.display = "none";
+        }
+      }
+      function onDueDateChange() {
+        var v = document.getElementById("invoiceDate").value,
+          dd = document.getElementById("dueDate"),
+          h = document.getElementById("dueDateHint");
+        if (v && dd.value && dd.value < v) {
+          dd.value = "";
+          h.textContent =
+            "Due date must be on or after the invoice date (" +
+            formatDisplayDate(v) +
+            ").";
+          h.className = "date-hint error";
+          h.style.display = "block";
+        } else {
+          h.className = "date-hint";
+          if (v) {
+            h.textContent = "Must be on or after " + formatDisplayDate(v) + ".";
+            h.style.display = "block";
+          } else {
+            h.style.display = "none";
+          }
+        }
+      }
+      function formatDisplayDate(s) {
+        if (!s) return "";
+        var p = s.split("-");
+        if (p.length !== 3) return s;
+        var m = [
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "May",
+          "Jun",
+          "Jul",
+          "Aug",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dec",
+        ];
+        return parseInt(p[2]) + " " + m[parseInt(p[1]) - 1] + " " + p[0];
+      }
+      function onFrequencyChange() {
+        const fv = document.getElementById("frequency").value,
+          el = document.getElementById("installments");
+        if (fv === "126330002") {
+          el.value = 1;
+          el.readOnly = true;
+          el.style.background = "#f0f4ff";
+          el.style.cursor = "not-allowed";
+          el.style.borderColor = "#c5d3f5";
+          el.style.color = "#555";
+        } else {
+          el.readOnly = false;
+          el.style.background = "";
+          el.style.cursor = "";
+          el.style.borderColor = "";
+          el.style.color = "";
+          if (el.value === "1") el.value = "";
+        }
+      }
+
+      // ─────────── CHARGE TYPES ───────────
+      async function fetchPropertyChargeTypes() {
+        const sel = document.getElementById("chargeType"),
+          parentXrm = getParentXrm();
+        if (!parentXrm) {
+          sel.innerHTML = '<option value="">Select charge type</option>';
+          return;
+        }
+        let pid = contextData.propertyid || contextData.property_id || null;
+        if (!pid && purchaseInvoiceId && purchaseInvoiceId !== "undefined") {
+          try {
+            const r = await parentXrm.WebApi.retrieveRecord(
+              "array_purchaseinvoice",
+              purchaseInvoiceId.replace(/[{}]/g, ""),
+              "?$select=_array_property_value",
+            );
+            pid = r["_array_property_value"] || null;
+          } catch (e) {
+            console.error("property fetch error:", e.message);
+          }
+        }
+        if (!pid) {
+          sel.innerHTML = '<option value="">No charge types available</option>';
+          return;
+        }
+        const query =
+          "?$select=array_propertyinvoicetypeconfigurationid,_array_chargetype_value,_array_invoicetype_value,_array_property_value&$filter=_array_property_value eq " +
+          pid.replace(/[{}]/g, "");
+        try {
+          const result = await parentXrm.WebApi.retrieveMultipleRecords(
+            "array_propertyinvoicetypeconfiguration",
+            query,
+          );
+          propertyChargeTypeMap = {};
+          const added = new Set();
+          sel.innerHTML = '<option value="">Select charge type</option>';
+          if (result.entities && result.entities.length > 0) {
+            result.entities.forEach(function (e) {
+              const cid = e["_array_chargetype_value"],
+                cn =
+                  e[
+                    "_array_chargetype_value@OData.Community.Display.V1.FormattedValue"
+                  ],
+                iid = e["_array_invoicetype_value"],
+                ina =
+                  e[
+                    "_array_invoicetype_value@OData.Community.Display.V1.FormattedValue"
+                  ];
+              if (cid && !added.has(cid)) {
+                added.add(cid);
+                propertyChargeTypeMap[cid] = {
+                  chargeTypeName: cn || "",
+                  invoiceTypeId: iid || "",
+                  invoiceTypeName: ina || "",
+                };
+                const o = document.createElement("option");
+                o.value = cid;
+                o.textContent = cn || cid;
+                sel.appendChild(o);
+              }
+            });
+          } else {
+            sel.innerHTML =
+              '<option value="">No charge types available for this property</option>';
+          }
+        } catch (e) {
+          sel.innerHTML = '<option value="">Select charge type</option>';
+        }
+      }
+      function onChargeTypeChange() {
+        const sel = document.getElementById("chargeType"),
+          cid = sel.value;
+        document.getElementById("chargeTypeId").value = cid;
+        document.getElementById("chargeTypeError").classList.remove("show");
+        if (cid && propertyChargeTypeMap[cid]) {
+          const c = propertyChargeTypeMap[cid];
+          document.getElementById("chargeInvoiceType").value =
+            c.invoiceTypeName;
+          document.getElementById("chargeInvoiceTypeId").value =
+            c.invoiceTypeId;
+          document
+            .getElementById("chargeInvoiceTypeError")
+            .classList.remove("show");
+        } else {
+          document.getElementById("chargeInvoiceType").value = "";
+          document.getElementById("chargeInvoiceTypeId").value = "";
+        }
+      }
+
+      // ─────────── CONTEXT ───────────
+      function getContextData() {
+        try {
+          const p = new URLSearchParams(window.location.search),
+            d = p.get("data");
+          if (d) {
+            contextData = JSON.parse(decodeURIComponent(d));
+          } else if (window.parent && window.parent.Xrm) {
+            const w = window.name;
+            if (w) contextData = JSON.parse(w);
+          }
+          purchaseInvoiceId =
+            contextData.purchaseinvoiceid || contextData.id || null;
+          sourceContext =
+            contextData.sourceContext || contextData.context || "form";
+          if (!purchaseInvoiceId && sourceContext === "form")
+            showModal(
+              "Purchase Invoice ID missing. Please reopen the dialog.",
+              "error",
+            );
+          return contextData;
+        } catch (e) {
+          console.error("Error parsing context:", e);
+          return {};
+        }
+      }
+
+      // ─────────── INIT ───────────
+      function initializeMeterReadingsSection() {
+        const sec = document.getElementById("meterReadingsSection");
+        if (
+          sourceContext === "form" &&
+          purchaseInvoiceId &&
+          purchaseInvoiceId !== "undefined"
+        ) {
+          // Section stays hidden — the Reinvoice Preview shows the readings.
+          // Still loaded: the recurring-charge submit sends these reading IDs.
+          fetchMeterReadings();
+        } else {
+          sec.classList.add("hidden");
+          document.getElementById("mainContent").style.display = "block";
+        }
+      }
+
+      // ─────────── INELIGIBLE METERS ───────────
+      async function fetchIneligibleMeterIds(meterIds) {
+        ineligibleMeterIds = new Set();
+        if (!meterIds || meterIds.length === 0) return;
+        const parentXrm = getParentXrm();
+        if (!parentXrm) return;
+        try {
+          const idList = meterIds.map((id) => `'${id}'`).join(",");
+          const query = `?$select=_array_meter_value,array_meterassociationtype&$filter=Microsoft.Dynamics.CRM.In(PropertyName='array_meter',PropertyValues=[${idList}]) and array_meterassociationtype eq ${INELIGIBLE_METER_ASSOCIATION_TYPE}`;
+          const result = await parentXrm.WebApi.retrieveMultipleRecords(
+            "array_meterassociation",
+            query,
+          );
+          if (result.entities && result.entities.length > 0)
+            result.entities.forEach((rec) => {
+              const mid = rec["_array_meter_value"];
+              if (mid) ineligibleMeterIds.add(mid);
+            });
+          console.log(
+            "[Reinvoice] Ineligible meter ids:",
+            Array.from(ineligibleMeterIds),
+          );
+        } catch (err) {
+          console.error("fetchIneligibleMeterIds error:", err.message);
+        }
+      }
+
+      // ─────────── FETCH METER READINGS ───────────
+      function fetchMeterReadings() {
+        if (!purchaseInvoiceId || purchaseInvoiceId === "undefined") {
+          showEmptyState();
+          showNoReadingsBanner();
+          return;
+        }
+        const cleanGuid = purchaseInvoiceId.replace(/[{}]/g, "");
+        if (window.parent && window.parent.Xrm && window.parent.Xrm.WebApi) {
+          // Readings are associated to the PI through the link table
+          // (array_purchaseinvoicemeterreadinglink), not directly by
+          // _array_purchaseinvoice_value on the reading. Resolve link rows first,
+          // then fetch those readings.
+          const linkQuery = `?$select=_array_meterreading_value&$filter=_array_purchaseinvoice_value eq ${cleanGuid}`;
+          window.parent.Xrm.WebApi.retrieveMultipleRecords(
+            "array_purchaseinvoicemeterreadinglink",
+            linkQuery,
+          )
+            .then(async function (linkResult) {
+              const readingIds = [
+                ...new Set(
+                  (linkResult.entities || [])
+                    .map((l) => l["_array_meterreading_value"])
+                    .filter((id) => !!id),
+                ),
+              ];
+              if (readingIds.length === 0) {
+                meterReadings = [];
+                showEmptyState();
+                showNoReadingsBanner();
+                return;
+              }
+              const idList = readingIds.map((id) => `'${id}'`).join(",");
+              const query =
+                `?$filter=Microsoft.Dynamics.CRM.In(PropertyName='array_meterreadingsid',PropertyValues=[${idList}]) and statuscode eq 1` +
+                `&$select=array_meterreadingid,array_meterreadingsid,array_priorvalue,array_currentvalue,array_amount` +
+                `&$expand=array_Meter($select=array_metername,array_meterid,_array_costcategory_value)`;
+              const result =
+                await window.parent.Xrm.WebApi.retrieveMultipleRecords(
+                  "array_meterreadings",
+                  query,
+                );
+              meterReadings = result.entities;
+              if (meterReadings.length === 0) {
+                showEmptyState();
+                showNoReadingsBanner();
+                return;
+              }
+              document.getElementById("mainContent").style.display = "block";
+              const categoryIds = [
+                ...new Set(
+                  meterReadings
+                    .map(
+                      (r) =>
+                        r.array_Meter &&
+                        r.array_Meter["_array_costcategory_value"],
+                    )
+                    .filter((id) => !!id),
+                ),
+              ];
+              const meterIds = [
+                ...new Set(
+                  meterReadings
+                    .map((r) => r.array_Meter && r.array_Meter.array_meterid)
+                    .filter((id) => !!id),
+                ),
+              ];
+              const meterIdsResolved =
+                meterIds.length > 0
+                  ? meterIds
+                  : [
+                      ...new Set(
+                        meterReadings
+                          .map((r) => {
+                            if (!r.array_Meter) return null;
+                            const o = r.array_Meter["@odata.id"] || "";
+                            const m = o.match(/\(([0-9a-f\-]{36})\)/i);
+                            return m ? m[1] : null;
+                          })
+                          .filter((id) => !!id),
+                      ),
+                    ];
+              const fetchCategory =
+                categoryIds.length > 0
+                  ? window.parent.Xrm.WebApi.retrieveMultipleRecords(
+                      "array_costcategory",
+                      `?$select=array_costcategoryid,array_costcategoryname&$filter=Microsoft.Dynamics.CRM.In(PropertyName='array_costcategoryid',PropertyValues=[${categoryIds.map((id) => `'${id}'`).join(",")}])`,
+                    )
+                  : Promise.resolve({ entities: [] });
+              const [catResult] = await Promise.all([fetchCategory]);
+              categoryMap = {};
+              catResult.entities.forEach((c) => {
+                categoryMap[c.array_costcategoryid] = c.array_costcategoryname;
+              });
+              await fetchIneligibleMeterIds(meterIdsResolved);
+              await renderMeterReadings();
+            })
+            .catch(function (error) {
+              console.error("Error fetching meter readings:", error.message);
+              showErrorState();
+            });
+        } else {
+          showEmptyState();
+        }
+      }
+
+      // ─────────── HELPERS ───────────
+      function extractGuidFromOdataId(id) {
+        const m = id && id.match(/\(([0-9a-f\-]{36})\)/i);
+        return m ? m[1] : "";
+      }
+      function getAppId() {
+        try {
+          const p = new URLSearchParams(window.parent.location.search);
+          return p.get("appid") || "";
+        } catch (e) {
+          try {
+            const r = new URL(document.referrer);
+            return new URLSearchParams(r.search).get("appid") || "";
+          } catch (e2) {
+            return "";
+          }
+        }
+      }
+      function getMeterIdFromReading(reading) {
+        if (!reading.array_Meter) return null;
+        if (reading.array_Meter.array_meterid)
+          return reading.array_Meter.array_meterid;
+        return (
+          extractGuidFromOdataId(reading.array_Meter["@odata.id"] || "") || null
+        );
+      }
+      function openReadingRecord(recordGuid, displayName) {
+        const gp =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!recordGuid || !gp.test(recordGuid.replace(/[{}]/g, ""))) {
+          showModal(
+            `Cannot open record: the GUID for "${displayName || recordGuid}" could not be resolved. Please open the meter reading directly from the Dynamics grid.`,
+            "warning",
+          );
+          return;
+        }
+        const cg = recordGuid.replace(/[{}]/g, "");
+        try {
+          const xrm = getParentXrm();
+          let base = "";
+          if (xrm && xrm.Utility && xrm.Utility.getGlobalContext)
+            base = xrm.Utility.getGlobalContext().getClientUrl();
+          if (!base) {
+            try {
+              base =
+                window.parent.location.protocol +
+                "//" +
+                window.parent.location.host;
+            } catch (e) {
+              base = window.location.protocol + "//" + window.location.host;
+            }
+          }
+          const appId = getAppId();
+          let url = `${base}/main.aspx?forceUCI=1&pagetype=entityrecord&etn=array_meterreadings&id=${cg}`;
+          if (appId)
+            url = `${base}/main.aspx?appid=${appId}&forceUCI=1&pagetype=entityrecord&etn=array_meterreadings&id=${cg}`;
+          window.open(url, "_blank", "noopener,noreferrer");
+        } catch (e) {
+          console.error("openReadingRecord error:", e.message);
+        }
+      }
+      function refreshMeterReadings() {
+        const btn = document.getElementById("refreshBtn");
+        if (!btn) return;
+        btn.disabled = true;
+        btn.classList.add("spinning");
+        document.getElementById("loadingState").style.display = "block";
+        document.getElementById("meterGroups").style.display = "none";
+        document.getElementById("emptyState").style.display = "none";
+        document.getElementById("errorState").style.display = "none";
+        document.getElementById("tableLegend").style.display = "none";
+        document
+          .getElementById("ineligibleInfoBanner")
+          .classList.remove("show");
+        document.getElementById("allIneligibleBanner").classList.remove("show");
+        document.getElementById("recordCount").textContent = "0 records";
+        updateSubmitButton();
+        fetchMeterReadings();
+        setTimeout(function () {
+          btn.disabled = false;
+          btn.classList.remove("spinning");
+        }, 1500);
+      }
+      function missingPill() {
+        return `<span class="missing-pill"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M6 1L11 10H1L6 1Z" stroke="#d97706" stroke-width="1.5" stroke-linejoin="round"/><path d="M6 5V7" stroke="#d97706" stroke-width="1.5" stroke-linecap="round"/><circle cx="6" cy="9" r="0.6" fill="#d97706"/></svg>Missing</span>`;
+      }
+      function formatCurrency(value) {
+        return new Intl.NumberFormat("pl-PL", {
+          style: "currency",
+          currency: "PLN",
+          minimumFractionDigits: 2,
+          currencyDisplay: "symbol",
+        }).format(value);
+      }
+
+      // ─────────── RENDER (lease-grouped) ───────────
+      // readiness = flow criteria = statuscode eq 1 (already filtered at fetch).
+      // amount/current-value no longer gate anything.
+      let readingLeaseMap = {}; // meterId -> {key,label,kind}
+
+      async function resolveReadingLeases(readings) {
+        const xrm = getParentXrm();
+        if (!xrm) return;
+        const meterIds = [
+          ...new Set(readings.map(getMeterIdFromReading).filter(Boolean)),
+        ];
+        const pending = meterIds.filter((id) => !(id in readingLeaseMap));
+        for (const mid of pending) {
+          try {
+            const q =
+              `?$top=1&$select=array_meterassociationtype,_array_leaseagreement_value,_array_customer_value` +
+              `&$expand=array_Unit($select=array_unitname,_array_currentlease_value),array_LeaseAgreement($select=array_leasename)` +
+              `&$filter=_array_meter_value eq ${mid.replace(/[{}]/g, "")}`;
+            const r = await xrm.WebApi.retrieveMultipleRecords(
+              "array_meterassociation",
+              q,
+            );
+            readingLeaseMap[mid] =
+              r.entities && r.entities[0]
+                ? groupFromAssoc(r.entities[0])
+                : {
+                    key: "__account__",
+                    label: "Account (unspecified)",
+                    kind: "account",
+                  };
+          } catch (e) {
+            readingLeaseMap[mid] = {
+              key: "__account__",
+              label: "Account (unspecified)",
+              kind: "account",
+            };
+          }
+        }
+      }
+      function groupFromAssoc(a) {
+        const T_LEASE = 126330000,
+          T_UNIT = 126330001,
+          t = a["array_meterassociationtype"];
+        if (t === T_LEASE) {
+          const k = a["_array_leaseagreement_value"];
+          const l =
+            (a.array_LeaseAgreement &&
+              a.array_LeaseAgreement["array_leasename"]) ||
+            a[
+              "_array_leaseagreement_value@OData.Community.Display.V1.FormattedValue"
+            ] ||
+            "Unnamed lease";
+          return k
+            ? {
+                key: "lease:" + k.replace(/[{}]/g, ""),
+                label: l,
+                kind: "lease",
+              }
+            : {
+                key: "__nolease__",
+                label: "Lease (unresolved)",
+                kind: "lease",
+              };
+        }
+        if (t === T_UNIT) {
+          const u = a.array_Unit || {},
+            lid = u["_array_currentlease_value"];
+          if (lid)
+            return {
+              key: "lease:" + lid.replace(/[{}]/g, ""),
+              label:
+                u[
+                  "_array_currentlease_value@OData.Community.Display.V1.FormattedValue"
+                ] || "Current lease",
+              kind: "lease",
+            };
+          return {
+            key: "__nounit_lease__",
+            label: "Unit (no current lease)",
+            kind: "lease",
+          };
+        }
+        const c = a["_array_customer_value"];
+        return c
+          ? {
+              key: "acct:" + c.replace(/[{}]/g, ""),
+              label:
+                a[
+                  "_array_customer_value@OData.Community.Display.V1.FormattedValue"
+                ] || "Account",
+              kind: "account",
+            }
+          : {
+              key: "__account__",
+              label: "Account (unspecified)",
+              kind: "account",
+            };
+      }
+
+      async function renderMeterReadings() {
+        const recordCount = document.getElementById("recordCount"),
+          loadingState = document.getElementById("loadingState"),
+          errorState = document.getElementById("errorState"),
+          emptyState = document.getElementById("emptyState"),
+          groupsEl = document.getElementById("meterGroups"),
+          tableWrapper = document.getElementById("tableWrapper"),
+          ineligibleBanner = document.getElementById("ineligibleInfoBanner"),
+          allIneligibleBanner = document.getElementById("allIneligibleBanner");
+        loadingState.style.display = "none";
+        errorState.style.display = "none";
+        emptyState.style.display = "none";
+
+        const isRecurring = selectedOption === "charge";
+        let visibleReadings = meterReadings.slice(),
+          hiddenCount = 0;
+        if (isRecurring && ineligibleMeterIds.size > 0) {
+          visibleReadings = meterReadings.filter((r) => {
+            const mid = getMeterIdFromReading(r);
+            return !mid || !ineligibleMeterIds.has(mid);
+          });
+          hiddenCount = meterReadings.length - visibleReadings.length;
+        }
+        if (
+          isRecurring &&
+          visibleReadings.length === 0 &&
+          meterReadings.length > 0
+        ) {
+          tableWrapper.style.display = "none";
+          groupsEl.style.display = "none";
+          document.getElementById("tableLegend").style.display = "none";
+          ineligibleBanner.classList.remove("show");
+          allIneligibleBanner.classList.add("show");
+          recordCount.textContent = `0 of ${meterReadings.length} eligible`;
+          updateSubmitButton(true);
+          return;
+        }
+        tableWrapper.style.display = "block";
+        allIneligibleBanner.classList.remove("show");
+        if (isRecurring && hiddenCount > 0) {
+          document.getElementById("ineligibleInfoBannerTitle").textContent =
+            `${hiddenCount} reading${hiddenCount !== 1 ? "s" : ""} not eligible for recurring charge`;
+          document.getElementById("ineligibleInfoBannerSubtitle").textContent =
+            `Meter readings linked to external accounts are not eligible for recurring charges and will be skipped automatically. Showing ${visibleReadings.length} of ${meterReadings.length} reading${meterReadings.length !== 1 ? "s" : ""}.`;
+          ineligibleBanner.classList.add("show");
+        } else {
+          ineligibleBanner.classList.remove("show");
+        }
+
+        await resolveReadingLeases(visibleReadings);
+
+        // group
+        const groups = {};
+        visibleReadings.forEach((reading) => {
+          const mid = getMeterIdFromReading(reading) || "";
+          const g = readingLeaseMap[mid] || {
+            key: "__account__",
+            label: "Account (unspecified)",
+            kind: "account",
+          };
+          if (!groups[g.key])
+            groups[g.key] = { label: g.label, kind: g.kind, rows: [] };
+          groups[g.key].rows.push(reading);
+        });
+        const rank = { lease: 0, account: 1, common: 2 };
+        const ordered = Object.keys(groups).sort((a, b) => {
+          const ga = groups[a],
+            gb = groups[b];
+          return rank[ga.kind] !== rank[gb.kind]
+            ? rank[ga.kind] - rank[gb.kind]
+            : ga.label.localeCompare(gb.label);
+        });
+
+        const esc = (s) =>
+          (s || "")
+            .toString()
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+        const gp =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        let html = "";
+        ordered.forEach((k, gi) => {
+          const g = groups[k];
+          const badge =
+            g.kind === "lease"
+              ? "Lease"
+              : g.kind === "account"
+                ? "Account"
+                : "Common";
+          const badgeCls =
+            g.kind === "lease"
+              ? "grp-badge-lease"
+              : g.kind === "account"
+                ? "grp-badge-acct"
+                : "grp-badge-common";
+          html += `<div class="meter-group"><button type="button" class="split-group-header" onclick="toggleMeterGroup(${gi})">
+          <span class="split-group-caret open" id="mcaret-${gi}">${ICON.chevron}</span>
+          <span class="split-group-badge ${badgeCls}">${badge}</span>
+          <span class="split-group-title" title="${esc(g.label)}">${esc(g.label)}</span>
+          <span class="split-group-count">${g.rows.length} reading${g.rows.length !== 1 ? "s" : ""}</span></button>
+          <div class="meter-group-body" id="mgrpbody-${gi}">
+          <table class="meter-table"><thead><tr><th>Reading ID</th><th>Meter</th><th>Cost Category</th>
+          <th>Prior Value</th><th>Current Value</th><th>Allocation</th></tr></thead><tbody>`;
+          g.rows.forEach((reading) => {
+            const meterName = reading.array_Meter
+              ? reading.array_Meter.array_metername
+              : "-";
+            const ccId =
+              reading.array_Meter &&
+              reading.array_Meter["_array_costcategory_value"];
+            const costCategory =
+              ccId && categoryMap[ccId] ? categoryMap[ccId] : "-";
+            const priorValue =
+              reading.array_priorvalue != null
+                ? Number(reading.array_priorvalue).toFixed(2)
+                : "-";
+            const cvRaw = reading.array_currentvalue;
+            const cvCell =
+              cvRaw != null
+                ? `<td class="numeric-cell">${Number(cvRaw).toFixed(2)}</td>`
+                : `<td class="numeric-cell">—</td>`;
+            const displayName = reading.array_meterreadingid || "";
+            let finalGuid =
+              reading["array_meterreadingsid"] ||
+              (reading["@odata.id"]
+                ? extractGuidFromOdataId(reading["@odata.id"])
+                : "") ||
+              "";
+            finalGuid = finalGuid.replace(/[{}]/g, "");
+            if (!gp.test(finalGuid)) finalGuid = "";
+            const idLinkHtml = displayName
+              ? `<button class="reading-id-link" onclick="openReadingRecord('${finalGuid}','${displayName}')" title="Open record in new tab">${displayName}<span class="reading-id-link-icon">${ICON.external}</span></button>`
+              : "-";
+            const meterId = getMeterIdFromReading(reading) || "";
+            const meterNameSafe = (meterName || "")
+              .replace(/\\/g, "\\\\")
+              .replace(/'/g, "\\'");
+            html += `<tr><td class="id-cell">${idLinkHtml}</td><td class="meter-cell">${esc(meterName)}</td>
+              <td class="meter-cell">${esc(costCategory)}</td><td class="numeric-cell">${priorValue}</td>${cvCell}
+              <td class="action-cell"><button class="btn-allocation" onclick="openAllocationPopup('${meterId}','${meterNameSafe}',null)" title="View allocation details">${ICON.link} See Allocation</button></td></tr>`;
+          });
+          html += `</tbody></table></div></div>`;
+        });
+        groupsEl.innerHTML = html;
+        groupsEl.style.display = "block";
+        document.getElementById("tableLegend").style.display = "none";
+        recordCount.textContent = `${visibleReadings.length} record${visibleReadings.length !== 1 ? "s" : ""}`;
+        window.__visibleReadingsForSubmit = visibleReadings;
+        updateSubmitButton();
+      }
+      function toggleMeterGroup(gi) {
+        const b = document.getElementById("mgrpbody-" + gi),
+          c = document.getElementById("mcaret-" + gi);
+        if (!b) return;
+        const col = b.style.display === "none";
+        b.style.display = col ? "block" : "none";
+        if (c) c.classList.toggle("open", col);
+      }
+      function updateSubmitButton(forceDisable) {
+        const btn = document.getElementById("submitBtn");
+        if (reinvoiceAlreadyRun) {
+          btn.disabled = true;
+          btn.title =
+            "The reinvoice has already run for this purchase invoice. Set Recalculation Required = Yes to run it again.";
+          return;
+        }
+        if (forceDisable) {
+          btn.disabled = true;
+          btn.title = "No eligible meter readings for recurring charge";
+          return;
+        }
+        btn.disabled = false;
+        btn.title = "";
+      }
+      function showEmptyState() {
+        document.getElementById("loadingState").style.display = "none";
+        document.getElementById("errorState").style.display = "none";
+        document.getElementById("meterGroups").style.display = "none";
+        document.getElementById("emptyState").style.display = "block";
+        document.getElementById("recordCount").textContent = "0 records";
+      }
+      function showErrorState() {
+        document.getElementById("loadingState").style.display = "none";
+        document.getElementById("emptyState").style.display = "none";
+        document.getElementById("meterGroups").style.display = "none";
+        document.getElementById("errorState").style.display = "block";
+        document.getElementById("recordCount").textContent = "0 records";
+        document.getElementById("mainContent").style.display = "block";
+      }
+      // No readings no longer blocks the dialog: the form stays usable and the
+      // readings section shows its empty state instead of the full-page banner.
+      function showNoReadingsBanner() {
+        document.getElementById("mainContent").style.display = "block";
+        updateSubmitButton();
+      }
+
+      // ─────────── SELECT OPTION ───────────
+      function selectOption(option) {
+        selectedOption = option;
+        document.getElementById("invoiceOption").checked = option === "invoice";
+        document.getElementById("chargeOption").checked = option === "charge";
+        document.getElementById("invoiceForm").classList.remove("active");
+        document.getElementById("chargeForm").classList.remove("active");
+        if (option === "invoice")
+          document.getElementById("invoiceForm").classList.add("active");
+        else document.getElementById("chargeForm").classList.add("active");
+        if (meterReadings && meterReadings.length > 0) renderMeterReadings();
+        const previewBody = document.getElementById("splitPreviewBody");
+        if (lastPreviewResult && previewBody)
+          renderSplitPreview(previewBody, lastPreviewResult);
+      }
+      function openLookup(entityName, formType) {
+        if (window.parent && window.parent.Xrm) {
+          window.parent.Xrm.Utility.lookupObjects({
+            entityTypes: [entityName],
+            allowMultiSelect: false,
+          }).then(
+            function (results) {
+              if (results && results.length > 0) {
+                if (formType === "invoice") {
+                  document.getElementById("invoiceType").value =
+                    results[0].name;
+                  document.getElementById("invoiceTypeId").value =
+                    results[0].id;
+                  document
+                    .getElementById("invoiceTypeError")
+                    .classList.remove("show");
+                }
+              }
+            },
+            function (e) {
+              console.error("Lookup error:", e);
+            },
+          );
+        }
+      }
+
+      // ─────────── VALIDATION ───────────
+      function validateInvoiceForm() {
+        let v = true;
+        const id = document.getElementById("invoiceDate").value,
+          dd = document.getElementById("dueDate").value;
+        document.getElementById("invoiceTypeError").classList.remove("show");
+        if (!id) {
+          document.getElementById("invoiceDateError").classList.add("show");
+          v = false;
+        } else
+          document.getElementById("invoiceDateError").classList.remove("show");
+        if (dd && id && dd < id) {
+          document.getElementById("dueDateError").innerText =
+            "Due date must be on or after the invoice date";
+          document.getElementById("dueDateError").classList.add("show");
+          v = false;
+        } else document.getElementById("dueDateError").classList.remove("show");
+        return v;
+      }
+      function validateChargeForm() {
+        let v = true;
+        const fields = [
+          ["frequency", "frequencyError"],
+          ["startDate", "startDateError"],
+          ["chargeGenDate", "chargeGenDateError"],
+          ["installments", "installmentsError"],
+        ];
+        fields.forEach(([fid, eid]) => {
+          const el = document.getElementById(fid);
+          if (!el.value || (el.type === "number" && el.value < 1)) {
+            document.getElementById(eid).classList.add("show");
+            v = false;
+          } else document.getElementById(eid).classList.remove("show");
+        });
+        const cgVal = document.getElementById("chargeGenDate").value;
+        const today = new Date().toISOString().split("T")[0];
+        if (cgVal && cgVal === today) {
+          document.getElementById("chargeGenDateError").innerText =
+            "Invoice generation date cannot be today";
+          document.getElementById("chargeGenDateError").classList.add("show");
+          v = false;
+        }
+        document.getElementById("chargeTypeError").classList.remove("show");
+        document
+          .getElementById("chargeInvoiceTypeError")
+          .classList.remove("show");
+        return v;
+      }
+
+      // ─────────── SUBMIT ───────────
+      function submitReinvoice() {
+        if (reinvoiceAlreadyRun) return;
+        if (!selectedOption) {
+          showModal(
+            "Please select an option (Invoice or Recurring Charge)",
+            "error",
+          );
+          return;
+        }
+        if (!reinvoiceFlowUrl) {
+          showModal(
+            "Error: Reinvoice flow URL is not configured. Please check environment variable array_ReinvoiceFlowvariableSingle.",
+            "error",
+          );
+          return;
+        }
+        let payload = {
+          sourceContext: sourceContext,
+          reinvoiceType: selectedOption,
+        };
+        if (sourceContext === "form") {
+          if (!purchaseInvoiceId || purchaseInvoiceId === "undefined") {
+            showModal(
+              "Purchase Invoice ID missing. Please reopen the dialog.",
+              "error",
+            );
+            return;
+          }
+          payload.purchaseinvoiceid = purchaseInvoiceId;
+        }
+        if (
+          sourceContext === "view" &&
+          purchaseInvoiceId &&
+          purchaseInvoiceId !== "undefined"
+        )
+          payload.purchaseinvoiceid = purchaseInvoiceId;
+        // Split flow trigger ("Final - Flow to split and save reading values of
+        // meters") expects { purchaseInvoiceIds: [guid] } — plain GUIDs, no braces
+        if (purchaseInvoiceId && purchaseInvoiceId !== "undefined")
+          payload.purchaseInvoiceIds = [stripGuid(purchaseInvoiceId)];
+        if (selectedOption === "invoice") {
+          if (!validateInvoiceForm()) return;
+          payload.invoiceDetails = {
+            invoiceTypeId: document.getElementById("invoiceTypeId").value,
+            invoiceTypeName: document.getElementById("invoiceType").value,
+            invoiceDate: document.getElementById("invoiceDate").value,
+            dueDate: document.getElementById("dueDate").value,
+          };
+        }
+        if (selectedOption === "charge") {
+          if (!validateChargeForm()) return;
+          payload.chargeDetails = {
+            chargeTypeId: document.getElementById("chargeTypeId").value,
+            chargeTypeName:
+              (
+                propertyChargeTypeMap[
+                  document.getElementById("chargeTypeId").value
+                ] || {}
+              ).chargeTypeName || "",
+            invoiceTypeId: document.getElementById("chargeInvoiceTypeId").value,
+            invoiceTypeName: document.getElementById("chargeInvoiceType").value,
+            frequency: parseInt(document.getElementById("frequency").value),
+            startDate: document.getElementById("startDate").value,
+            invoiceGenerationDate:
+              document.getElementById("chargeGenDate").value,
+            numberOfInstallments: parseInt(
+              document.getElementById("installments").value,
+            ),
+            dueDateRule: document.getElementById("dueDateRule").value,
+            dueInDays: document.getElementById("dueInDays").value
+              ? parseInt(document.getElementById("dueInDays").value)
+              : null,
+          };
+          const visible = window.__visibleReadingsForSubmit || meterReadings;
+          payload.eligibleMeterReadingIds = visible
+            .map((r) => {
+              let g = r["array_meterreadingsid"] || "";
+              if (!g && r["@odata.id"])
+                g = extractGuidFromOdataId(r["@odata.id"]);
+              return g ? g.replace(/[{}]/g, "") : "";
+            })
+            .filter(Boolean);
+        }
+        document.getElementById("submitBtn").disabled = true;
+        document.getElementById("submitBtn").textContent = "Submitting...";
+        fetch(reinvoiceFlowUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        })
+          .then(async (response) => {
+            if (!response.ok) {
+              const err = await response.text();
+              throw new Error("HTTP " + response.status + ": " + err);
+            }
+            document.getElementById("loaderText").textContent =
+              "Processing, please wait...";
+            document.getElementById("loaderOverlay").classList.add("active");
+            setTimeout(function () {
+              document
+                .getElementById("loaderOverlay")
+                .classList.remove("active");
+              document.getElementById("submitBtn").disabled = false;
+              document.getElementById("submitBtn").textContent = "Re-invoice";
+              showModal(
+                "The reinvoice has been submitted. The related records will be created shortly.",
+                "success",
+                function () {
+                  try {
+                    const xrm = getParentXrm();
+                    if (xrm && xrm.Page && xrm.Page.data) {
+                      xrm.Page.data.refresh(false).then(
+                        function () {
+                          closeDialog();
+                        },
+                        function () {
+                          closeDialog();
+                        },
+                      );
+                    } else if (xrm && xrm.formContext && xrm.formContext.data) {
+                      xrm.formContext.data.refresh(false);
+                      closeDialog();
+                    } else closeDialog();
+                  } catch (e) {
+                    closeDialog();
+                  }
+                },
+              );
+            }, 5000);
+          })
+          .catch((err) => {
+            console.error(err);
+            showModal("Flow call failed: " + err.message, "error");
+            document.getElementById("submitBtn").disabled = false;
+            document.getElementById("submitBtn").textContent = "Re-invoice";
+          });
+      }
+      function closeDialog() {
+        try {
+          if (window.parent && window.parent.Xrm) {
+            window.parent.Xrm.Navigation.closeWebResource();
+            return;
+          }
+          if (window.top && window.top.Xrm) {
+            window.top.Xrm.Navigation.closeWebResource();
+            return;
+          }
+          window.parent.postMessage({ action: "closeDialog" }, "*");
+          window.close();
+        } catch (e) {
+          try {
+            window.parent.postMessage({ action: "closeDialog" }, "*");
+          } catch (e2) {}
+          window.close();
+        }
+      }
+
+      // ─────────── DUE DATE RULE CHOICES ───────────
+      async function fetchDueDateRuleChoices() {
+        const select = document.getElementById("dueDateRule");
+        try {
+          const xrm = getParentXrm();
+          if (!xrm) {
+            select.innerHTML = '<option value="">Select due date rule</option>';
+            return;
+          }
+          const clientUrl = xrm.Utility.getGlobalContext().getClientUrl();
+          const url =
+            clientUrl +
+            "/api/data/v9.2/GlobalOptionSetDefinitions(Name='array_duedaterule')";
+          const data = await new Promise(function (resolve, reject) {
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", url, true);
+            xhr.setRequestHeader("OData-MaxVersion", "4.0");
+            xhr.setRequestHeader("OData-Version", "4.0");
+            xhr.setRequestHeader("Accept", "application/json");
+            xhr.withCredentials = true;
+            xhr.onload = function () {
+              if (xhr.status >= 200 && xhr.status < 300) {
+                try {
+                  resolve(JSON.parse(xhr.responseText));
+                } catch (e) {
+                  reject(new Error("JSON parse error: " + e.message));
+                }
+              } else {
+                reject(
+                  new Error("GlobalOptionSet fetch failed: " + xhr.status),
+                );
+              }
+            };
+            xhr.onerror = function () {
+              reject(new Error("Network error"));
+            };
+            xhr.send();
+          });
+          const options = data.Options ? data.Options : [];
+          select.innerHTML = '<option value="">Select due date rule</option>';
+          options
+            .sort(function (a, b) {
+              return a.Value - b.Value;
+            })
+            .forEach(function (opt) {
+              var label =
+                opt.Label && opt.Label.UserLocalizedLabel
+                  ? opt.Label.UserLocalizedLabel.Label
+                  : "Option " + opt.Value;
+              var el = document.createElement("option");
+              el.value = opt.Value;
+              el.textContent = label;
+              select.appendChild(el);
+            });
+
+          // ── AUTO-SELECT: "of the issue of the sales document" (126330000) ──
+          const DUE_DATE_RULE_ISSUE_OF_SALES_DOC = 126330000;
+          const match = options.find(
+            (o) => o.Value === DUE_DATE_RULE_ISSUE_OF_SALES_DOC,
+          );
+          if (match) {
+            select.value = match.Value;
+          } else {
+            console.error(
+              "[Reinvoice] Due Date Rule auto-select failed — value " +
+                DUE_DATE_RULE_ISSUE_OF_SALES_DOC +
+                " not found in array_duedaterule choices. Check if the choice was deleted or renumbered.",
+            );
+          }
+        } catch (error) {
+          select.innerHTML = '<option value="">Select due date rule</option>';
+        }
+      }
+
+      // ═══════════════════════════════════════════════════════════════════════
+      //  ALLOCATION POPUP
+      // ═══════════════════════════════════════════════════════════════════════
+
+      function openAllocationPopup(meterId, meterName, readingAmount) {
+        const overlay = document.getElementById("allocationOverlay");
+        const body = document.getElementById("allocationModalBody");
+        const title = document.getElementById("allocationModalTitle");
+        const subtitle = document.getElementById("allocationModalSubtitle");
+
+        title.textContent = "Meter Allocation";
+        subtitle.textContent = meterName ? "Meter: " + meterName : "";
+        body.innerHTML =
+          '<div class="allocation-state"><div class="allocation-spinner"></div><div class="allocation-state-text">Loading allocations...</div></div>';
+        overlay.classList.add("active");
+
+        if (!meterId) {
+          renderAllocationEmpty(
+            body,
+            "Meter ID could not be resolved for this reading.",
+          );
+          return;
+        }
+        fetchAllocationData(meterId, readingAmount, body);
+      }
+
+      function closeAllocationPopup() {
+        document.getElementById("allocationOverlay").classList.remove("active");
+      }
+
+      document
+        .getElementById("allocationOverlay")
+        .addEventListener("click", function (e) {
+          if (e.target === this) closeAllocationPopup();
+        });
+
+      async function fetchAllocationData(meterId, readingAmount, bodyEl) {
+        const parentXrm = getParentXrm();
+        if (!parentXrm) {
+          renderAllocationEmpty(
+            bodyEl,
+            "Unable to connect to Dynamics. Please try again.",
+          );
+          return;
+        }
+
+        try {
+          const cleanMeterId = meterId.replace(/[{}]/g, "");
+
+          const assocQuery =
+            "?$select=array_meterassociationid,_array_customer_value,array_allocationpercenatage,_array_leaseagreement_value,_array_unit_value,array_meterassociationtype" +
+            "&$expand=array_LeaseAgreement($select=array_leasename),array_Unit($select=array_unitname,_array_currentlease_value;$expand=array_CurrentLease($select=array_leasename))" +
+            "&$filter=(_array_meter_value eq " +
+            cleanMeterId +
+            " and statecode eq 0)";
+          const assocResult = await parentXrm.WebApi.retrieveMultipleRecords(
+            "array_meterassociation",
+            assocQuery,
+          );
+          const associations = assocResult.entities || [];
+
+          if (associations.length === 0) {
+            renderAllocationEmpty(
+              bodyEl,
+              "No active allocations found for this meter.",
+            );
+            return;
+          }
+
+          // ── Resolve polymorphic Customer lookup (Account or Contact) ──
+          // _array_customer_value can point to either 'account' or 'contact'.
+          // The target entity is only known via the lookuplogicalname annotation,
+          // and Account/Contact use different display-name fields (name vs fullname),
+          // so we batch-resolve names separately per entity type — same pattern as
+          // the existing Unit lookup below.
+          const accountIds = [];
+          const contactIds = [];
+          associations.forEach((a) => {
+            const custId = a["_array_customer_value"];
+            const custType =
+              a[
+                "_array_customer_value@Microsoft.Dynamics.CRM.lookuplogicalname"
+              ];
+            if (!custId) return;
+            if (custType === "account") accountIds.push(custId);
+            else if (custType === "contact") contactIds.push(custId);
+          });
+
+          let customerNameMap = {};
+
+          if (accountIds.length > 0) {
+            try {
+              const uniqueAccountIds = [...new Set(accountIds)];
+              const accountQuery =
+                "?$select=accountid,name" +
+                "&$filter=Microsoft.Dynamics.CRM.In(PropertyName='accountid',PropertyValues=[" +
+                uniqueAccountIds.map((id) => "'" + id + "'").join(",") +
+                "])";
+              const accountResult =
+                await parentXrm.WebApi.retrieveMultipleRecords(
+                  "account",
+                  accountQuery,
+                );
+              (accountResult.entities || []).forEach((acc) => {
+                customerNameMap[acc.accountid] = acc.name;
+              });
+            } catch (accErr) {
+              console.error(
+                "fetchAllocationData — account fetch error:",
+                accErr.message,
+              );
+            }
+          }
+
+          if (contactIds.length > 0) {
+            try {
+              const uniqueContactIds = [...new Set(contactIds)];
+              const contactQuery =
+                "?$select=contactid,fullname" +
+                "&$filter=Microsoft.Dynamics.CRM.In(PropertyName='contactid',PropertyValues=[" +
+                uniqueContactIds.map((id) => "'" + id + "'").join(",") +
+                "])";
+              const contactResult =
+                await parentXrm.WebApi.retrieveMultipleRecords(
+                  "contact",
+                  contactQuery,
+                );
+              (contactResult.entities || []).forEach((con) => {
+                customerNameMap[con.contactid] = con.fullname;
+              });
+            } catch (conErr) {
+              console.error(
+                "fetchAllocationData — contact fetch error:",
+                conErr.message,
+              );
+            }
+          }
+
+          const unitIds = [
+            ...new Set(
+              associations
+                .map((a) => a["_array_unit_value"])
+                .filter((id) => !!id),
+            ),
+          ];
+          let unitLeaseMap = {};
+
+          if (unitIds.length > 0) {
+            try {
+              const unitQuery =
+                "?$select=array_unitid,_array_currentlease_value" +
+                "&$filter=Microsoft.Dynamics.CRM.In(PropertyName='array_unitid',PropertyValues=[" +
+                unitIds.map((id) => "'" + id + "'").join(",") +
+                "])";
+              const unitResult = await parentXrm.WebApi.retrieveMultipleRecords(
+                "array_unit",
+                unitQuery,
+              );
+              (unitResult.entities || []).forEach((unit) => {
+                unitLeaseMap[unit.array_unitid] =
+                  unit[
+                    "_array_currentlease_value@OData.Community.Display.V1.FormattedValue"
+                  ] || null;
+              });
+            } catch (unitErr) {
+              console.error(
+                "fetchAllocationData — unit fetch error:",
+                unitErr.message,
+              );
+            }
+          }
+
+          renderAllocationTable(
+            bodyEl,
+            associations,
+            unitLeaseMap,
+            readingAmount,
+            customerNameMap,
+          );
+        } catch (err) {
+          console.error("fetchAllocationData error:", err.message);
+          renderAllocationError(
+            bodyEl,
+            "Failed to load allocation data: " + err.message,
+          );
+        }
+      }
+
+      // ── renderAllocationTable — UPDATED: polymorphic Customer (Account/Contact) + Lease + Unit ──
+      function renderAllocationTable(
+        bodyEl,
+        associations,
+        unitLeaseMap,
+        readingAmount,
+        customerNameMap,
+      ) {
+        customerNameMap = customerNameMap || {};
+        const hasAmount = readingAmount != null && !isNaN(readingAmount);
+        let totalPct = 0,
+          totalAmt = 0;
+
+        const rows = associations.map((assoc) => {
+          const customerId = assoc["_array_customer_value"];
+          const customerType =
+            assoc[
+              "_array_customer_value@Microsoft.Dynamics.CRM.lookuplogicalname"
+            ]; // 'account' | 'contact'
+          const leaseId = assoc["_array_leaseagreement_value"];
+          const leaseName = assoc["array_LeaseAgreement"]
+            ? assoc["array_LeaseAgreement"]["array_leasename"]
+            : null;
+          const unitId = assoc["_array_unit_value"];
+          const unitName = assoc["array_Unit"]
+            ? assoc["array_Unit"]["array_unitname"]
+            : null;
+          const pct = assoc["array_allocationpercenatage"];
+          // Authoritative type comes from the array_meterassociationtype choice field
+          // (values: Lease / Unit / Account — "Account" covers both Account and
+          // Contact records via the polymorphic _array_customer_value lookup).
+          // Reading the formatted label avoids hardcoding option-set numbers.
+          const assocTypeLabel = (
+            assoc[
+              "array_meterassociationtype@OData.Community.Display.V1.FormattedValue"
+            ] || ""
+          )
+            .trim()
+            .toLowerCase();
+
+          let type = null,
+            primaryName = "—",
+            currentLease = "—";
+
+          if (assocTypeLabel === "unit") {
+            type = "unit";
+            primaryName = unitName || "—";
+            currentLease =
+              assoc["array_Unit"] && assoc["array_Unit"]["array_CurrentLease"]
+                ? assoc["array_Unit"]["array_CurrentLease"][
+                    "array_leasename"
+                  ] || "—"
+                : "—";
+          } else if (assocTypeLabel === "lease") {
+            type = "lease";
+            primaryName = leaseName || "—";
+          } else if (assocTypeLabel === "account") {
+            // "Account" choice value — disambiguate Account vs Contact via the
+            // customer lookup's resolved entity type
+            type = customerType === "contact" ? "contact" : "account";
+            primaryName = customerNameMap[customerId] || "—";
+          } else {
+            // Fallback if the type field is unexpectedly blank — infer from
+            // whichever lookup is populated (same priority as before)
+            if (customerId && customerType === "account") {
+              type = "account";
+              primaryName = customerNameMap[customerId] || "—";
+            } else if (customerId && customerType === "contact") {
+              type = "contact";
+              primaryName = customerNameMap[customerId] || "—";
+            } else if (leaseId) {
+              type = "lease";
+              primaryName = leaseName || "—";
+            } else if (unitId) {
+              type = "unit";
+              primaryName = unitName || "—";
+              currentLease =
+                assoc["array_Unit"] && assoc["array_Unit"]["array_CurrentLease"]
+                  ? assoc["array_Unit"]["array_CurrentLease"][
+                      "array_leasename"
+                    ] || "—"
+                  : "—";
+            }
+          }
+
+          const pctNum = pct != null ? parseFloat(pct) : null;
+          let allocAmt = null;
+          if (hasAmount && pctNum != null)
+            allocAmt = (readingAmount * pctNum) / 100;
+          if (pctNum != null) totalPct += pctNum;
+          if (allocAmt != null) totalAmt += allocAmt;
+
+          return { type, primaryName, currentLease, pctNum, allocAmt };
+        });
+
+        const typeBadge = (t) => {
+          if (!t) return "";
+          const labels = {
+            account: "Account",
+            lease: "Lease",
+            unit: "Unit",
+            contact: "Contact",
+          };
+          return `<span class="alloc-type-badge ${t}" title="${labels[t] || t}">${labels[t] || t}</span>`;
+        };
+        const fmtPct = (v) =>
+          v != null ? parseFloat(v.toFixed(4)) + "%" : "—";
+        const fmtAmt = (v) => (v != null ? formatCurrency(v) : "—");
+        // Escape special chars for use in HTML attribute values
+        const esc = (s) =>
+          (s || "")
+            .toString()
+            .replace(/&/g, "&amp;")
+            .replace(/"/g, "&quot;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+
+        let html = `<div class="allocation-modal-notice">
+            <div class="allocation-modal-notice-icon">${ICON.alert}</div>
+            <div class="allocation-modal-notice-text">
+                <strong>Allocation amounts may vary</strong>
+                Displayed amounts are indicative. Final amounts may differ for meters with proration-enabled allocations, where values are recalculated at reinvoice time based on the actual service period.
+            </div>
+        </div>
+        <div class="allocation-table-wrapper"><table class="allocation-table"><thead><tr>
+        <th>Type</th><th>Name</th><th>Current Lease</th>
+        <th style="text-align:center;">Allocation %</th>
+        ${hasAmount ? '<th style="text-align:right;">Amount</th>' : ""}
+    </tr></thead><tbody>`;
+
+        rows.forEach((r) => {
+          const pctDisplay = fmtPct(r.pctNum);
+          const amtDisplay = fmtAmt(r.allocAmt);
+          const leaseDisplay = r.type === "unit" ? r.currentLease : "—";
+          const typeLabel = r.type
+            ? r.type.charAt(0).toUpperCase() + r.type.slice(1)
+            : "—";
+          html += `<tr>
+            <td title="${esc(typeLabel)}">${typeBadge(r.type)}</td>
+            <td class="alloc-name-cell" title="${esc(r.primaryName)}">${esc(r.primaryName)}</td>
+            <td class="alloc-lease-cell" title="${esc(leaseDisplay)}">${esc(leaseDisplay)}</td>
+            <td class="alloc-pct-cell" title="${esc(pctDisplay)}">${pctDisplay}</td>
+            ${hasAmount ? `<td class="alloc-amt-cell" title="${esc(amtDisplay)}">${amtDisplay}</td>` : ""}
+        </tr>`;
+        });
+
+        const totalPctDisplay = fmtPct(totalPct);
+        const totalAmtDisplay = fmtAmt(totalAmt);
+        html += `<tr class="allocation-total-row">
+        <td colspan="3" style="padding:10px 12px;" title="Total">Total</td>
+        <td class="alloc-pct-cell" title="${esc(totalPctDisplay)}">${totalPctDisplay}</td>
+        ${hasAmount ? `<td class="alloc-amt-cell" title="${esc(totalAmtDisplay)}">${totalAmtDisplay}</td>` : ""}
+    </tr></tbody></table></div>`;
+
+        if (!hasAmount) {
+          html += `<div style="margin-top:12px;font-size:12px;color:#9ca3af;text-align:center;">Allocation Amount column not shown — meter reading amount is not yet available.</div>`;
+        }
+
+        bodyEl.innerHTML = html;
+      }
+
+      function renderAllocationEmpty(bodyEl, message) {
+        bodyEl.innerHTML = `<div class="allocation-state"><div style="font-size:32px;margin-bottom:10px;opacity:0.35;">${ICON.inbox}</div><div class="allocation-state-text">${message || "No allocation records found."}</div></div>`;
+      }
+      function renderAllocationError(bodyEl, message) {
+        bodyEl.innerHTML = `<div style="padding:20px;background:#fff3f3;border:1px solid #ffcdd2;border-radius:6px;color:#c62828;font-size:13px;text-align:center;">${message || "An error occurred while loading allocation data."}</div>`;
+      }
+
+      // ─────────── ONLOAD ───────────
+      window.onload = async function () {
+        await getEnvironmentVariables();
+        getContextData();
+        setMinDates();
+        selectOption("invoice");
+        document.getElementById("invoiceDate").value = new Date()
+          .toISOString()
+          .split("T")[0];
+        document.getElementById("startDate").value = new Date()
+          .toISOString()
+          .split("T")[0];
+        onInvoiceDateChange();
+        initializeMeterReadingsSection();
+        loadSplitPreview(); // read-only split preview, runs alongside the readings load
+        await fetchDueDateRuleChoices();
+        await fetchPropertyChargeTypes();
+      };
+
+      // ════════════════════════════════════════════════════════════════════════
+      //  REINVOICE PREVIEW  —  read-only port of the flow
+      //  "Final - Flow to split and save reading values of meters" (flow.html).
+      //  Calculated on load for the current purchase invoice: shows the
+      //  meter reading line items the flow would write for THIS invoice.
+      //  Nothing is created, updated or deleted in Dataverse.
+      // ════════════════════════════════════════════════════════════════════════
+
+      // ─────────── Flow constants (option-set values & parameters) ───────────
+      const SPLIT_CFG = {
+        // Flow parameter array_HeatCostCategory (default value in the flow)
+        HEAT_COST_CATEGORY: "54eaeb96-78ef-f011-8406-0022489fa4ad",
+        // Carrefour connection point id (flow hardcodes this literal)
+        CARREFOUR_CONNECTION_POINT: "590322429201692688",
+        // Compose_-_Total_Heated_Area — flow hardcodes 19236.25
+        TOTAL_HEATED_AREA: 19236.25,
+
+        ALLOC_METHOD_METER: 126330001, // array_allocationmethod "Meter"
+        POOL_BEHAVIOUR_POOLED: 590930000, // array_poolbehaviour
+        BILLING_STATUS_BILLED: 590930001, // line item array_billingstatus
+
+        SPLIT_BY_USAGE: 126330000, // array_splitbyusage
+        SPLIT_EQUAL_SHARE: 126330001,
+
+        UOM_M3: "126330006", // varUnitofMeasure comparison (string)
+        UOM_L: "126330000",
+        UOM_HEAT_S: 126330007, // → 'S'
+        UOM_HEAT_C: 126330005, // → 'C'
+        UOM_HEAT_N: 126330003, // → 'N'
+
+        ASSOC_TYPE_LEASE: 126330000, // array_meterassociationtype
+        ASSOC_TYPE_UNIT: 126330001,
+        ASSOC_TYPE_ACCOUNT: 126330002,
+
+        SPACE_TYPE_LEASABLE: 590930000, // array_spacetype
+        SPACE_TYPE_COMMON: 590930001,
+        SPLIT_TYPE_METERED: 590930001, // line item array_splittype "Metered Split"
+        SPLIT_TYPE_COMMON: 590930002, // "Common Area Split"
+        COMMON_AREA_LANDLORD_ABSORBED: 126330000, // line item array_commonareaallocation "Landlord absorbed"
+        COMMON_AREA_SPLIT_BY_TENANT: 126330001, // "Split by Tenant" → shared out by the area-wise flow
+        SPLIT_TYPE_AREA: 590930000, // line item array_splittype written by "Area Wise PI Meter Split Flow"
+
+        METER_TYPE_MAIN: 590930000, // array_type on meter
+        METER_TYPE_OWN: 590930001,
+
+        EMPTY_GUID: "00000000-0000-0000-0000-000000000000",
+      };
+      const FV = "@OData.Community.Display.V1.FormattedValue";
+
+      // ─────────── Flow expression primitives (exact semantics) ───────────
+      // float(formatNumber(x,'F2','en-US')) → round half-away-from-zero to N dp
+      function flowRound(x, dp) {
+        const n = Number(x);
+        if (!isFinite(n)) return 0;
+        const f = Math.pow(10, dp);
+        return Math.round((n + (n >= 0 ? 1e-9 : -1e-9)) * f) / f;
+      }
+      const F2 = (x) => flowRound(x, 2);
+      const F5 = (x) => flowRound(x, 5);
+      const F6 = (x) => flowRound(x, 6);
+      const num = (v, d = 0) => {
+        const n = parseFloat(v);
+        return isFinite(n) ? n : d;
+      }; // coalesce+float
+      const sumArr = (a) => (a || []).reduce((s, v) => s + num(v, 0), 0); // xpath sum(/r/a)
+      function stripGuid(g) {
+        return (g || "").toString().replace(/[{}]/g, "");
+      }
+      const guidKey = (g) => stripGuid(g).toLowerCase();
+      const uniq = (a) => [...new Set(a)];
+
+      // Preview usage: array_meteredusage, falling back to array_usage when it is empty
+      const readingUsageRaw = (r) =>
+        r && r.array_meteredusage != null ? r.array_meteredusage : r && r.array_usage;
+      const readingUsage = (r) => num(readingUsageRaw(r), 0);
+
+      // Common Area Allocation = "Landlord absorbed" (by value, or by label as a fallback)
+      function isLandlordAbsorbed(rec, field) {
+        const v = rec && rec[field];
+        if (v != null && Number(v) === SPLIT_CFG.COMMON_AREA_LANDLORD_ABSORBED)
+          return true;
+        const label = rec && rec[field + FV];
+        return (
+          !!label && String(label).trim().toLowerCase() === "landlord absorbed"
+        );
+      }
+
+      // int(first(split(formatNumber(x,'F2'),'.'))) → integer part (neon meters)
+      function flowIntPartF2(x) {
+        const s = flowRound(x, 2).toFixed(2);
+        return parseInt(s.split(".")[0], 10);
+      }
+
+      // ─────────── Web API helpers (read-only) ───────────
+      // Xrm.WebApi takes the ENTITY LOGICAL NAME (e.g. 'array_meterreadings').
+      async function dvList(entityLogicalName, queryOrFetch, isFetch) {
+        const xrm = getParentXrm();
+        if (!xrm) throw new Error("Xrm unavailable");
+        const q = isFetch
+          ? "?fetchXml=" + encodeURIComponent(queryOrFetch)
+          : queryOrFetch;
+        const r = await xrm.WebApi.retrieveMultipleRecords(
+          entityLogicalName,
+          q,
+        );
+        return r && r.entities ? r.entities : [];
+      }
+      async function dvGet(entityLogicalName, id, select) {
+        const xrm = getParentXrm();
+        if (!xrm) throw new Error("Xrm unavailable");
+        return await xrm.WebApi.retrieveRecord(
+          entityLogicalName,
+          stripGuid(id),
+          select || undefined,
+        );
+      }
+
+      // Compose_-_Month_Start / Month_End (from the PI's array_dateto)
+      function monthBounds(dateTo) {
+        const d = new Date(dateTo);
+        const start = new Date(
+          Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1),
+        );
+        const end = new Date(
+          Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0),
+        );
+        const fmt = (x) => x.toISOString().split("T")[0];
+        return { start: fmt(start), end: fmt(end) };
+      }
+
+      // ─────────── Preview groups (lease-wise) ───────────
+      const GROUP_COMMON = {
+        key: "__common__",
+        label: "Common area",
+        kind: "common",
+      };
+      const GROUP_UNASSIGNED = {
+        key: "__unassigned__",
+        label: "No meter association",
+        kind: "unassigned",
+      };
+      function leaseGroup(leaseId, leaseName) {
+        return leaseId
+          ? {
+              key: "lease:" + guidKey(leaseId),
+              label: leaseName || "Lease",
+              kind: "lease",
+            }
+          : {
+              key: "__nolease__",
+              label: "Unit (no current lease)",
+              kind: "nolease",
+            };
+      }
+      function accountGroup(customerId, customerName) {
+        return customerId
+          ? {
+              key: "acct:" + guidKey(customerId),
+              label: customerName || "Account",
+              kind: "account",
+            }
+          : {
+              key: "__account__",
+              label: "Account (unspecified)",
+              kind: "account",
+            };
+      }
+
+      // ════════════════════════════════════════════════════════════════════════
+      //  MAIN ENTRY — the flow's "Apply to each" body for ONE purchase invoice
+      // ════════════════════════════════════════════════════════════════════════
+      async function runSplitPreview(piId) {
+        const pi = await dvGet(
+          "array_purchaseinvoice",
+          piId,
+          "?$select=array_purchaseinvoiceid,array_dateto,array_recalculationrequired,array_utilityinvoice," +
+            "array_connectionpointid,array_totaldetailamount,_array_property_value,_array_supplier_value",
+        );
+        const piGuid = stripGuid(pi.array_purchaseinvoiceid);
+        const propertyId = stripGuid(pi._array_property_value);
+        const { start: monthStart, end: monthEnd } = monthBounds(
+          pi.array_dateto,
+        );
+
+        // List_rows_-_Purchase_invoice_items ($top 1, expand cost category)
+        const firstItem =
+          (
+            await dvList(
+              "array_purchaseinvoiceitem",
+              `?$top=1&$filter=_array_purchaseinvoice_value eq ${piGuid}` +
+                `&$expand=array_CostCategory($select=array_costcategoryid,array_costcategoryname)`,
+            )
+          )[0] || {};
+        const costCategoryId = stripGuid(firstItem._array_costcategory_value);
+        const costCategoryName =
+          (firstItem.array_CostCategory &&
+            firstItem.array_CostCategory.array_costcategoryname) ||
+          "";
+
+        const result = {
+          mode: "calculated", // 'calculated' | 'existing' | 'none'
+          path: null, // 'heating' | 'non-heating'
+          costCategoryName,
+          poolGroupName: "",
+          unitPrice: 0,
+          piCount: 0,
+          piIndex: 0,
+          invoiceNet: num(pi.array_totaldetailamount, 0),
+          residue: null,
+          landlordAbsorbed: 0, // common-area amount with allocation "Landlord absorbed"
+          lines: [],
+          notes: [],
+        };
+
+        // List_rows_-_Existing_Meter_Reading_line_items + Condition_-_Calculation_Required
+        const billed = await dvList(
+          "array_meterreadinglineitemrelation",
+          `?$select=array_meterreadinglineitemrelationid&$filter=_array_purchaseinvoice_value eq ${piGuid}` +
+            ` and array_billingstatus eq ${SPLIT_CFG.BILLING_STATUS_BILLED}`,
+        );
+        const calcRequired =
+          pi.array_recalculationrequired === true &&
+          billed.length <= 0 &&
+          pi.array_utilityinvoice === true;
+        if (!calcRequired) {
+          // The flow skips the split; reinvoicing uses the line items already saved
+          const why = [];
+          if (pi.array_recalculationrequired !== true)
+            why.push("Recalculation Required is No");
+          if (billed.length > 0)
+            why.push(`${billed.length} line item(s) are already billed`);
+          if (pi.array_utilityinvoice !== true)
+            why.push("it is not a utility invoice");
+          result.mode = "existing";
+          result.notes.push(
+            `The flow does not recalculate this invoice (${why.join(", ")}). Showing the line items already saved.`,
+          );
+          result.lines = await loadExistingLines(piGuid, result);
+          // Not a utility invoice and nothing saved yet: the area-wise flow still
+          // runs for it and shares out the invoice net by area
+          if (
+            pi.array_utilityinvoice !== true &&
+            !result.lines.length &&
+            costCategoryId
+          ) {
+            result.mode = "calculated";
+            result.path = "area";
+            result.notes = [];
+            await computeAreaSplit(
+              result,
+              propertyId,
+              costCategoryId,
+              result.invoiceNet,
+              "invoice net",
+            );
+            if (!result.area) result.mode = "none";
+            return result;
+          }
+          // Already run: the flow set Recalc = No after splitting and saved line items
+          result.alreadyRun =
+            pi.array_recalculationrequired !== true && result.lines.length > 0;
+          if (result.alreadyRun)
+            result.notes[result.notes.length - 1] =
+              "The reinvoice has already run for this invoice — showing the line items already saved. To run it again, set Recalculation Required = Yes on the purchase invoice.";
+          return result;
+        }
+        if (!costCategoryId) {
+          result.mode = "none";
+          result.notes.push(
+            "The first purchase invoice line has no cost category — the flow cannot split this invoice.",
+          );
+          return result;
+        }
+
+        // List_Utility_Pool_Group → List_Recovery_Allocation_Rule_with_Pool_Group
+        const pool = (
+          await dvList("array_poolgroup", poolGroupFetch(costCategoryId), true)
+        )[0];
+        const poolId = pool
+          ? stripGuid(pool.array_poolgroupid)
+          : SPLIT_CFG.EMPTY_GUID;
+        const rule = (
+          await dvList(
+            "array_recoveryallocationrules",
+            `?$top=1&$filter=statuscode eq 1 and _array_poolgroup_value eq ${poolId} and _array_property_value eq ${propertyId}`,
+          )
+        )[0];
+        result.poolGroupName = (pool && pool.array_poolgroupname) || "";
+        // Switch_-_Rule_Allocation_Method: only "Meter" is split
+        if (
+          !rule ||
+          rule.array_allocationmethod !== SPLIT_CFG.ALLOC_METHOD_METER
+        ) {
+          result.mode = "none";
+          result.notes.push(
+            !pool
+              ? "No pooled utility pool group is linked to this cost category — the flow does not split this invoice."
+              : !rule
+                ? `No active recovery allocation rule for pool group "${result.poolGroupName}" on this property — the flow does not split this invoice.`
+                : `The recovery allocation method is "${rule["array_allocationmethod" + FV] || rule.array_allocationmethod}", not Meter — the flow does not split this invoice.`,
+          );
+          return result;
+        }
+
+        // Condition_-_Carrefour_Checking: readings + same-supplier invoices
+        const isCarrefour =
+          String(pi.array_connectionpointid || "") ===
+          SPLIT_CFG.CARREFOUR_CONNECTION_POINT;
+        const cpOp = isCarrefour ? "eq" : "ne";
+        const monthReadings = await dvList(
+          "array_meterreadings",
+          buildMeterReadingsFetch(
+            costCategoryId,
+            propertyId,
+            monthStart,
+            monthEnd,
+            cpOp,
+          ),
+          true,
+        );
+        let spis = [];
+        if (pi._array_supplier_value) {
+          spis = await dvList(
+            "array_purchaseinvoice",
+            `?$select=array_purchaseinvoiceid,array_totaldetailamount` +
+              `&$filter=_array_supplier_value eq ${stripGuid(pi._array_supplier_value)}` +
+              ` and array_dateto ge ${monthStart} and array_dateto le ${monthEnd}` +
+              ` and _array_property_value eq ${propertyId}` +
+              ` and array_connectionpointid ${cpOp} '${SPLIT_CFG.CARREFOUR_CONNECTION_POINT}'` +
+              (isCarrefour ? "&$orderby=createdon asc" : ""),
+          );
+        }
+        // Set_variable_-_varUnitofMeasure (first reading's meter unit of measure)
+        const firstUom =
+          monthReadings[0] &&
+          monthReadings[0]["array_Meter.array_unitofmeasure"];
+        const varUnitofMeasure = firstUom != null ? String(firstUom) : "";
+
+        // Switch_-_Cost_Categories → varUnitPrice
+        let unitPrice = 0;
+        if (costCategoryName === "Water") {
+          const items = await dvList(
+            "array_purchaseinvoiceitem",
+            `?$filter=_array_purchaseinvoice_value eq ${piGuid}`,
+          );
+          const byUsage = items.filter(
+            (i) => i.array_splitbyusage === SPLIT_CFG.SPLIT_BY_USAGE,
+          );
+          const equalShare = items.filter(
+            (i) => i.array_splitbyusage === SPLIT_CFG.SPLIT_EQUAL_SHARE,
+          );
+          const byUsageQty = byUsage.map((i) => num(i.array_quantity, 0));
+          const minQty = byUsageQty.length ? Math.min(...byUsageQty) : 0;
+          const sumByUsage = sumArr(
+            byUsage.map((i) => num(i.array_priceperunit, 0)),
+          );
+          const sumEqual = sumArr(
+            equalShare.map((i) => num(i.array_priceperunit, 0)),
+          );
+          unitPrice =
+            minQty === 0 ? 0 : F2((minQty * sumByUsage + sumEqual) / minQty);
+        } else if (costCategoryName === "Electricity") {
+          let detail = 0,
+            qty = 0;
+          for (const spi of spis) {
+            detail += num(spi.array_totaldetailamount, 0);
+            const it =
+              (
+                await dvList(
+                  "array_purchaseinvoiceitem",
+                  `?$top=1&$orderby=array_quantity asc&$filter=_array_purchaseinvoice_value eq ${stripGuid(spi.array_purchaseinvoiceid)}` +
+                    ` and array_splitbyusage eq ${SPLIT_CFG.SPLIT_BY_USAGE}`,
+                )
+              )[0] || {};
+            const itUom =
+              it.array_unitofmeasure != null
+                ? String(it.array_unitofmeasure)
+                : "";
+            const q = num(it.array_quantity, 0);
+            // Compose_-_Final_Quantity_(Unit_Conversion)
+            if (
+              varUnitofMeasure === SPLIT_CFG.UOM_M3 &&
+              itUom === SPLIT_CFG.UOM_L
+            )
+              qty += q / 1000;
+            else if (
+              varUnitofMeasure === SPLIT_CFG.UOM_L &&
+              itUom === SPLIT_CFG.UOM_M3
+            )
+              qty += q * 1000;
+            else qty += q;
+          }
+          unitPrice = qty === 0 ? 0 : F5(detail / qty);
+        } else if (
+          costCategoryId.toLowerCase() !==
+          SPLIT_CFG.HEAT_COST_CATEGORY.toLowerCase()
+        ) {
+          result.notes.push(
+            `Cost category "${costCategoryName}" has no unit-price rule in the flow — unit price is 0.`,
+          );
+        }
+        result.unitPrice = unitPrice;
+        result.piCount = spis.length;
+
+        // vPIIndex of THIS invoice inside the same-supplier loop (1-based)
+        result.piIndex =
+          spis.findIndex(
+            (s) => guidKey(s.array_purchaseinvoiceid) === guidKey(piGuid),
+          ) + 1;
+        if (!result.piIndex) {
+          result.mode = "none";
+          result.notes.push(
+            "This invoice is not in the flow's list of same-supplier invoices for the month (check supplier, property, period end date and connection point) — the flow writes no line items for it.",
+          );
+          return result;
+        }
+        const thisSpi = spis[result.piIndex - 1];
+        result.invoiceNet = num(thisSpi.array_totaldetailamount, 0);
+
+        if (
+          costCategoryId.toLowerCase() ===
+          SPLIT_CFG.HEAT_COST_CATEGORY.toLowerCase()
+        ) {
+          result.path = "heating";
+          await computeHeating(
+            result,
+            propertyId,
+            monthStart,
+            monthEnd,
+            thisSpi,
+          );
+        } else {
+          result.path = "non-heating";
+          // The flow links every month reading to the invoice first, then splits
+          // every linked reading. Preview: union of existing links + month readings.
+          const links = await dvList(
+            "array_purchaseinvoicemeterreadinglink",
+            `?$select=_array_meterreading_value&$filter=_array_purchaseinvoice_value eq ${piGuid}`,
+          );
+          const readingIds = uniq(
+            [
+              ...links.map((l) => l._array_meterreading_value),
+              ...monthReadings.map((r) => r.array_meterreadingsid),
+            ]
+              .filter(Boolean)
+              .map(guidKey),
+          );
+          if (!readingIds.length)
+            result.notes.unshift(
+              await diagnoseNoReadings(
+                costCategoryId,
+                costCategoryName,
+                propertyId,
+                monthStart,
+                monthEnd,
+                cpOp,
+              ),
+            );
+          await computeNonHeating(
+            result,
+            propertyId,
+            costCategoryId,
+            readingIds,
+            spis.length,
+            unitPrice,
+            pool ? poolId : null, // vPoolGroup
+          );
+          // Run_a_Child_Flow (area-wise): common-area / vacant lines marked "Split by Tenant"
+          const areaBase = sumArr(
+            result.lines
+              .filter(
+                (l) =>
+                  (l.splitType === SPLIT_CFG.SPLIT_TYPE_COMMON ||
+                    l.splitType === PRORATE_CFG.SPLIT_TYPE_VACANT) &&
+                  Number(l.allocation) === SPLIT_CFG.COMMON_AREA_SPLIT_BY_TENANT,
+              )
+              .map((l) => l.amount),
+          );
+          await computeAreaSplit(
+            result,
+            propertyId,
+            costCategoryId,
+            areaBase,
+            "common-area amount marked Split by Tenant",
+          );
+        }
+        return result;
+      }
+
+      // No reading matched the flow's filter — find the month's readings for this
+      // cost category on ANY meter and say which flow condition excludes each (read-only)
+      async function diagnoseNoReadings(
+        costCategoryId,
+        costCategoryName,
+        propertyId,
+        monthStart,
+        monthEnd,
+        cpOp,
+      ) {
+        const month =
+          formatDisplayDate(monthStart) + " – " + formatDisplayDate(monthEnd);
+        const head = `No meter readings match the flow's filter (${costCategoryName || "this cost category"} meter on this property, meter and reading active, Date To in ${month}, connection point ${cpOp === "eq" ? "= Carrefour" : "≠ Carrefour"}).`;
+        const fetch = (
+          withPeriod,
+        ) => `<fetch><entity name="array_meterreadings">
+    <attribute name="array_meterreadingsid" /><attribute name="array_meterreadingid" /><attribute name="array_dateto" />
+    <filter type="and">
+      <condition entityname="m" attribute="array_costcategory" operator="eq" value="${stripGuid(costCategoryId)}" />
+      <condition attribute="statuscode" operator="eq" value="1" />
+      ${withPeriod ? `<condition attribute="array_dateto" operator="ge" value="${monthStart}" /><condition attribute="array_dateto" operator="le" value="${monthEnd}" />` : ""}
+    </filter>
+    <link-entity name="array_meter" from="array_meterid" to="array_meter" alias="m" link-type="inner">
+      <attribute name="array_metername" /><attribute name="array_property" /><attribute name="statuscode" /><attribute name="array_connectionpointid" />
+    </link-entity>
+  </entity></fetch>`;
+        try {
+          const rows = await dvList("array_meterreadings", fetch(true), true);
+          if (rows.length) {
+            const reasons = {};
+            const add = (k) => (reasons[k] = (reasons[k] || 0) + 1);
+            rows.forEach((r) => {
+              const cp = String(r["m.array_connectionpointid"] || "");
+              if (guidKey(r["m.array_property"]) !== guidKey(propertyId))
+                add(
+                  `meter is on property "${r["m.array_property" + FV] || "none"}"`,
+                );
+              else if (r["m.statuscode"] !== 1)
+                add(
+                  `meter Status Reason is "${r["m.statuscode" + FV] || "?"}" with value ${r["m.statuscode"]} — the flow requires value 1`,
+                );
+              else if (
+                (cpOp === "eq") !==
+                (cp === SPLIT_CFG.CARREFOUR_CONNECTION_POINT)
+              )
+                add(`meter connection point is "${cp || "empty"}"`);
+              else
+                add(
+                  "excluded by Dataverse for another reason (check the reading in the grid)",
+                );
+            });
+            return (
+              `${head} ${rows.length} active ${costCategoryName} reading(s) exist for this month, but: ` +
+              Object.entries(reasons)
+                .map(([k, n]) => `${n} — ${k}`)
+                .join("; ") +
+              "."
+            );
+          }
+          const any = await dvList("array_meterreadings", fetch(false), true);
+          const latest = any
+            .map((r) => (r.array_dateto || "").split("T")[0])
+            .filter(Boolean)
+            .sort()
+            .pop();
+          return any.length
+            ? `${head} No active ${costCategoryName} reading has a Date To in ${month}${latest ? ` (latest: ${formatDisplayDate(latest)})` : ""}.`
+            : `${head} There are no active ${costCategoryName} readings at all.`;
+        } catch (e) {
+          console.warn("diagnoseNoReadings:", e);
+          return head;
+        }
+      }
+
+      // ════════════════════════════════════════════════════════════════════════
+      //  NON-HEATING — Condition_-_Split_Non-Heating, for THIS invoice's index
+      // ════════════════════════════════════════════════════════════════════════
+      async function computeNonHeating(
+        result,
+        propertyId,
+        costCategoryId,
+        readingIds,
+        len,
+        unitPrice,
+        poolGroupId,
+      ) {
+        const idx = result.piIndex;
+        let readingTotal = 0; // vMeterReadingAmount
+        let ruleAdjustment = 0; // vRuleAdjustment (child totalamount − distribution amount)
+        const childCache = makeProrationCache(propertyId, poolGroupId);
+
+        for (const rid of readingIds) {
+          let mr;
+          try {
+            mr = await dvGet(
+              "array_meterreadings",
+              rid,
+              "?$select=array_meterreadingsid,array_meterreadingid,array_meteredusage,array_usage,_array_meter_value,array_datefrom,array_dateto" +
+                "&$expand=array_Meter($select=array_neonmeter,array_metername)",
+            );
+          } catch (e) {
+            result.notes.push(
+              `Meter reading ${rid} could not be read: ${e.message}`,
+            );
+            continue;
+          }
+          const usage = readingUsage(mr);
+          const neon = !!(
+            mr.array_Meter && mr.array_Meter.array_neonmeter === true
+          );
+          // Compose_-_meter_reading_amount
+          const readingAmount = F2((unitPrice * usage) / len);
+          readingTotal += readingAmount;
+          const base = {
+            readingId: mr.array_meterreadingid || "",
+            readingGuid: guidKey(mr.array_meterreadingsid),
+            meterName:
+              (mr.array_Meter && mr.array_Meter.array_metername) ||
+              mr["_array_meter_value" + FV] ||
+              "—",
+            basis: usage,
+            neon,
+          };
+          if (!mr._array_meter_value) {
+            result.notes.push(
+              `Meter reading ${base.readingId} has no meter — skipped.`,
+            );
+            continue;
+          }
+
+          const assocs = await dvList(
+            "array_meterassociation",
+            `?$filter=_array_meter_value eq ${stripGuid(mr._array_meter_value)}` +
+              `&$expand=array_Unit($select=array_unitname,array_spacetype,_array_currentlease_value),` +
+              `array_LeaseAgreement($select=array_leasename)`,
+          );
+          // Condition_-_length_of_meter_association → else: one line, no tenant
+          if (!assocs.length) {
+            result.lines.push({
+              ...base,
+              typeLabel: "—",
+              name: "No meter association",
+              allocPct: null,
+              amount: readingAmount,
+              group: GROUP_UNASSIGNED,
+            });
+            continue;
+          }
+
+          for (const a of assocs) {
+            const pct = num(a.array_allocationpercenatage, 0);
+            // Neon: the tenant's share of usage is cut to whole units (as in the flow)
+            const neonUnits = neon ? flowIntPartF2((usage * pct) / 100) : null;
+            // Compose_-_Tenant_Total
+            const tenantTotal = neon
+              ? F2(neonUnits * unitPrice)
+              : F2((pct * (unitPrice * usage)) / 100);
+            // Compose_-_distribution_amount (last invoice takes the rounding remainder)
+            const amount =
+              idx === len
+                ? F2(tenantTotal - F2(tenantTotal / len) * (len - 1))
+                : F2(tenantTotal / len);
+
+            // Run_a_Child_Flow_-_Proration ("Child - Split line amount creation - Prorated")
+            const child = await runProrationChild(
+              a,
+              amount,
+              mr.array_datefrom,
+              mr.array_dateto,
+              childCache,
+            );
+            if (child.failed) {
+              result.notes.push(
+                `Meter reading ${base.readingId}: ${child.failed} — the proration child flow fails, so the split flow run stops.`,
+              );
+              continue;
+            }
+            // Increment_variable_-_vRuleAdjustment
+            ruleAdjustment += child.totalamount - amount;
+
+            for (const cl of child.lines) {
+              // Lines the child writes with Common Area Allocation = Landlord absorbed
+              if (cl.landlord) {
+                result.landlordAbsorbed += cl.amount;
+                continue;
+              }
+              const line = {
+                ...base,
+                allocPct: pct,
+                amount: cl.amount,
+                amountTitle: cl.title || "",
+                typeLabel: cl.typeLabel,
+                name: cl.name || "—",
+                group: cl.group,
+                splitType: cl.splitType,
+                allocation: cl.allocation,
+              };
+              if (neon) {
+                line.basis = neonUnits;
+                line.basisTitle = `Neon meter: ${usage} × ${pct}% = ${F2((usage * pct) / 100)} → billed ${neonUnits} whole units`;
+              }
+              result.lines.push(line);
+            }
+          }
+        }
+
+        // Compose_-_Residue_Amount (net − Σ meter reading amounts − vRuleAdjustment)
+        result.residue = result.invoiceNet - readingTotal - ruleAdjustment;
+
+        // List_rows_-_Meter_Associations (all active main-meter associations) →
+        // For_each_-_Meter_Associations: one common-area line per common-area unit
+        const mainAssocs = await dvList(
+          "array_meterassociation",
+          `?$filter=statecode eq 0 and array_Meter/_array_costcategory_value eq ${costCategoryId}` +
+            ` and array_Meter/array_type eq ${SPLIT_CFG.METER_TYPE_MAIN}` +
+            ` and array_Meter/_array_property_value eq ${propertyId}` +
+            `&$expand=array_Unit($select=array_unitname,array_spacetype)`,
+        );
+        const commonAssocs = mainAssocs.filter(
+          (a) =>
+            a.array_Unit &&
+            a.array_Unit.array_spacetype === SPLIT_CFG.SPACE_TYPE_COMMON,
+        );
+        console.log(
+          "[Preview] Main-meter associations:",
+          mainAssocs.map((a) => ({
+            unit: a.array_Unit && a.array_Unit.array_unitname,
+            spaceType: a.array_Unit && a.array_Unit.array_spacetype,
+            pct: a.array_allocationpercenatage,
+            allocation: a.array_remainingamountallocation,
+            label: a["array_remainingamountallocation" + FV],
+          })),
+        );
+        for (const a of commonAssocs) {
+          const pct = num(a.array_allocationpercenatage, 0);
+          const amount = F2((result.residue * pct) / 100); // Compose_-_Common_Area_Amount
+          // The flow copies array_remainingamountallocation to the line's array_commonareaallocation
+          if (isLandlordAbsorbed(a, "array_remainingamountallocation"))
+            result.landlordAbsorbed += amount;
+          result.lines.push({
+            readingId: "",
+            readingGuid: "",
+            meterName: a["_array_meter_value" + FV] || "Main meter",
+            basis: null,
+            typeLabel: "Remaining amount",
+            name: a.array_Unit.array_unitname || "—",
+            allocPct: pct,
+            amount,
+            group: GROUP_COMMON,
+            splitType: SPLIT_CFG.SPLIT_TYPE_COMMON,
+            allocation: a.array_remainingamountallocation,
+          });
+        }
+        if (!commonAssocs.length && Math.abs(result.residue) > 0.004) {
+          result.notes.push(
+            !mainAssocs.length
+              ? "The remaining amount is not allocated: no active main-meter association exists for this cost category and property."
+              : "The remaining amount is not allocated: no active main-meter association is on a common-area unit.",
+          );
+        }
+      }
+
+      // ════════════════════════════════════════════════════════════════════════
+      //  PRORATION CHILD FLOW — read-only port of
+      //  "Child - Split line amount creation - Prorated" (prorated flow.html).
+      //  Called once per meter association; returns the line items it would
+      //  write and its totalamount (used by the parent for vRuleAdjustment).
+      // ════════════════════════════════════════════════════════════════════════
+      const PRORATE_CFG = {
+        SCOPE_PROPERTY: 126330000, // array_applicablescope
+        SCOPE_LEASE: 126330001,
+        METHOD_PERCENT: 126330002, // array_allocationmethod
+        METHOD_FIXED: 126330003,
+        METHOD_EXCLUDED: 126330004,
+        SPLIT_TYPE_VACANT: 590930003, // line item array_splittype written for vacant / no-lease shares
+      };
+      const DAY_MS = 86400000;
+      // formatDateTime(x,'yyyy-MM-dd') — UTC date part
+      const ymd = (v) => (v ? new Date(v).toISOString().slice(0, 10) : "");
+      const dayNo = (d) => Date.parse(d + "T00:00:00Z") / DAY_MS;
+
+      // Rules / lease-unit associations are the same for every association → fetch once
+      function makeProrationCache(propertyId, poolGroupId) {
+        const pool = poolGroupId || SPLIT_CFG.EMPTY_GUID;
+        const memo = new Map();
+        const once = (key, fn) => {
+          if (!memo.has(key)) memo.set(key, fn());
+          return memo.get(key);
+        };
+        const rule = (filter) =>
+          dvList(
+            "array_recoveryallocationrules",
+            `?$top=1&$filter=statecode eq 0 and _array_poolgroup_value eq ${pool} and ${filter}`,
+          ).then((r) => r[0] || null);
+        return {
+          // List_rows_-_Property_Rule
+          propertyRule: () =>
+            once("property", () =>
+              rule(
+                `_array_property_value eq ${stripGuid(propertyId)} and array_applicablescope eq ${PRORATE_CFG.SCOPE_PROPERTY}`,
+              ),
+            ),
+          // List_rows_-_Lease_Rule_*
+          leaseRule: (leaseId) =>
+            leaseId
+              ? once("lease:" + guidKey(leaseId), () =>
+                  rule(
+                    `_array_leaseagreement_value eq ${stripGuid(leaseId)} and array_applicablescope eq ${PRORATE_CFG.SCOPE_LEASE}`,
+                  ),
+                )
+              : Promise.resolve(null),
+          // List_rows_-_Lease_Unit_Association_by_Unit / _by_Lease_Agreement
+          luas: (field, id, fromD, toD) =>
+            once(`lua:${field}:${guidKey(id)}:${fromD}:${toD}`, () =>
+              dvList(
+                "array_leaseunitassociation",
+                `?$filter=array_startdate le ${toD} and array_enddate ge ${fromD}` +
+                  ` and ${field} eq ${stripGuid(id)} and statecode eq 0`,
+              ),
+            ),
+        };
+      }
+
+      // Compose_-_Base / Rec_Pct / Billed / NonRec / Is_Excluded / Extra
+      function applyRecoveryRule(leaseRule, propertyRule, amount) {
+        const m = leaseRule && leaseRule.array_allocationmethod;
+        const base = F2(
+          !leaseRule
+            ? amount
+            : m === PRORATE_CFG.METHOD_FIXED
+              ? num(leaseRule.array_fixedamount, 0)
+              : m === PRORATE_CFG.METHOD_PERCENT
+                ? (amount * num(leaseRule.array_allocationvalue, 0)) / 100
+                : m === PRORATE_CFG.METHOD_EXCLUDED
+                  ? 0
+                  : amount,
+        );
+        const recPct = num(
+          (leaseRule || propertyRule || {}).array_recoverablepercentage,
+          100,
+        );
+        const billed = F2((base * recPct) / 100);
+        const excluded = !!leaseRule && m === PRORATE_CFG.METHOD_EXCLUDED;
+        return {
+          base,
+          recPct,
+          billed,
+          nonRec: F2(base - billed),
+          excluded,
+          extra: !leaseRule ? 0 : excluded ? -amount : F2(base - amount),
+        };
+      }
+
+      async function runProrationChild(a, dist, prorateFrom, prorateTo, cache) {
+        const out = { lines: [], totalamount: dist };
+        if (!prorateFrom || !prorateTo) {
+          out.failed = "the reading has no Date From / Date To";
+          return out;
+        }
+        // Compose_-_vTotalDays (ticks difference in whole days + 1)
+        const totalDays =
+          Math.floor((Date.parse(prorateTo) - Date.parse(prorateFrom)) / DAY_MS) +
+          1;
+        if (!(totalDays > 0)) return out; // nothing written, totalamount = dist
+
+        const propertyRule = await cache.propertyRule();
+        const unit = a.array_Unit || {};
+        const unitName = unit.array_unitname || a["_array_unit_value" + FV] || "";
+        const allocation = a.array_remainingamountallocation;
+        const landlordAlloc = isLandlordAbsorbed(a, "array_remainingamountallocation");
+        let occupied = 0; // vOccupiedSum
+        let extra = 0; // vExtra
+
+        // Billed line + non-recoverable ("Landlord absorbed") line for one lease
+        const leaseLines = (r, amount, leaseId, leaseName, name, typeLabel, prorateNote) => {
+          const why =
+            `Share ${amount}${prorateNote || ""}` +
+            (r.base !== amount ? ` → rule base ${r.base}` : "") +
+            ` × ${r.recPct}% recoverable`;
+          if (!r.excluded)
+            out.lines.push({
+              amount: r.billed,
+              splitType: SPLIT_CFG.SPLIT_TYPE_METERED,
+              title: why,
+              typeLabel,
+              name,
+              group: leaseGroup(leaseId, leaseName),
+            });
+          if (r.nonRec > 0)
+            out.lines.push({ amount: r.nonRec, landlord: true });
+        };
+
+        // Proration enabled: one share per lease-unit association overlapping the period
+        const prorated = async (field, id, typeLabel) => {
+          const fromD = ymd(prorateFrom),
+            toD = ymd(prorateTo);
+          const luas = await cache.luas(field, id, fromD, toD);
+          for (const l of luas) {
+            const startD = ymd(l.array_startdate);
+            const endD = ymd(l.array_enddate || prorateTo);
+            const s = fromD > startD ? fromD : startD; // Compose_-_overlapStart
+            const e = toD < endD ? toD : endD; // Compose_-_overlapEnd
+            const days = Math.max(0, dayNo(e) - dayNo(s) + 1);
+            const perLua = days > 0 ? F2((dist * days) / totalDays) : 0;
+            const leaseId = l._array_leaseagreement_value;
+            const r = applyRecoveryRule(
+              await cache.leaseRule(leaseId),
+              propertyRule,
+              perLua,
+            );
+            occupied += perLua;
+            if (days > 0) {
+              extra += r.extra;
+              leaseLines(
+                r,
+                perLua,
+                leaseId,
+                l["_array_leaseagreement_value" + FV],
+                l["_array_unit_value" + FV] || unitName,
+                typeLabel,
+                ` (${days}/${totalDays} days)`,
+              );
+            }
+          }
+        };
+        // Proration disabled: the whole share to one lease
+        const whole = async (leaseId, leaseName, name, typeLabel) => {
+          const r = applyRecoveryRule(
+            await cache.leaseRule(leaseId),
+            propertyRule,
+            dist,
+          );
+          occupied += dist;
+          extra += r.extra;
+          leaseLines(r, dist, leaseId, leaseName, name, typeLabel, "");
+        };
+
+        const t = a.array_meterassociationtype;
+        if (t === SPLIT_CFG.ASSOC_TYPE_UNIT) {
+          if (unit.array_spacetype === SPLIT_CFG.SPACE_TYPE_LEASABLE) {
+            if (a.array_prorationenabled === true)
+              await prorated("_array_unit_value", a._array_unit_value, "Unit");
+            else if (unit._array_currentlease_value)
+              await whole(
+                unit._array_currentlease_value,
+                unit["_array_currentlease_value" + FV],
+                unitName,
+                "Unit",
+              );
+            else {
+              // Unit without a current lease: line with split type 590930003, no allocation
+              occupied += dist;
+              out.lines.push({
+                amount: dist,
+                splitType: PRORATE_CFG.SPLIT_TYPE_VACANT,
+                typeLabel: "Unit (no lease)",
+                name: unitName,
+                group: leaseGroup(null),
+              });
+            }
+          } else {
+            // Common-area unit: line carries the association's Remaining Amount Allocation
+            occupied += dist;
+            out.lines.push(
+              landlordAlloc
+                ? { amount: dist, landlord: true }
+                : {
+                    amount: dist,
+                    splitType: SPLIT_CFG.SPLIT_TYPE_COMMON,
+                    typeLabel: "Unit (common)",
+                    name: unitName,
+                    group: GROUP_COMMON,
+                    allocation,
+                  },
+            );
+          }
+        } else if (t === SPLIT_CFG.ASSOC_TYPE_LEASE) {
+          const leaseName =
+            (a.array_LeaseAgreement && a.array_LeaseAgreement.array_leasename) ||
+            a["_array_leaseagreement_value" + FV];
+          if (a.array_prorationenabled === true)
+            await prorated(
+              "_array_leaseagreement_value",
+              a._array_leaseagreement_value,
+              "Lease",
+            );
+          else
+            await whole(a._array_leaseagreement_value, leaseName, leaseName, "Lease");
+        } else if (t === SPLIT_CFG.ASSOC_TYPE_ACCOUNT) {
+          // Case_-_Account: property rule's recoverable % only
+          const recPct = num(propertyRule && propertyRule.array_recoverablepercentage, 100);
+          const billed = F2((dist * recPct) / 100);
+          const nonRec = F2(dist - billed);
+          const name = a["_array_customer_value" + FV] || "—";
+          occupied += dist;
+          out.lines.push({
+            amount: billed,
+            splitType: SPLIT_CFG.SPLIT_TYPE_METERED,
+            title: `Share ${dist} × ${recPct}% recoverable`,
+            typeLabel: "Account",
+            name,
+            group: accountGroup(a._array_customer_value, name),
+          });
+          if (nonRec > 0) out.lines.push({ amount: nonRec, landlord: true });
+        }
+
+        // Compose_-_Vacant_Amount: part of the share no lease covers
+        const vacant = Math.max(0, F2(dist - occupied));
+        if (vacant > 0)
+          out.lines.push(
+            landlordAlloc
+              ? { amount: vacant, landlord: true }
+              : {
+                  amount: vacant,
+                  splitType: PRORATE_CFG.SPLIT_TYPE_VACANT,
+                  typeLabel: "Vacant",
+                  name: unitName,
+                  group: GROUP_COMMON,
+                  allocation,
+                },
+          );
+        out.totalamount = dist + extra; // Respond: totalamount
+        return out;
+      }
+
+      // ════════════════════════════════════════════════════════════════════════
+      //  AREA SPLIT — read-only port of "Area Wise PI Meter Split Flow"
+      //  (Areawise split flow.html). The split flow calls it last, for every
+      //  invoice. It shares out `base` (utility invoice: common-area / vacant
+      //  lines marked "Split by Tenant"; other invoices: the invoice net) to the
+      //  participants of the property's Area rule on the non-pooled pool group.
+      // ════════════════════════════════════════════════════════════════════════
+      const AREA_CFG = {
+        POOL_BEHAVIOUR_NON_POOLED: 590930001, // List_row_-_Pool_Groups
+        METHOD_AREA: 126330000, // array_allocationmethod
+        METHOD_PERCENT: 126330002,
+        METHOD_FIXED: 126330003,
+        METHOD_EXCLUDED: 126330004,
+        METHOD_WEIGHTED_AREA: 126330005,
+      };
+
+      async function computeAreaSplit(result, propertyId, costCategoryId, base, baseLabel) {
+        const pool = (
+          await dvList(
+            "array_poolgroup",
+            poolGroupFetch(costCategoryId, AREA_CFG.POOL_BEHAVIOUR_NON_POOLED),
+            true,
+          )
+        )[0];
+        const poolId = pool ? stripGuid(pool.array_poolgroupid) : SPLIT_CFG.EMPTY_GUID;
+        // List_rows_-_Recovery_Allocation_Rule_with_Pool_Group (property rule, no lease)
+        const rule = (
+          await dvList(
+            "array_recoveryallocationrules",
+            `?$top=1&$filter=statuscode eq 1 and _array_poolgroup_value eq ${poolId}` +
+              ` and _array_property_value eq ${stripGuid(propertyId)} and _array_leaseagreement_value eq null`,
+          )
+        )[0];
+        // Switch_1: only "Area" is split
+        if (!rule || rule.array_allocationmethod !== AREA_CFG.METHOD_AREA) {
+          if (base > 0.004)
+            result.notes.push(
+              `${money2(base)} (${baseLabel}) is not shared out: no active Area rule on a non-pooled pool group for this cost category and property.`,
+            );
+          return;
+        }
+        const area = {
+          base,
+          baseLabel,
+          poolGroupName: (pool && pool.array_poolgroupname) || "",
+          distributed: 0,
+        };
+        result.area = area;
+
+        // List_rows_-_Rule_Participants (+ lease area)
+        const participants = await dvList(
+          "array_ruleparticipant",
+          `?$filter=_array_recoveryallocationrule_value eq ${stripGuid(rule.array_recoveryallocationrulesid)}` +
+            `&$expand=array_LeaseAgreement($select=array_totalareaofunits,array_leasename)`,
+        );
+        const partIds = new Set(
+          participants.map((p) => guidKey(p._array_leaseagreement_value)),
+        );
+        // List_rows_-_Recovery_Allocation_Rule (lease-level overrides)
+        const leaseRules = await dvList(
+          "array_recoveryallocationrules",
+          `?$filter=statuscode eq 1 and _array_poolgroup_value eq ${poolId}` +
+            ` and _array_leaseagreement_value ne null and _array_property_value eq ${stripGuid(propertyId)}`,
+        );
+        const leaseCache = new Map();
+        const getLease = (id) => {
+          const k = guidKey(id);
+          if (!leaseCache.has(k))
+            leaseCache.set(
+              k,
+              dvGet(
+                "array_leaseagreement",
+                k,
+                "?$select=array_leaseagreementid,array_leasename,array_totalareaofunits",
+              ).catch(() => ({})),
+            );
+          return leaseCache.get(k);
+        };
+
+        let remAmount = base; // varRemainingAmount
+        let remArea = sumArr(
+          participants.map(
+            (p) => p.array_LeaseAgreement && p.array_LeaseAgreement.array_totalareaofunits,
+          ),
+        ); // varRemainingArea (Compose_-_Total_Area)
+        area.totalArea = remArea;
+        const processed = new Set(); // varLeaseAgreement
+
+        // One lease's share: billed line (+ "Landlord absorbed" part when recoverable % ≠ 100)
+        const emit = (lease, amount, recRaw, typeLabel, basis, how) => {
+          const full = Number(recRaw) === 100;
+          const recPct = full ? 100 : num(recRaw, 0);
+          const billed = full ? amount : (amount * recPct) / 100;
+          area.distributed += amount;
+          result.landlordAbsorbed += F2(amount - billed);
+          result.lines.push({
+            readingId: "",
+            readingGuid: "",
+            meterName: area.poolGroupName || "Area split",
+            basis,
+            basisUnit: basis == null ? "" : "m²",
+            typeLabel,
+            name: lease.array_leasename || "—",
+            allocPct: null,
+            amount: F2(billed),
+            amountTitle: `${how} = ${F2(amount)} × ${recPct}% recoverable`,
+            group: leaseGroup(lease.array_leaseagreementid, lease.array_leasename),
+            splitType: SPLIT_CFG.SPLIT_TYPE_AREA,
+          });
+        };
+        const leaveArea = async (leaseId, lease) => {
+          processed.add(guidKey(leaseId));
+          if (partIds.has(guidKey(leaseId)))
+            remArea -= num(lease.array_totalareaofunits, 0);
+        };
+        const byMethod = (m) => leaseRules.filter((r) => r.array_allocationmethod === m);
+        const fmtA = (v) => `${F2(v)} m²`;
+
+        // Apply_to_each_-_Filtered_Array_of_Fixed_Amount
+        for (const r of byMethod(AREA_CFG.METHOD_FIXED)) {
+          const lease = await getLease(r._array_leaseagreement_value);
+          const amount = num(r.array_fixedamount, 0);
+          emit(lease, amount, r.array_recoverablepercentage, "Fixed amount", null, "Fixed amount");
+          remAmount -= amount;
+          await leaveArea(r._array_leaseagreement_value, lease);
+        }
+        // Apply_to_each_-_Filtered_Array_of_Fixed_Percentage (of what is still left)
+        for (const r of byMethod(AREA_CFG.METHOD_PERCENT)) {
+          const lease = await getLease(r._array_leaseagreement_value);
+          const amount = (num(r.array_allocationvalue, 0) * remAmount) / 100;
+          emit(lease, amount, r.array_recoverablepercentage, "Fixed %",
+            null, `${num(r.array_allocationvalue, 0)}% of ${F2(remAmount)}`);
+          remAmount -= amount;
+          await leaveArea(r._array_leaseagreement_value, lease);
+        }
+        // Apply_to_each_-_Filtered_Array_of_Exclude_From_Share
+        for (const r of byMethod(AREA_CFG.METHOD_EXCLUDED)) {
+          const lease = await getLease(r._array_leaseagreement_value);
+          await leaveArea(r._array_leaseagreement_value, lease);
+        }
+        // Apply_to_each_-_Filtered_Array_of_Weighted_Area
+        for (const r of byMethod(AREA_CFG.METHOD_WEIGHTED_AREA)) {
+          const leaseId = r._array_leaseagreement_value;
+          const lease = await getLease(leaseId);
+          const part = participants.find((p) => guidKey(p._array_leaseagreement_value) === guidKey(leaseId));
+          const coef = num(part && part.array_sharingcoefficient, 1);
+          let weighted = 0;
+          const luas = await dvList(
+            "array_leaseunitassociation",
+            `?$select=_array_unit_value&$filter=_array_leaseagreement_value eq ${stripGuid(leaseId)}` +
+              ` and statecode eq 0 and statuscode eq 1 and _array_unit_value ne null`,
+          );
+          for (const l of luas) {
+            const unit = await dvGet("array_unit", l._array_unit_value, "?$select=array_unitareasqm").catch(() => ({}));
+            const w = (
+              await dvList(
+                "array_recoveryallocationunitweight",
+                `?$top=1&$select=array_weight&$filter=_array_unit_value eq ${stripGuid(l._array_unit_value)}`,
+              )
+            )[0];
+            weighted += num(unit.array_unitareasqm, 0) * (w && w.array_weight != null ? num(w.array_weight, 1) : 1);
+          }
+          const amount = remArea === 0 ? 0 : (weighted * coef * remAmount) / remArea;
+          emit(lease, amount, r.array_recoverablepercentage, "Weighted area", weighted,
+            `${fmtA(weighted)} × ${coef} × ${F2(remAmount)} / ${fmtA(remArea)}`);
+          remAmount -= amount;
+          await leaveArea(leaseId, lease);
+        }
+        // Apply_to_each_-_Filtered_Array_of_Area
+        for (const r of byMethod(AREA_CFG.METHOD_AREA)) {
+          const lease = await getLease(r._array_leaseagreement_value);
+          const a = num(lease.array_totalareaofunits, 0);
+          const amount = remArea <= 0 ? 0 : (remAmount * a) / remArea;
+          emit(lease, amount, r.array_recoverablepercentage, "Area", a,
+            `${F2(remAmount)} × ${fmtA(a)} / ${fmtA(remArea)}`);
+          remAmount -= amount;
+          await leaveArea(r._array_leaseagreement_value, lease);
+        }
+        // For_each_-_Active_Leases_of_Participants: everyone not handled above,
+        // each from the same remaining amount / area (not decremented here)
+        for (const p of participants) {
+          const leaseId = p._array_leaseagreement_value;
+          if (!leaseId || processed.has(guidKey(leaseId))) continue;
+          const lease = await getLease(leaseId);
+          const lr = leaseRules.find((r) => guidKey(r._array_leaseagreement_value) === guidKey(leaseId));
+          const coef = num(
+            (lr && lr.array_sharingcoefficient) != null ? lr.array_sharingcoefficient : p.array_sharingcoefficient,
+            1,
+          );
+          const a = num(lease.array_totalareaofunits, 0);
+          const amount = remArea === 0 ? 0 : (remAmount * a * coef) / remArea;
+          emit(lease, amount, p.array_recoverablepercentage, "Area (participant)", a,
+            `${F2(remAmount)} × ${fmtA(a)} × ${coef} / ${fmtA(remArea)}`);
+        }
+        area.undistributed = F2(base - area.distributed);
+        if (Math.abs(area.undistributed) > 0.004)
+          result.notes.push(
+            `Area split: ${money2(area.undistributed)} of ${money2(base)} is not shared out (participant areas do not cover it).`,
+          );
+      }
+      const money2 = (v) => formatCurrency(v || 0);
+
+      // ════════════════════════════════════════════════════════════════════════
+      //  HEATING — Condition_-_Split_Heating, for THIS invoice only
+      // ════════════════════════════════════════════════════════════════════════
+      async function computeHeating(
+        result,
+        propertyId,
+        monthStart,
+        monthEnd,
+        spi,
+      ) {
+        const HEAT = SPLIT_CFG.HEAT_COST_CATEGORY;
+        const mainMeter = (
+          await dvList(
+            "array_meter",
+            `?$top=1&$select=array_meterid&$filter=_array_property_value eq ${propertyId}` +
+              ` and _array_costcategory_value eq ${HEAT} and array_type eq ${SPLIT_CFG.METER_TYPE_MAIN} and statuscode eq 1`,
+          )
+        )[0];
+        const mainMeterId = mainMeter
+          ? stripGuid(mainMeter.array_meterid)
+          : SPLIT_CFG.EMPTY_GUID;
+        const heatingUnits = await dvList(
+          "array_meterassociation",
+          heatingUnitsFetch(mainMeterId),
+          true,
+        );
+        const totalHeatedArea = SPLIT_CFG.TOTAL_HEATED_AREA;
+
+        const ownAssocs = await dvList(
+          "array_meterassociation",
+          ownMeterAssocFetch(propertyId),
+          true,
+        );
+        const ownUnitIds = new Set(
+          ownAssocs
+            .map((a) => a._array_unit_value)
+            .filter(Boolean)
+            .map(guidKey),
+        );
+        const isOwn = (u) => ownUnitIds.has(guidKey(u._array_unit_value));
+        const ownMeterArea = sumArr(
+          heatingUnits
+            .filter(isOwn)
+            .map((u) => num(u["u.array_unitareasqm"], 0)),
+        );
+        const ownReadings = await dvList(
+          "array_meterreadings",
+          ownMeterReadingsFetch(propertyId, monthStart, monthEnd),
+          true,
+        );
+        const ownMeterGJ = sumArr(
+          ownReadings.map((r) => readingUsage(r)),
+        );
+
+        // List_rows_-_First_Invoice_Line + Compose_-_Invoice_Type / Unit_Price / Ratio
+        const fl =
+          (
+            await dvList(
+              "array_purchaseinvoiceitem",
+              `?$top=1&$select=array_unitofmeasure,array_quantity&$filter=_array_purchaseinvoice_value eq ${stripGuid(spi.array_purchaseinvoiceid)}`,
+            )
+          )[0] || {};
+        const net = num(spi.array_totaldetailamount, 0);
+        const qty = num(fl.array_quantity, 0);
+        const uom = fl.array_unitofmeasure;
+        const type =
+          uom === SPLIT_CFG.UOM_HEAT_S
+            ? "S"
+            : uom === SPLIT_CFG.UOM_HEAT_C
+              ? "C"
+              : uom === SPLIT_CFG.UOM_HEAT_N
+                ? "N"
+                : "X";
+        let unitPrice = 0;
+        if (type === "S" || type === "C")
+          unitPrice = qty <= 0 ? 0 : F2(net / qty);
+        else if (type === "N" && totalHeatedArea > 0)
+          unitPrice = net / totalHeatedArea;
+        let ratio = 0;
+        if (type === "S")
+          ratio = totalHeatedArea <= 0 ? 0 : qty / totalHeatedArea;
+        else if (type === "C") {
+          const denom = totalHeatedArea - ownMeterArea;
+          ratio = denom <= 0 ? 0 : (qty - ownMeterGJ) / denom;
+        }
+        result.unitPrice = unitPrice;
+        Object.assign(result, {
+          heatType: type,
+          totalHeatedArea,
+          ownMeterArea,
+          ownMeterGJ,
+        });
+        if (type === "X")
+          result.notes.push(
+            "The first invoice line's unit of measure is not S / C / N — the flow allocates 0 to every unit.",
+          );
+
+        // Filter_array_-_Units_To_Split → Apply_to_each_-_Leasable_Units (all heating units)
+        for (const u of heatingUnits.filter(
+          (u) => !(type === "C" && isOwn(u)),
+        )) {
+          const area = num(u["u.array_unitareasqm"], 0);
+          let cost = 0;
+          if (type === "S") cost = F2(F6(area * ratio) * unitPrice);
+          else if (type === "C")
+            cost = isOwn(u)
+              ? F2(ownMeterGJ * unitPrice)
+              : F2(F5(area * ratio) * unitPrice);
+          else if (type === "N") cost = F2(area * unitPrice);
+          const leasable =
+            u["u.array_spacetype"] === SPLIT_CFG.SPACE_TYPE_LEASABLE;
+          result.lines.push({
+            readingId: "",
+            readingGuid: "",
+            meterName: u["_array_unit_value" + FV] || "—",
+            basis: area,
+            basisUnit: "m²",
+            typeLabel: leasable ? "Leasable" : "Common",
+            name: u["l.array_tenant" + FV] || "—",
+            allocPct: null,
+            amount: cost,
+            group: leasable
+              ? leaseGroup(
+                  u["u.array_currentlease"],
+                  u["u.array_currentlease" + FV],
+                )
+              : GROUP_COMMON,
+          });
+        }
+
+        // Apply_to_each_-_Own_Meter_Readings (type C only)
+        if (type === "C") {
+          for (const r of ownReadings) {
+            result.lines.push({
+              readingId: r.array_meterreadingid || "",
+              readingGuid: guidKey(r.array_meterreadingsid),
+              meterName:
+                r.array_metername || r["_array_meter_value" + FV] || "—",
+              basis: readingUsage(r),
+              basisUnit: "GJ",
+              typeLabel: "Own meter",
+              name: r["l.array_tenant" + FV] || r["a.array_unit" + FV] || "—",
+              allocPct: null,
+              amount: F2(readingUsage(r) * unitPrice), // Compose_-_Reading_Cost
+              group: leaseGroup(
+                r["u.array_currentlease"],
+                r["u.array_currentlease" + FV],
+              ),
+            });
+          }
+        }
+      }
+
+      // Calculation not required → the line items already saved for this invoice
+      async function loadExistingLines(piGuid, result) {
+        const rows = await dvList(
+          "array_meterreadinglineitemrelation",
+          `?$filter=_array_purchaseinvoice_value eq ${piGuid}` +
+            `&$expand=array_MeterReading($select=array_meterreadingsid,array_meterreadingid,array_meteredusage,array_usage)`,
+        );
+        // Landlord-absorbed lines are not reinvoiced — total them, then leave them out (empty allocation stays)
+        const isLandlord = (r) =>
+          isLandlordAbsorbed(r, "array_commonareaallocation");
+        if (result)
+          result.landlordAbsorbed = sumArr(
+            rows.filter(isLandlord).map((r) => r.array_distributionamount),
+          );
+        console.log(
+          "[Preview] Common-area lines:",
+          rows
+            .filter((r) => r.array_splittype === SPLIT_CFG.SPLIT_TYPE_COMMON)
+            .map((r) => ({
+              amount: r.array_distributionamount,
+              allocation: r.array_commonareaallocation,
+              label: r["array_commonareaallocation" + FV],
+            })),
+          "→ landlord absorbed:",
+          result && result.landlordAbsorbed,
+        );
+        return rows
+          .filter((r) => !isLandlord(r))
+          .map((r) => {
+          const mr = r.array_MeterReading || {};
+          const leaseId = r._array_leaseagreement_value;
+          const tenantId = r._array_tenant_value;
+          const group =
+            r.array_splittype === SPLIT_CFG.SPLIT_TYPE_COMMON
+              ? GROUP_COMMON
+              : leaseId
+                ? leaseGroup(leaseId, r["_array_leaseagreement_value" + FV])
+                : tenantId
+                  ? accountGroup(tenantId, r["_array_tenant_value" + FV])
+                  : r._array_unit_value
+                    ? leaseGroup(null)
+                    : GROUP_UNASSIGNED;
+          return {
+            readingId: mr.array_meterreadingid || "",
+            readingGuid: guidKey(mr.array_meterreadingsid),
+            meterName: r["_array_meter_value" + FV] || "—",
+            basis: readingUsageRaw(mr) != null ? readingUsage(mr) : null,
+            typeLabel: r["array_splittype" + FV] || "—",
+            name:
+              r["_array_unit_value" + FV] ||
+              r["_array_tenant_value" + FV] ||
+              "—",
+            allocPct: null,
+            amount: num(r.array_distributionamount, 0),
+            status: r["array_billingstatus" + FV] || "",
+            splitType: r.array_splittype != null ? r.array_splittype : null,
+            group,
+          };
+        });
+      }
+
+      // ─────────── FetchXML builders (as in the flow) ───────────
+      function poolGroupFetch(costCategoryId, behaviour) {
+        return `<fetch top="1"><entity name="array_poolgroup">
+    <attribute name="array_poolgroupid" /><attribute name="array_poolgroupname" /><attribute name="array_poolbehaviour" />
+    <filter><condition attribute="array_poolbehaviour" operator="eq" value="${behaviour || SPLIT_CFG.POOL_BEHAVIOUR_POOLED}" /></filter>
+    <link-entity name="cr5e7_array_poolgroup_array_costcategory" from="array_poolgroupid" to="array_poolgroupid" intersect="true">
+      <filter><condition attribute="array_costcategoryid" operator="eq" value="${stripGuid(costCategoryId)}" /></filter>
+    </link-entity>
+  </entity></fetch>`;
+      }
+      function buildMeterReadingsFetch(
+        costCategoryId,
+        propertyId,
+        monthStart,
+        monthEnd,
+        cpOp,
+      ) {
+        // cpOp null → no connection point condition; monthStart null → no period condition
+        const period = monthStart
+          ? `<condition attribute="array_dateto" operator="ge" value="${monthStart}" />
+      <condition attribute="array_dateto" operator="le" value="${monthEnd}" />`
+          : "";
+        const cp = cpOp
+          ? `<condition entityname="array_Meter" attribute="array_connectionpointid" operator="${cpOp}" value="${SPLIT_CFG.CARREFOUR_CONNECTION_POINT}" />`
+          : "";
+        return `<fetch><entity name="array_meterreadings">
+    <attribute name="array_meterreadingsid" /><attribute name="array_meteredusage" /><attribute name="array_usage" />
+    <attribute name="array_meter" /><attribute name="array_metername" /><attribute name="array_dateto" />
+    <filter type="and">
+      <condition entityname="array_Meter" attribute="array_costcategory" operator="eq" value="${stripGuid(costCategoryId)}" />
+      <condition entityname="array_Meter" attribute="array_property" operator="eq" value="${stripGuid(propertyId)}" />
+      <condition entityname="array_Meter" attribute="statuscode" operator="eq" value="1" />
+      <condition attribute="statuscode" operator="eq" value="1" />
+      ${period}
+      ${cp}
+    </filter>
+    <link-entity name="array_meter" from="array_meterid" to="array_meter" alias="array_Meter" link-type="outer">
+      <attribute name="array_unitofmeasure" /><attribute name="array_connectionpointid" />
+    </link-entity>
+  </entity></fetch>`;
+      }
+      function heatingUnitsFetch(mainMeterId) {
+        return `<fetch><entity name="array_meterassociation">
+    <attribute name="array_unit" /><attribute name="array_combinedline" /><attribute name="array_remainingamountallocation" />
+    <filter>
+      <condition attribute="array_meter" operator="eq" value="${stripGuid(mainMeterId)}" />
+      <condition attribute="statecode" operator="eq" value="0" />
+    </filter>
+    <link-entity name="array_unit" from="array_unitid" to="array_unit" alias="u" link-type="inner">
+      <attribute name="array_unitareasqm" /><attribute name="array_spacetype" /><attribute name="array_currentlease" />
+      <order attribute="array_spacetype" />
+      <link-entity name="array_leaseagreement" from="array_leaseagreementid" to="array_currentlease" alias="l" link-type="outer">
+        <attribute name="array_tenant" />
+      </link-entity>
+    </link-entity>
+  </entity></fetch>`;
+      }
+      function ownMeterAssocFetch(propertyId) {
+        return `<fetch><entity name="array_meterassociation">
+    <attribute name="array_unit" />
+    <filter><condition attribute="statecode" operator="eq" value="0" /></filter>
+    <link-entity name="array_meter" from="array_meterid" to="array_meter" link-type="inner">
+      <filter>
+        <condition attribute="array_property" operator="eq" value="${stripGuid(propertyId)}" />
+        <condition attribute="array_costcategory" operator="eq" value="${SPLIT_CFG.HEAT_COST_CATEGORY}" />
+        <condition attribute="array_type" operator="eq" value="${SPLIT_CFG.METER_TYPE_OWN}" />
+        <condition attribute="statuscode" operator="eq" value="1" />
+      </filter>
+    </link-entity>
+  </entity></fetch>`;
+      }
+      function ownMeterReadingsFetch(propertyId, monthStart, monthEnd) {
+        return `<fetch><entity name="array_meterreadings">
+    <attribute name="array_meterreadingsid" /><attribute name="array_meterreadingid" /><attribute name="array_meteredusage" /><attribute name="array_usage" />
+    <attribute name="array_meter" /><attribute name="array_metername" />
+    <filter>
+      <condition attribute="statuscode" operator="eq" value="1" />
+      <condition attribute="array_dateto" operator="ge" value="${monthStart}" />
+      <condition attribute="array_dateto" operator="le" value="${monthEnd}" />
+    </filter>
+    <link-entity name="array_meter" from="array_meterid" to="array_meter" link-type="inner">
+      <filter>
+        <condition attribute="array_property" operator="eq" value="${stripGuid(propertyId)}" />
+        <condition attribute="array_costcategory" operator="eq" value="${SPLIT_CFG.HEAT_COST_CATEGORY}" />
+        <condition attribute="array_type" operator="eq" value="${SPLIT_CFG.METER_TYPE_OWN}" />
+        <condition attribute="statuscode" operator="eq" value="1" />
+      </filter>
+    </link-entity>
+    <link-entity name="array_meterassociation" from="array_meter" to="array_meter" alias="a" link-type="inner">
+      <attribute name="array_unit" /><attribute name="array_combinedline" />
+      <filter><condition attribute="statecode" operator="eq" value="0" /></filter>
+      <link-entity name="array_unit" from="array_unitid" to="array_unit" alias="u" link-type="inner">
+        <attribute name="array_currentlease" />
+        <link-entity name="array_leaseagreement" from="array_leaseagreementid" to="array_currentlease" alias="l" link-type="outer">
+          <attribute name="array_tenant" />
+        </link-entity>
+      </link-entity>
+    </link-entity>
+  </entity></fetch>`;
+      }
+
+      // ════════════════════════════════════════════════════════════════════════
+      //  UI — calculated on load, rendered inline (no popup)
+      // ════════════════════════════════════════════════════════════════════════
+      async function loadSplitPreview() {
+        const section = document.getElementById("splitPreviewSection");
+        const body = document.getElementById("splitPreviewBody");
+        if (!section || !body) return;
+        if (!purchaseInvoiceId || purchaseInvoiceId === "undefined") {
+          section.classList.add("hidden");
+          return;
+        }
+        section.classList.remove("hidden");
+        const btn = document.getElementById("previewRefreshBtn");
+        if (btn) {
+          btn.disabled = true;
+          btn.classList.add("spinning");
+        }
+        body.innerHTML =
+          '<div class="loading-state"><div class="loading-spinner"></div>' +
+          '<div class="loading-text">Calculating the split…</div></div>';
+        try {
+          const res = await runSplitPreview(stripGuid(purchaseInvoiceId));
+          console.log(
+            "[Preview v2026-10-22 area] mode:",
+            res.mode,
+            "| path:",
+            res.path,
+            "| remaining amount:",
+            res.residue,
+            "| landlord absorbed:",
+            res.landlordAbsorbed,
+          );
+          reinvoiceAlreadyRun = !!res.alreadyRun;
+          updateSubmitButton();
+          lastPreviewResult = res;
+          renderSplitPreview(body, res);
+        } catch (e) {
+          console.error("loadSplitPreview error:", e);
+          body.innerHTML =
+            '<div class="error-state">Failed to calculate the split: ' +
+            (e && e.message ? e.message : "unknown error").replace(
+              /</g,
+              "&lt;",
+            ) +
+            "</div>";
+        } finally {
+          if (btn) {
+            btn.disabled = false;
+            btn.classList.remove("spinning");
+          }
+        }
+      }
+
+      function toggleSplitGroup(gi) {
+        const bodyEl = document.getElementById("grpbody-" + gi);
+        const caret = document.getElementById("caret-" + gi);
+        if (!bodyEl) return;
+        const collapsed = bodyEl.style.display === "none";
+        bodyEl.style.display = collapsed ? "block" : "none";
+        if (caret) caret.classList.toggle("open", collapsed);
+      }
+
+      function renderSplitPreview(body, r) {
+        const esc = (s) =>
+          (s == null ? "" : s)
+            .toString()
+            .replace(/&/g, "&amp;")
+            .replace(/"/g, "&quot;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+        const money = (v) => (v == null || isNaN(v) ? "—" : formatCurrency(v));
+        const kpi = (label, val) =>
+          `<div class="split-kpi"><span class="split-kpi-label">${label}</span><span class="split-kpi-val">${val}</span></div>`;
+        const banner = (text) =>
+          `<div class="ineligible-info-banner show"><div class="ineligible-info-banner-icon">${ICON.info}</div>
+            <div class="ineligible-info-banner-body"><div class="ineligible-info-banner-subtitle">${esc(text)}</div></div></div>`;
+
+        // Recurring Charge: only each charge and its amount
+        const chargeMode = selectedOption === "charge";
+        let html = chargeMode
+          ? ""
+          : `<div class="split-summary">${kpi("Cost Category", esc(r.costCategoryName) || "—")}`;
+        if (!chargeMode && r.mode === "calculated") {
+          if (r.path !== "area") {
+            html += kpi("Unit Price", r.unitPrice ? r.unitPrice : 0);
+            html += kpi(
+              "Invoice",
+              r.piCount > 1
+                ? `${r.piIndex} of ${r.piCount} (same supplier)`
+                : "Single",
+            );
+          }
+          html += kpi("Invoice Net", money(r.invoiceNet));
+          if (r.area)
+            html += kpi("Area Split Base", money(r.area.base));
+          if (r.path === "non-heating")
+            html += kpi("Remaining Amount", money(r.residue));
+          if (r.path === "heating")
+            html +=
+              kpi("Heating Type", esc(r.heatType)) +
+              kpi("Heated Area", r.totalHeatedArea);
+        }
+        if (!chargeMode) html += `</div>`;
+
+        // Info notes first (not-required / not-split reasons)
+        const [lead, ...rest] = r.notes;
+        if (lead && r.mode !== "calculated") html += banner(lead);
+        if (r.mode === "none") {
+          body.innerHTML = html;
+          return;
+        }
+        // Only tenant lines are shown: "Metered Split" and the area-wise flow's
+        // area split. Calculated lines get the split type the flow would write:
+        // common-area / remaining-amount rows are Common Area Split (they feed the
+        // area split), readings without an association get none, the rest are Metered.
+        const isArea = (l) => l.splitType === SPLIT_CFG.SPLIT_TYPE_AREA;
+        const isMetered = (l) =>
+          l.splitType != null
+            ? l.splitType === SPLIT_CFG.SPLIT_TYPE_METERED
+            : l.group.kind !== "common" && l.group.kind !== "unassigned";
+        r.lines = r.lines.filter((l) => isMetered(l) || isArea(l));
+
+        if (!r.lines.length) {
+          if (r.mode === "calculated")
+            r.notes.forEach((n) => (html += banner(n)));
+          html += `<div class="empty-state"><div class="empty-state-icon">${ICON.inbox}</div>
+            <div class="empty-state-text">No line items would be created for this invoice.</div></div>`;
+          body.innerHTML = html;
+          return;
+        }
+
+        // ── Group lease-wise ──
+        const groups = {};
+        r.lines.forEach((l) => {
+          const g = l.group;
+          if (!groups[g.key]) groups[g.key] = { ...g, lines: [], subtotal: 0 };
+          groups[g.key].lines.push(l);
+          groups[g.key].subtotal += num(l.amount, 0);
+        });
+        const rank = {
+          lease: 0,
+          nolease: 1,
+          account: 2,
+          common: 3,
+          unassigned: 4,
+        };
+        const badges = {
+          lease: ["Lease", "grp-badge-lease"],
+          nolease: ["Unit", "grp-badge-common"],
+          account: ["Account", "grp-badge-acct"],
+          common: ["Common", "grp-badge-common"],
+          unassigned: ["Unassigned", "grp-badge-common"],
+        };
+        const ordered = Object.values(groups).sort((a, b) =>
+          rank[a.kind] !== rank[b.kind]
+            ? rank[a.kind] - rank[b.kind]
+            : a.label.localeCompare(b.label),
+        );
+        const heating = r.path === "heating";
+        const basisHead = heating ? "Area / GJ" : "Usage";
+
+        if (chargeMode) {
+          const total = ordered.reduce((t, g) => t + g.subtotal, 0);
+          html += `<div class="table-wrapper"><table class="meter-table" style="min-width:0;"><thead><tr>
+              <th>Charge</th><th style="text-align:right;">Amount</th></tr></thead><tbody>`;
+          ordered.forEach((g) => {
+            const [badge, badgeCls] = badges[g.kind];
+            html += `<tr><td class="meter-cell"><span class="split-group-badge ${badgeCls}" style="margin-right:8px;">${badge}</span>${esc(g.label)}</td>
+              <td class="amount-cell" style="text-align:right;">${money(g.subtotal)}</td></tr>`;
+          });
+          html += `<tr style="background:#f0f7f2;"><td style="font-weight:700;">Total</td>
+              <td class="amount-cell" style="text-align:right;font-weight:700;">${money(total)}</td></tr>`;
+          html += `</tbody></table></div>`;
+          html += `<div style="margin-top:12px;font-size:12px;color:#9ca3af;text-align:center;">
+            Preview only — calculated like the split flow. No records are created.</div>`;
+          body.innerHTML = html;
+          return;
+        }
+
+        // Totals first — below the summary, above the lease groups
+        const meteredTotal = sumArr(r.lines.filter(isMetered).map((l) => l.amount));
+        const areaTotal = sumArr(r.lines.filter(isArea).map((l) => l.amount));
+        const leaseTotal = ordered
+          .filter((g) => g.kind === "lease")
+          .reduce((t, g) => t + g.subtotal, 0);
+        html += `<div class="split-grandtotal" style="margin-top:0;"><span>Allocated to leases</span><span>${money(leaseTotal)}</span></div>`;
+        if (r.path !== "area")
+          html += `<div class="split-grandtotal" style="margin-top:8px;"><span>Total metered split</span><span>${money(meteredTotal)}</span></div>`;
+        if (r.area || areaTotal)
+          html += `<div class="split-grandtotal" style="margin-top:8px;" title="Area Wise PI Meter Split Flow — ${esc(r.area ? r.area.baseLabel : "saved area split lines")} shared by lease area"><span>Area split${r.area && r.area.poolGroupName ? ` (${esc(r.area.poolGroupName)})` : ""}</span><span>${money(areaTotal)}</span></div>`;
+        if (r.path !== "heating" || r.mode === "existing")
+          html += `<div class="split-grandtotal" style="margin-top:8px;background:#fffbeb;border-color:#fde68a;" title="Non-recoverable, vacant and landlord-absorbed common-area amounts — not reinvoiced to tenants"><span>Landlord absorbed</span><span style="color:#92400e;">${money(r.landlordAbsorbed || 0)}</span></div>`;
+
+        // Lease groups start collapsed — click a header to expand
+        html += `<div class="split-groups" style="margin-top:14px;">`;
+        ordered.forEach((g, gi) => {
+          const [badge, badgeCls] = badges[g.kind];
+          html += `<div class="split-group">
+            <button type="button" class="split-group-header" onclick="toggleSplitGroup(${gi})">
+              <span class="split-group-caret" id="caret-${gi}">${ICON.chevron}</span>
+              <span class="split-group-badge ${badgeCls}">${badge}</span>
+              <span class="split-group-title" title="${esc(g.label)}">${esc(g.label)}</span>
+              <span class="split-group-count">${g.lines.length} line${g.lines.length !== 1 ? "s" : ""}</span>
+              <span class="split-group-subtotal">${money(g.subtotal)}</span>
+            </button>
+            <div class="split-group-body" id="grpbody-${gi}" style="display:none;">
+              <table class="meter-table"><thead><tr>
+                <th>Reading ID</th><th>${heating ? "Meter / Unit" : "Meter"}</th><th>Type</th><th>${heating ? "Tenant" : "Allocated To"}</th>
+                <th>${basisHead}</th><th>Alloc %</th><th style="text-align:right;">Amount</th></tr></thead><tbody>`;
+          g.lines.forEach((l) => {
+            const idCell = l.readingId
+              ? `<button class="reading-id-link" onclick="openReadingRecord('${esc(l.readingGuid)}','${esc(l.readingId)}')" title="Open record in new tab">${esc(l.readingId)}<span class="reading-id-link-icon">${ICON.external}</span></button>`
+              : "—";
+            const basis =
+              l.basis == null
+                ? "—"
+                : `${Number(l.basis).toLocaleString("pl-PL", { maximumFractionDigits: 2 })}${l.basisUnit ? " " + l.basisUnit : ""}`;
+            html += `<tr>
+              <td class="id-cell">${idCell}</td>
+              <td class="meter-cell" title="${esc(l.meterName)}">${esc(l.meterName)}${l.neon ? ' <span class="row-warning-badge">NEON</span>' : ""}</td>
+              <td class="meter-cell">${esc(l.typeLabel)}${l.status ? `<div style="font-size:11px;color:#6b7280;">${esc(l.status)}</div>` : ""}</td>
+              <td class="meter-cell" title="${esc(l.name)}">${esc(l.name)}</td>
+              <td class="numeric-cell"${l.basisTitle ? ` title="${esc(l.basisTitle)}"` : ""}>${basis}</td>
+              <td class="numeric-cell">${l.allocPct == null ? "—" : l.allocPct + "%"}</td>
+              <td class="amount-cell" style="text-align:right;"${l.amountTitle ? ` title="${esc(l.amountTitle)}"` : ""}>${money(l.amount)}</td></tr>`;
+          });
+          html += `</tbody></table></div></div>`;
+        });
+        html += `</div>`;
+
+        const shown = r.mode === "calculated" ? r.notes : rest;
+        if (shown.length)
+          html +=
+            `<div style="margin-top:12px;font-size:11px;color:#9ca3af;line-height:1.6;">` +
+            shown.map((n) => "• " + esc(n)).join("<br>") +
+            `</div>`;
+        html += `<div style="margin-top:12px;font-size:12px;color:#9ca3af;text-align:center;">
+          Preview only — calculated like the split flow. No records are created.</div>`;
+        body.innerHTML = html;
+      }
+
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") {
+          const ao = document.getElementById("allocationOverlay");
+          if (ao && ao.classList.contains("active")) closeAllocationPopup();
+          else closeDialog();
+        }
+      });
+    </script>
+  </body>
+</html>
