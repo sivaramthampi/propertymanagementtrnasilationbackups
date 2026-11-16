@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lease Amendment History</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+        width: 100%;
+        height: 100%;
+        background: #ffffff;
+        font-family: 'DM Sans', sans-serif;
+        color: #1a2233;
+    }
+
+    .ah-box {
+        width: 100%;
+        height: 100%;
+        background: #ffffff;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* ── Header ─────────────────────────────────────────────── */
+    .ah-header {
+        padding: 12px 18px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        border-bottom: 1px solid #eaecf0;
+        flex-shrink: 0;
+    }
+    .ah-header-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #1a2233;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+    }
+    .ah-refresh-btn {
+        background: transparent;
+        border: 1px solid #eaecf0;
+        color: #8fa0b8;
+        font-size: 11.5px;
+        font-weight: 500;
+        font-family: 'DM Sans', sans-serif;
+        padding: 4px 10px;
+        border-radius: 5px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    .ah-refresh-btn:hover {
+        background: #fafbfc;
+        border-color: #d0d7e2;
+        color: #1a2233;
+    }
+    .ah-refresh-btn.loading svg { animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── 2-column body ──────────────────────────────────────── */
+    .ah-body {
+        display: grid;
+        grid-template-columns: 210px 1fr;
+        align-items: stretch;
+        min-height: 0;
+        flex: 1;
+        overflow: hidden;
+    }
+
+    /* ── Panels ─────────────────────────────────────────────── */
+    .panel-left {
+        border-right: 1px solid #eaecf0;
+        padding: 14px 14px 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        background: #fafbfc;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+    .panel-mid {
+        padding: 14px 18px 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+    .panel-left::-webkit-scrollbar,
+    .panel-mid::-webkit-scrollbar { width: 4px; }
+    .panel-left::-webkit-scrollbar-thumb,
+    .panel-mid::-webkit-scrollbar-thumb { background: #d0d7e2; border-radius: 4px; }
+    .panel-left::-webkit-scrollbar-track,
+    .panel-mid::-webkit-scrollbar-track { background: transparent; }
+
+    /* ── Labels / Values ────────────────────────────────────── */
+    .field-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #8fa0b8;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 2px;
+    }
+    .field-value {
+        font-size: 15px;
+        color: #1a2233;
+        font-weight: 500;
+        line-height: 1.4;
+    }
+    .field-value.large {
+        font-size: 20.5px;
+        font-weight: 700;
+        color: #1a2233;
+        line-height: 1.1;
+    }
+    .field-value.sentence {
+        font-size: 12.5px;
+        color: #4a5568;
+        font-weight: 400;
+        line-height: 1.5;
+    }
+    .field-value.muted {
+        font-size: 13px;
+        color: #8fa0b8;
+        font-weight: 500;
+    }
+
+    /* ── Divider ────────────────────────────────────────────── */
+    .divider { height: 1px; background: #eaecf0; flex-shrink: 0; }
+
+    /* ── Section headings (with flex divider after) ─────────── */
+    .section-heading {
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.7px;
+        color: #8fa0b8;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        flex-shrink: 0;
+    }
+    .section-heading::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: #eaecf0;
+    }
+    .section-heading-count {
+        font-size: 11px;
+        font-weight: 600;
+        color: #8fa0b8;
+        text-transform: none;
+        letter-spacing: 0.2px;
+    }
+
+    /* ── Status pill (left panel) ───────────────────────────── */
+    .expiry-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 9px 3px 7px;
+        border-radius: 5px;
+        font-size: 12px;
+        font-weight: 600;
+        border: 1px solid;
+        margin-top: 3px;
+        letter-spacing: 0.1px;
+        line-height: 1.4;
+        width: fit-content;
+    }
+    .expiry-badge::before {
+        content: '';
+        width: 7px;
+        height: 7px;
+        min-width: 7px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+    .eb-active   { background: #e8f5e9; color: #2e7d32; border-color: #a5d6a7; }
+    .eb-active::before   { background: #43a047; }
+    .eb-pending  { background: #fff3e0; color: #e65100; border-color: #ffcc80; }
+    .eb-pending::before  { background: #fb8c00; }
+    .eb-empty    { background: #f5f5f5; color: #616161; border-color: #bdbdbd; }
+    .eb-empty::before    { background: #9e9e9e; }
+
+    /* ── Tag pills (Active / Pending) — match EUR/PLN style ── */
+    .ah-tag-row {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+    }
+    .tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 9px;
+        border-radius: 4px;
+        font-size: 13px;
+        font-weight: 500;
+        border: 1px solid;
+        cursor: pointer;
+        transition: filter 0.15s;
+        font-family: 'DM Sans', sans-serif;
+        background: transparent;
+        color: #8fa0b8;
+        border-color: #eaecf0;
+    }
+    .tag:hover { filter: brightness(0.96); }
+    .tag.selected.tag-blue { background: #e3f2fd; color: #1565c0; border-color: #90caf9; }
+    .tag.selected.tag-orange { background: #fff3e0; color: #e65100; border-color: #ffcc80; }
+    .tag .tag-count {
+        background: rgba(0,0,0,0.06);
+        padding: 0 6px;
+        border-radius: 8px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+    .tag.selected.tag-blue .tag-count { background: #1565c0; color: #fff; }
+    .tag.selected.tag-orange .tag-count { background: #e65100; color: #fff; }
+
+    .ah-tag-panel { display: none; }
+    .ah-tag-panel.shown { display: block; }
+
+    /* ── Row layout for amendments ──────────────────────────── */
+    .ah-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 8px 0;
+        border-bottom: 1px solid #eaecf0;
+        cursor: pointer;
+        transition: background 0.12s;
+    }
+    .ah-row:last-child { border-bottom: none; }
+    .ah-row:hover { background: #fafbfc; }
+    .ah-row-body { flex: 1; min-width: 0; }
+    .ah-row-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #1a2233;
+        margin: 0 0 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-family: 'DM Sans', sans-serif;
+    }
+    .ah-row-meta {
+        font-size: 11.5px;
+        color: #8fa0b8;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .ah-row-meta strong {
+        color: #4a5568;
+        font-weight: 600;
+    }
+    .ah-row-status {
+        font-size: 11.5px;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 4px;
+        white-space: nowrap;
+        flex-shrink: 0;
+        border: 1px solid;
+    }
+    .ah-row-status.active  { background: #e8f5e9; color: #2e7d32; border-color: #a5d6a7; }
+    .ah-row-status.pending { background: #fff3e0; color: #e65100; border-color: #ffcc80; }
+    .ah-row-status.draft   { background: #fff8e1; color: #f57f17; border-color: #ffe082; }
+    .ah-row-status.failed  { background: #ffebee; color: #c62828; border-color: #ef9a9a; }
+
+    /* ── Narrative ──────────────────────────────────────────── */
+    .ah-narrative {
+        font-size: 12.5px;
+        color: #4a5568;
+        line-height: 1.5;
+        padding-bottom: 12px;
+        margin-bottom: 4px;
+    }
+    .ah-narrative strong {
+        color: #1a2233;
+        font-weight: 600;
+    }
+
+    /* ── Empty state ────────────────────────────────────────── */
+    .ah-empty {
+        font-size: 12.5px;
+        color: #8fa0b8;
+        padding: 12px 0;
+        font-style: italic;
+    }
+
+    /* ── Loading / shimmer ──────────────────────────────────── */
+    .loading-shimmer {
+        background: linear-gradient(90deg, #f0f2f5 25%, #e0e4ea 50%, #f0f2f5 75%);
+        background-size: 200% 100%;
+        animation: shimmer 1.4s infinite;
+        border-radius: 4px;
+        color: transparent !important;
+        user-select: none;
+    }
+    @keyframes shimmer {
+        0%   { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+
+    /* ── Error ──────────────────────────────────────────────── */
+    .ah-error {
+        background: #ffebee;
+        border: 1px solid #ef9a9a;
+        border-radius: 5px;
+        padding: 9px 12px;
+        margin-bottom: 12px;
+        font-size: 12px;
+        color: #c62828;
+        display: flex;
+        align-items: flex-start;
+        gap: 7px;
+    }
+
+    /* ── Responsive ─────────────────────────────────────────── */
+    @media (max-width: 480px) {
+        .ah-body { grid-template-columns: 140px 1fr; }
+        .panel-left { padding: 8px 8px 18px; gap: 12px; }
+        .panel-mid  { padding: 8px 10px 18px; gap: 14px; }
+        .field-value.large { font-size: 15px; }
+        .field-value { font-size: 13px; }
+        .field-label { font-size: 10px; letter-spacing: 0.3px; }
+        .section-heading { font-size: 10px; letter-spacing: 0.4px; margin-bottom: 7px; }
+        .ah-row-title { font-size: 12px; }
+        .ah-row-meta { font-size: 10.5px; gap: 6px; }
+    }
+    @media (max-width: 360px) {
+        .ah-body { grid-template-columns: 118px 1fr; }
+    }
+</style>
+</head>
+<body>
+<div class="ah-box">
+
+    <!-- Header -->
+    <div class="ah-header">
+        <div class="ah-header-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            Amendment History
+        </div>
+        <button class="ah-refresh-btn" id="ahRefreshBtn" title="Refresh">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"></path>
+            </svg>
+            Refresh
+        </button>
+    </div>
+
+    <!-- Body -->
+    <div class="ah-body">
+
+        <!-- LEFT PANEL -->
+        <div class="panel-left">
+
+            <div>
+                <div class="field-label">Total Amendments</div>
+                <div class="field-value large loading-shimmer" id="ahCountTotal" style="min-width:60px;">&nbsp;</div>
+            </div>
+
+            <div>
+                <div class="field-label">Active</div>
+                <div class="field-value large loading-shimmer" id="ahCountActive" style="font-size:17px;min-width:50px;">&nbsp;</div>
+            </div>
+
+            <div>
+                <div class="field-label">Pending</div>
+                <div class="field-value large loading-shimmer" id="ahCountPending" style="font-size:17px;min-width:50px;">&nbsp;</div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div>
+                <div class="field-label">Last Updated</div>
+                <div class="field-value muted loading-shimmer" id="ahLastUpdated" style="min-width:80px;">&nbsp;</div>
+            </div>
+
+            <div>
+                <div class="field-label">Status</div>
+                <div id="ahOverallStatus" class="expiry-badge eb-active loading-shimmer" style="min-width:80px;height:24px;">&nbsp;</div>
+            </div>
+        </div>
+
+        <!-- MID PANEL -->
+        <div class="panel-mid" id="ahMid">
+
+            <!-- Narrative -->
+            <div class="ah-narrative loading-shimmer" id="ahNarrative" style="min-height:36px;">&nbsp;</div>
+
+            <!-- In-Flight Amendments -->
+            <div>
+                <div class="section-heading">
+                    In-Flight Amendments
+                </div>
+                <div class="ah-tag-row">
+                    <span class="tag selected tag-blue" data-tag="Active">
+                        Active <span class="tag-count" id="ahTagCountActive">0</span>
+                    </span>
+                    <span class="tag" data-tag="Pending">
+                        Pending <span class="tag-count" id="ahTagCountPending">0</span>
+                    </span>
+                </div>
+                <div class="ah-tag-panel shown" id="ahPanelActive">
+                    <div class="ah-empty loading-shimmer" style="min-height:30px;">&nbsp;</div>
+                </div>
+                <div class="ah-tag-panel" id="ahPanelPending"></div>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- Full History -->
+            <div>
+                <div class="section-heading">
+                    Full History
+                    <span class="section-heading-count" id="ahHistoryCount"></span>
+                </div>
+                <div id="ahHistoryBody">
+                    <div class="ah-empty loading-shimmer" style="min-height:30px;">&nbsp;</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    "use strict";
+
+    var STATUS = {
+        ACTIVE:  1,
+        DRAFT:   126330006,
+        PENDING: 126330001,
+        FAILED:  126330003
+    };
+    var STATUS_LABEL = {};
+    STATUS_LABEL[STATUS.ACTIVE]  = { text: "Active",  key: "active" };
+    STATUS_LABEL[STATUS.PENDING] = { text: "Pending", key: "pending" };
+    STATUS_LABEL[STATUS.DRAFT]   = { text: "Draft",   key: "draft" };
+    STATUS_LABEL[STATUS.FAILED]  = { text: "Failed",  key: "failed" };
+
+    var AMENDMENT_TYPE_LABELS = null;
+
+    function esc(s) {
+        return String(s == null ? "" : s)
+            .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    }
+    function formatDate(iso) {
+        if (!iso) return "—";
+        var d = new Date(iso);
+        if (isNaN(d.getTime())) return "—";
+        var dd = String(d.getDate()).padStart(2, "0");
+        var mm = String(d.getMonth() + 1).padStart(2, "0");
+        return dd + "-" + mm + "-" + d.getFullYear();
+    }
+    function relativeTime(iso) {
+        if (!iso) return "";
+        var ms = Date.now() - new Date(iso).getTime();
+        if (isNaN(ms) || ms < 0) return "";
+        var days = Math.floor(ms / 86400000);
+        if (days === 0) {
+            var hrs = Math.floor(ms / 3600000);
+            return hrs <= 0 ? "just now" : hrs + " hour" + (hrs > 1 ? "s" : "") + " ago";
+        }
+        if (days === 1) return "yesterday";
+        if (days < 7) return days + " days ago";
+        if (days < 30) return Math.floor(days / 7) + " week" + (Math.floor(days / 7) > 1 ? "s" : "") + " ago";
+        if (days < 365) return Math.floor(days / 30) + " month" + (Math.floor(days / 30) > 1 ? "s" : "") + " ago";
+        return Math.floor(days / 365) + " year" + (Math.floor(days / 365) > 1 ? "s" : "") + " ago";
+    }
+
+    function getXrm() {
+        try { if (window.parent && window.parent.Xrm) return window.parent.Xrm; } catch (e) {}
+        return null;
+    }
+    function getCurrentLeaseId() {
+        var Xrm = getXrm();
+        if (!Xrm) return null;
+        try {
+            if (Xrm.Utility && typeof Xrm.Utility.getPageContext === "function") {
+                var pc = Xrm.Utility.getPageContext();
+                if (pc && pc.input && pc.input.entityId) return pc.input.entityId.replace(/[{}]/g, "");
+            }
+            if (Xrm.Page && Xrm.Page.data && Xrm.Page.data.entity) {
+                return (Xrm.Page.data.entity.getId() || "").replace(/[{}]/g, "");
+            }
+        } catch (e) {}
+        return null;
+    }
+    function getClientUrl() {
+        var Xrm = getXrm();
+        if (!Xrm) return "";
+        try { return Xrm.Utility.getGlobalContext().getClientUrl(); } catch (e) { return ""; }
+    }
+
+    function fetchAmendments(leaseId) {
+        var clientUrl = getClientUrl();
+        if (!clientUrl || !leaseId) return Promise.reject(new Error("Missing context"));
+        var url = clientUrl + "/api/data/v9.2/array_leaseamendmentses" +
+            "?$select=array_leaseamendmentsid,array_amendmentname,array_amendmenttype," +
+            "array_effectivedate,array_expirydate,array_amendmentdate,statuscode,createdon,modifiedon" +
+            "&$filter=_array_leaseagreement_value eq " + leaseId + " and statecode eq 0" +
+            "&$orderby=createdon desc";
+        return fetch(url, {
+            headers: { "OData-MaxVersion": "4.0", "OData-Version": "4.0", Accept: "application/json",
+                       Prefer: 'odata.include-annotations="*"' },
+            credentials: "same-origin"
+        }).then(function (r) {
+            if (!r.ok) throw new Error("HTTP " + r.status);
+            return r.json();
+        }).then(function (d) { return d.value || []; });
+    }
+
+    function fetchAmendmentTypeLabels() {
+        if (AMENDMENT_TYPE_LABELS) return Promise.resolve(AMENDMENT_TYPE_LABELS);
+        var clientUrl = getClientUrl();
+        if (!clientUrl) return Promise.resolve({});
+        var tryNames = ["array_amendmenttype", "array_AmendmentType"];
+        var fetchOne = function (name) {
+            return fetch(
+                clientUrl + "/api/data/v9.2/GlobalOptionSetDefinitions(Name='" + name + "')/Microsoft.Dynamics.CRM.OptionSetMetadata",
+                { headers: { "OData-MaxVersion": "4.0", "OData-Version": "4.0", Accept: "application/json" },
+                  credentials: "same-origin" }
+            ).then(function (r) { if (!r.ok) return null; return r.json(); })
+             .then(function (data) {
+                if (!data || !data.Options) return null;
+                var map = {};
+                data.Options.forEach(function (o) {
+                    var label = o.Label && o.Label.UserLocalizedLabel && o.Label.UserLocalizedLabel.Label;
+                    if (label) map[o.Value] = label;
+                });
+                return map;
+             }).catch(function () { return null; });
+        };
+        return fetchOne(tryNames[0]).then(function (m) {
+            if (m && Object.keys(m).length) { AMENDMENT_TYPE_LABELS = m; return m; }
+            return fetchOne(tryNames[1]).then(function (m2) {
+                AMENDMENT_TYPE_LABELS = m2 || {};
+                return AMENDMENT_TYPE_LABELS;
+            });
+        }).catch(function () { AMENDMENT_TYPE_LABELS = {}; return {}; });
+    }
+
+    function resolveTypes(raw) {
+        if (!raw) return "—";
+        var labels = AMENDMENT_TYPE_LABELS || {};
+        var ids = String(raw).split(",").map(function (s) { return parseInt(s.trim(), 10); })
+            .filter(function (n) { return !isNaN(n); });
+        if (!ids.length) return "—";
+        return ids.map(function (id) { return labels[id] || ("Type " + id); }).join(", ");
+    }
+
+    function openAmendmentRecord(id) {
+        var Xrm = getXrm();
+        if (!Xrm) return;
+        try {
+            Xrm.Navigation.openForm({
+                entityName: "array_leaseamendments",
+                entityId: id,
+                openInNewWindow: true
+            });
+        } catch (e) {}
+    }
+
+    function renderRow(a) {
+        var status = STATUS_LABEL[parseInt(a.statuscode, 10)] || { text: "—", key: "draft" };
+        var name = a.array_amendmentname || "Untitled amendment";
+        var effDate = formatDate(a.array_effectivedate);
+        var types = resolveTypes(a.array_amendmenttype);
+        var rel = relativeTime(a.createdon);
+        return (
+            '<div class="ah-row" data-id="' + esc(a.array_leaseamendmentsid) + '">' +
+                '<div class="ah-row-body">' +
+                    '<div class="ah-row-title">' + esc(name) + '</div>' +
+                    '<div class="ah-row-meta">' +
+                        '<span><strong>Effective:</strong> ' + effDate + '</span>' +
+                        '<span><strong>Type:</strong> ' + esc(types) + '</span>' +
+                        (rel ? '<span><strong>Created:</strong> ' + esc(rel) + '</span>' : '') +
+                    '</div>' +
+                '</div>' +
+                '<span class="ah-row-status ' + status.key + '">' + status.text + '</span>' +
+            '</div>'
+        );
+    }
+    function renderEmpty(msg) {
+        return '<div class="ah-empty">' + esc(msg) + '</div>';
+    }
+
+    function buildNarrative(counts, all) {
+        if (!counts.total) {
+            return "This lease has <strong>no amendment history</strong>. Amendments will appear here once created.";
+        }
+        var parts = ["This lease has <strong>" + counts.total + " amendment" + (counts.total > 1 ? "s" : "") + "</strong>"];
+        if (counts.active && counts.pending) parts.push(counts.active + " active and " + counts.pending + " pending");
+        else if (counts.active) parts.push(counts.active + " currently active");
+        else if (counts.pending) parts.push(counts.pending + " awaiting activation");
+        var summary = parts.join(", ") + ".";
+        var nextPending = all.find(function (a) { return parseInt(a.statuscode, 10) === STATUS.PENDING; });
+        if (nextPending && nextPending.array_effectivedate) {
+            summary += " The next amendment activates on <strong>" + formatDate(nextPending.array_effectivedate) + "</strong>.";
+        }
+        return summary;
+    }
+
+    function updateOverallStatus(counts) {
+        var el = document.getElementById("ahOverallStatus");
+        if (!el) return;
+        el.className = "expiry-badge";
+        el.style.minWidth = "";
+        el.style.height = "";
+        if (counts.pending > 0) {
+            el.classList.add("eb-pending");
+            el.textContent = "Pending changes";
+        } else if (counts.total === 0) {
+            el.classList.add("eb-empty");
+            el.textContent = "No history";
+        } else {
+            el.classList.add("eb-active");
+            el.textContent = "Active";
+        }
+    }
+
+    function reveal(id, text) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.classList.remove("loading-shimmer");
+        el.textContent = text;
+        el.style.minWidth = "";
+        el.style.height = "";
+    }
+
+    function render(amendments) {
+        var counts = { total: amendments.length, active: 0, pending: 0, draft: 0, failed: 0 };
+        var active = [], pending = [];
+        amendments.forEach(function (a) {
+            var sc = parseInt(a.statuscode, 10);
+            if (sc === STATUS.ACTIVE) { counts.active++; active.push(a); }
+            else if (sc === STATUS.PENDING) { counts.pending++; pending.push(a); }
+            else if (sc === STATUS.DRAFT) counts.draft++;
+            else if (sc === STATUS.FAILED) counts.failed++;
+        });
+
+        reveal("ahCountTotal", String(counts.total));
+        reveal("ahCountActive", String(counts.active));
+        reveal("ahCountPending", String(counts.pending));
+        document.getElementById("ahTagCountActive").textContent = counts.active;
+        document.getElementById("ahTagCountPending").textContent = counts.pending;
+
+        var lastTouched = amendments[0];
+        reveal("ahLastUpdated", lastTouched ? (relativeTime(lastTouched.modifiedon || lastTouched.createdon) || "—") : "—");
+
+        updateOverallStatus(counts);
+
+        var narEl = document.getElementById("ahNarrative");
+        narEl.classList.remove("loading-shimmer");
+        narEl.innerHTML = buildNarrative(counts, amendments);
+        narEl.style.minHeight = "";
+
+        document.getElementById("ahPanelActive").innerHTML = active.length
+            ? active.map(renderRow).join("") : renderEmpty("No active amendments.");
+        document.getElementById("ahPanelPending").innerHTML = pending.length
+            ? pending.map(renderRow).join("") : renderEmpty("No pending amendments.");
+
+        document.getElementById("ahHistoryCount").textContent =
+            counts.total + " " + (counts.total === 1 ? "record" : "records");
+        document.getElementById("ahHistoryBody").innerHTML = amendments.length
+            ? amendments.map(renderRow).join("") : renderEmpty("No amendment history yet.");
+
+        document.querySelectorAll(".ah-row[data-id]").forEach(function (el) {
+            el.addEventListener("click", function () {
+                var id = el.getAttribute("data-id");
+                if (id) openAmendmentRecord(id);
+            });
+        });
+    }
+
+    function showError(msg) {
+        var mid = document.getElementById("ahMid");
+        var existing = mid.querySelector(".ah-error");
+        if (existing) existing.remove();
+        var err = document.createElement("div");
+        err.className = "ah-error";
+        err.innerHTML =
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px;">' +
+                '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>' +
+            '</svg>' +
+            '<span>' + esc(msg) + '</span>';
+        mid.insertBefore(err, mid.firstChild);
+    }
+
+    function setLoading(loading) {
+        var btn = document.getElementById("ahRefreshBtn");
+        if (loading) btn.classList.add("loading");
+        else btn.classList.remove("loading");
+    }
+
+    function load() {
+        setLoading(true);
+        var leaseId = getCurrentLeaseId();
+        if (!leaseId) {
+            setLoading(false);
+            showError("Unable to read the current lease ID. Save the lease record first, then refresh.");
+            return;
+        }
+        Promise.all([
+            fetchAmendmentTypeLabels().catch(function () { return {}; }),
+            fetchAmendments(leaseId)
+        ]).then(function (results) {
+            render(results[1]);
+            setLoading(false);
+        }).catch(function (err) {
+            console.error("Failed to load amendments:", err);
+            showError("Failed to load amendment history: " + (err && err.message ? err.message : err));
+            setLoading(false);
+        });
+    }
+
+    // Tag pill switching
+    document.querySelectorAll(".tag[data-tag]").forEach(function (pill) {
+        pill.addEventListener("click", function () {
+            var tag = pill.getAttribute("data-tag");
+            document.querySelectorAll(".tag[data-tag]").forEach(function (p) {
+                p.classList.remove("selected", "tag-blue", "tag-orange");
+            });
+            pill.classList.add("selected");
+            pill.classList.add(tag === "Active" ? "tag-blue" : "tag-orange");
+            // Keep the other one in its un-selected base style
+            document.querySelectorAll(".ah-tag-panel").forEach(function (p) { p.classList.remove("shown"); });
+            var panel = document.getElementById("ahPanel" + tag);
+            if (panel) panel.classList.add("shown");
+        });
+    });
+
+    document.getElementById("ahRefreshBtn").addEventListener("click", load);
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", load);
+    } else {
+        load();
+    }
+})();
+</script>
+</body>
+</html>
