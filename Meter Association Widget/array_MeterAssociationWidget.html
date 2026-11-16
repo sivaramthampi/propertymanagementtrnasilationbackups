@@ -1,0 +1,2747 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Meter Allocation Widget</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --c-bg: #ffffff;
+        --c-bg2: #f8f9fa;
+        --c-bg3: #eeeeee;
+        --c-text: #1a1a1a;
+        --c-text2: #5f6368;
+        --c-text3: #9aa0a6;
+        --c-border: #e3e5e8;
+        --c-border-strong: #dadce0;
+        --c-primary: #1a73e8;
+        --c-primary-h: #1557b0;
+        --c-info-bg: #e8f0fe;
+        --c-info-txt: #1a73e8;
+        --c-info-bdr: #a8c7fa;
+        --c-succ-bg: #e6f4ea;
+        --c-succ-txt: #137333;
+        --c-succ-bdr: #81c995;
+        --c-warn-bg: #fef7e0;
+        --c-warn-txt: #b06000;
+        --c-warn-bdr: #f9c642;
+        --c-dang-bg: #fce8e6;
+        --c-dang-txt: #c5221f;
+        --c-dang-bdr: #f28b82;
+        --c-purple-bg: #f3e8fd;
+        --c-purple-txt: #7b1fa2;
+        --c-purple-bdr: #ce93d8;
+        --c-teal-bg: #e0f2f1;
+        --c-teal-txt: #00695c;
+        --c-teal-bdr: #80cbc4;
+        --r-sm: 4px;
+        --r-md: 8px;
+        --r-lg: 12px;
+        --font: "DM Sans", system-ui, -apple-system, sans-serif;
+        --shadow-sm: 0 1px 2px rgba(60, 64, 67, 0.08);
+        --shadow-md:
+          0 1px 3px rgba(60, 64, 67, 0.12), 0 1px 2px rgba(60, 64, 67, 0.06);
+      }
+
+      html,
+      body {
+        height: 100%;
+        overflow: hidden;
+        font-family: var(--font);
+        font-size: 13px;
+        color: var(--c-text);
+        background: var(--c-bg);
+      }
+
+      .page {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      .page-header {
+        flex-shrink: 0;
+        padding: 10px 16px;
+        background: var(--c-bg);
+        border-bottom: 1px solid var(--c-border);
+        z-index: 10;
+      }
+      .top-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      .top-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+      }
+      .top-icon {
+        width: 32px;
+        height: 32px;
+        background: linear-gradient(135deg, var(--c-info-bg), #d2e3fc);
+        border-radius: var(--r-md);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        box-shadow: var(--shadow-sm);
+      }
+      .top-icon svg {
+        width: 16px;
+        height: 16px;
+        fill: var(--c-primary);
+      }
+      .top-title-block {
+        min-width: 0;
+      }
+      .top-title {
+        font-size: 14px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+      .top-subtitle {
+        font-size: 11px;
+        color: var(--c-text2);
+        margin-top: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .top-subtitle.warn {
+        color: var(--c-warn-txt);
+      }
+      .top-subtitle.info {
+        color: var(--c-info-txt);
+      }
+      .top-subtitle.error {
+        color: var(--c-dang-txt);
+      }
+
+      .mode-pill {
+        font-size: 10px;
+        font-weight: 700;
+        padding: 3px 9px;
+        border-radius: 10px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        flex-shrink: 0;
+        white-space: nowrap;
+      }
+      .pill-create {
+        background: var(--c-warn-bg);
+        color: var(--c-warn-txt);
+      }
+      .pill-edit {
+        background: var(--c-info-bg);
+        color: var(--c-info-txt);
+      }
+      .pill-readonly {
+        background: var(--c-dang-bg);
+        color: var(--c-dang-txt);
+      }
+
+      .banner-error {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: var(--r-md);
+        border: 1px solid var(--c-dang-bdr);
+        background: var(--c-dang-bg);
+        color: var(--c-dang-txt);
+        font-size: 12px;
+        line-height: 1.5;
+        margin-bottom: 8px;
+      }
+      .banner-error svg {
+        width: 14px;
+        height: 14px;
+        flex-shrink: 0;
+        margin-top: 1px;
+      }
+
+      .page-body {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 12px 16px 24px;
+      }
+      .page-body::-webkit-scrollbar {
+        width: 6px;
+      }
+      .page-body::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .page-body::-webkit-scrollbar-thumb {
+        background: var(--c-border-strong);
+        border-radius: 3px;
+      }
+
+      .alloc-summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 13px;
+        border-radius: var(--r-md);
+        border: 1px solid;
+        margin-bottom: 14px;
+        font-size: 12px;
+        font-weight: 500;
+        box-shadow: var(--shadow-sm);
+      }
+      .alloc-summary-left {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+      .alloc-summary svg {
+        width: 14px;
+        height: 14px;
+        flex-shrink: 0;
+      }
+      .alloc-ok {
+        background: var(--c-succ-bg);
+        color: var(--c-succ-txt);
+        border-color: var(--c-succ-bdr);
+      }
+      .alloc-warn {
+        background: var(--c-warn-bg);
+        color: var(--c-warn-txt);
+        border-color: var(--c-warn-bdr);
+      }
+      .alloc-pct {
+        font-size: 14px;
+        font-weight: 800;
+        letter-spacing: -0.01em;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .skeleton {
+        background: linear-gradient(
+          90deg,
+          var(--c-bg2) 25%,
+          var(--c-bg3) 50%,
+          var(--c-bg2) 75%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 1.4s infinite;
+        border-radius: var(--r-md);
+      }
+      @keyframes shimmer {
+        0% {
+          background-position: 200% 0;
+        }
+        100% {
+          background-position: -200% 0;
+        }
+      }
+      .skel-bar {
+        height: 36px;
+        margin-bottom: 8px;
+      }
+      .skel-list {
+        height: 120px;
+      }
+
+      .section-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--c-text2);
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+        display: block;
+      }
+
+      .assoc-card {
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-lg);
+        background: var(--c-bg);
+        margin-bottom: 14px;
+        overflow: hidden;
+        box-shadow: var(--shadow-md);
+      }
+      .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 14px;
+        background: var(--c-bg2);
+        border-bottom: 1px solid var(--c-border);
+      }
+      .card-header-left {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .card-title {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--c-text2);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      .sel-count {
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: 10px;
+        background: var(--c-bg3);
+        color: var(--c-text2);
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+      }
+      .sel-count.has {
+        background: var(--c-info-bg);
+        color: var(--c-info-txt);
+      }
+
+      .rows-scroll {
+        overflow-x: auto;
+      }
+      .rows-scroll::-webkit-scrollbar {
+        height: 6px;
+      }
+      .rows-scroll::-webkit-scrollbar-thumb {
+        background: var(--c-border-strong);
+        border-radius: 3px;
+      }
+
+      .btn-add {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        height: 30px;
+        padding: 0 12px;
+        background: var(--c-info-bg);
+        color: var(--c-info-txt);
+        border: 1px solid var(--c-info-bdr);
+        border-radius: var(--r-md);
+        font-size: 12px;
+        font-weight: 600;
+        font-family: var(--font);
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+      .btn-add:hover:not(:disabled) {
+        background: #d2e3fc;
+      }
+      .btn-add:active:not(:disabled) {
+        transform: scale(0.97);
+      }
+      .btn-add svg {
+        width: 13px;
+        height: 13px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 2.5;
+      }
+
+      .empty-state {
+        padding: 40px 16px;
+        text-align: center;
+        color: var(--c-text3);
+      }
+      .empty-state p {
+        font-size: 12px;
+        line-height: 1.6;
+        margin-top: 8px;
+      }
+
+      .row {
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--c-border);
+        transition: background 0.12s;
+      }
+      .row:last-child {
+        border-bottom: none;
+      }
+      .row:hover {
+        background: var(--c-bg2);
+      }
+      .row.pct-error {
+        background: #fff8f8;
+      }
+      .row.pct-error:hover {
+        background: #fce8e6;
+      }
+
+      .row-line1 {
+        display: flex;
+        align-items: flex-end;
+        gap: 12px;
+        min-width: max-content;
+      }
+      .row-line2 {
+        display: flex;
+        align-items: flex-start;
+        justify-content: flex-start;
+        gap: 12px;
+        margin: 14px -16px 0;
+        padding: 12px 16px 4px;
+        border-top: 1px dashed var(--c-border);
+        background: var(--c-bg2);
+        min-width: max-content;
+      }
+
+      .field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        flex-shrink: 0;
+      }
+      .field-label {
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--c-text3);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        white-space: nowrap;
+        padding-left: 1px;
+      }
+
+      .type-badge {
+        align-items: center;
+        display: none;
+        height: 22px;
+        padding: 0 8px;
+        border-radius: 11px;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        flex-shrink: 0;
+        min-width: 56px;
+        justify-content: center;
+      }
+      .type-badge.lease {
+        background: var(--c-info-bg);
+        color: var(--c-info-txt);
+        border: 1px solid var(--c-info-bdr);
+      }
+      .type-badge.unit {
+        background: var(--c-purple-bg);
+        color: var(--c-purple-txt);
+        border: 1px solid var(--c-purple-bdr);
+      }
+      .type-badge.customer {
+        background: var(--c-succ-bg);
+        color: var(--c-succ-txt);
+        border: 1px solid var(--c-succ-bdr);
+      }
+      .type-badge.empty {
+        background: var(--c-bg3);
+        color: var(--c-text2);
+        border: 1px solid var(--c-border-strong);
+      }
+
+      .cust-sub {
+        font-size: 9px;
+        font-weight: 700;
+        padding: 2px 6px;
+        border-radius: 8px;
+        height: 18px;
+        display: inline-flex;
+        align-items: center;
+        flex-shrink: 0;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        display: none;
+      }
+      .cust-sub.account {
+        background: var(--c-succ-bg);
+        color: var(--c-succ-txt);
+      }
+      .cust-sub.contact {
+        background: var(--c-info-bg);
+        color: var(--c-info-txt);
+      }
+
+      .space-badge {
+        font-size: 9px;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 8px;
+        flex-shrink: 0;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        height: 18px;
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid transparent;
+        white-space: nowrap;
+      }
+      .space-badge.leased {
+        background: var(--c-info-bg);
+        color: var(--c-info-txt);
+        border-color: var(--c-info-bdr);
+      }
+      .space-badge.common {
+        background: var(--c-teal-bg);
+        color: var(--c-teal-txt);
+        border-color: var(--c-teal-bdr);
+      }
+      .space-badge-inline {
+        margin-left: 6px;
+        font-size: 9px;
+        font-weight: 700;
+        padding: 1px 5px;
+        border-radius: 6px;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        vertical-align: middle;
+      }
+      .space-badge-inline.leased {
+        background: var(--c-info-bg);
+        color: var(--c-info-txt);
+      }
+      .space-badge-inline.common {
+        background: var(--c-teal-bg);
+        color: var(--c-teal-txt);
+      }
+
+      .row-select {
+        height: 30px;
+        padding: 0 24px 0 9px;
+        border: 1px solid var(--c-border-strong);
+        border-radius: var(--r-sm);
+        font-size: 12px;
+        font-family: var(--font);
+        background: #fff;
+        cursor: pointer;
+        color: var(--c-text);
+        appearance: none;
+        -webkit-appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%235f6368' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 7px center;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+        flex-shrink: 0;
+      }
+      .row-select.sel-type {
+        width: 92px;
+      }
+      .row-select.sel-method {
+        width: 108px;
+      }
+      .row-select.sel-proration {
+        width: 108px;
+      }
+      .row-select.sel-remaining {
+        width: 172px;
+      }
+      .row-select:hover:not(:disabled) {
+        border-color: #bdc1c6;
+      }
+      .row-select:focus {
+        outline: none;
+        border-color: var(--c-primary);
+        box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.15);
+      }
+      .row-select:disabled {
+        background-color: var(--c-bg2);
+        color: var(--c-text2);
+        cursor: not-allowed;
+        opacity: 0.7;
+      }
+      .row-select.err {
+        border-color: var(--c-dang-txt);
+      }
+
+      .record-picker {
+        flex: 1 1 220px;
+        min-width: 220px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        height: 30px;
+        padding: 0 10px;
+        border: 1px solid var(--c-border-strong);
+        border-radius: var(--r-sm);
+        background: #fff;
+        cursor: pointer;
+        font-size: 12px;
+        color: var(--c-text);
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+      }
+      .record-picker:hover:not(.disabled) {
+        border-color: var(--c-primary);
+        box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.08);
+      }
+      .record-picker.disabled {
+        cursor: not-allowed;
+        background: var(--c-bg2);
+        color: var(--c-text3);
+      }
+      .record-picker.err {
+        border-color: var(--c-dang-txt);
+        box-shadow: 0 0 0 2px rgba(197, 34, 31, 0.12);
+      }
+      .record-picker-text {
+        flex: 1;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-weight: 500;
+      }
+      .record-picker-text.placeholder {
+        color: var(--c-text3);
+        font-style: italic;
+        font-weight: 400;
+      }
+      .record-picker svg {
+        width: 12px;
+        height: 12px;
+        stroke: var(--c-text2);
+        fill: none;
+        stroke-width: 2;
+        flex-shrink: 0;
+      }
+
+      .area-display {
+        font-size: 11px;
+        color: var(--c-text2);
+        font-weight: 500;
+        white-space: nowrap;
+        padding: 0 9px;
+        background: var(--c-bg2);
+        border: 1px solid var(--c-border-strong);
+        border-radius: var(--r-sm);
+        height: 30px;
+        display: inline-flex;
+        align-items: center;
+        flex-shrink: 0;
+        font-variant-numeric: tabular-nums;
+      }
+      .area-display strong {
+        color: var(--c-text);
+        font-weight: 700;
+        margin-right: 3px;
+      }
+      .area-display .unit-label {
+        color: var(--c-text3);
+        margin-left: 2px;
+        font-size: 10px;
+      }
+
+      .alloc-pct-input-wrap {
+        position: relative;
+        display: flex;
+        align-items: center;
+        width: 84px;
+        flex-shrink: 0;
+      }
+      .alloc-pct-input {
+        width: 100%;
+        height: 30px;
+        padding: 0 22px 0 8px;
+        border: 1px solid var(--c-border-strong);
+        border-radius: var(--r-sm);
+        font-size: 13px;
+        font-weight: 600;
+        font-family: var(--font);
+        color: var(--c-text);
+        background: var(--c-bg);
+        text-align: right;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+        font-variant-numeric: tabular-nums;
+      }
+      .alloc-pct-input:hover:not(:disabled) {
+        border-color: #bdc1c6;
+      }
+      .alloc-pct-input:focus {
+        outline: none;
+        border-color: var(--c-primary);
+        box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.15);
+      }
+      .alloc-pct-input:disabled {
+        background: var(--c-bg2);
+        color: var(--c-text3);
+        cursor: default;
+      }
+      .alloc-pct-input.err {
+        border-color: var(--c-dang-txt);
+        box-shadow: 0 0 0 2px rgba(197, 34, 31, 0.1);
+      }
+      .alloc-pct-input::-webkit-outer-spin-button,
+      .alloc-pct-input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        appearance: none;
+        margin: 0;
+      }
+      .alloc-pct-input {
+        -moz-appearance: textfield;
+        appearance: textfield;
+      }
+      .alloc-pct-symbol {
+        position: absolute;
+        right: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--c-text3);
+        pointer-events: none;
+      }
+
+      .alloc-calc-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 0 10px;
+        height: 30px;
+        border-radius: var(--r-sm);
+        background: var(--c-purple-bg);
+        color: var(--c-purple-txt);
+        border: 1px solid var(--c-purple-bdr);
+        font-size: 11px;
+        font-weight: 600;
+        white-space: nowrap;
+        width: 84px;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .alloc-calc-badge.error {
+        background: var(--c-dang-bg);
+        color: var(--c-dang-txt);
+        border-color: var(--c-dang-bdr);
+      }
+
+      .saved-badge,
+      .dup-badge {
+        font-size: 9px;
+        font-weight: 700;
+        padding: 2px 6px;
+        border-radius: 8px;
+        flex-shrink: 0;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        height: 18px;
+        display: inline-flex;
+        align-items: center;
+      }
+      .saved-badge {
+        background: var(--c-succ-bg);
+        color: var(--c-succ-txt);
+      }
+      .dup-badge {
+        background: var(--c-dang-bg);
+        color: var(--c-dang-txt);
+      }
+
+      .btn-remove {
+        width: 30px;
+        height: 30px;
+        border-radius: var(--r-sm);
+        border: 1px solid var(--c-border-strong);
+        background: var(--c-bg);
+        color: var(--c-text2);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition:
+          background 0.15s,
+          color 0.15s,
+          border-color 0.15s;
+      }
+      .btn-remove:hover:not(:disabled) {
+        background: var(--c-dang-bg);
+        color: var(--c-dang-txt);
+        border-color: var(--c-dang-bdr);
+      }
+      .btn-remove svg {
+        width: 14px;
+        height: 14px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .btn-save {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 34px;
+        padding: 0 16px;
+        background: var(--c-primary);
+        color: #fff;
+        border: none;
+        border-radius: var(--r-md);
+        font-size: 13px;
+        font-weight: 600;
+        font-family: var(--font);
+        cursor: pointer;
+        transition:
+          background 0.15s,
+          box-shadow 0.15s,
+          transform 0.1s;
+        box-shadow: 0 1px 2px rgba(26, 115, 232, 0.25);
+      }
+      .btn-save:hover:not(:disabled) {
+        background: var(--c-primary-h);
+        box-shadow: 0 2px 8px rgba(26, 115, 232, 0.35);
+      }
+      .btn-save:active:not(:disabled) {
+        transform: scale(0.97);
+      }
+      .btn-save:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        box-shadow: none;
+      }
+      .btn-save svg {
+        width: 15px;
+        height: 15px;
+        stroke: #fff;
+        fill: none;
+        stroke-width: 2;
+        stroke-linecap: round;
+      }
+
+      .spinner {
+        width: 13px;
+        height: 13px;
+        border: 2px solid rgba(255, 255, 255, 0.4);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+        flex-shrink: 0;
+      }
+      .mini-spin {
+        width: 10px;
+        height: 10px;
+        border: 1.5px solid rgba(123, 31, 162, 0.3);
+        border-top-color: var(--c-purple-txt);
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+        flex-shrink: 0;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .status {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 8px 12px;
+        border-radius: var(--r-md);
+        border: 1px solid;
+        font-size: 12px;
+        margin-top: 6px;
+      }
+      .status svg {
+        width: 14px;
+        height: 14px;
+        flex-shrink: 0;
+      }
+      .status-msg-text {
+        flex: 1;
+        min-width: 0;
+      }
+      .status-close {
+        width: 20px;
+        height: 20px;
+        border-radius: var(--r-sm);
+        border: none;
+        background: transparent;
+        color: currentColor;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        opacity: 0.65;
+        transition:
+          opacity 0.15s,
+          background 0.15s;
+        padding: 0;
+      }
+      .status-close:hover {
+        opacity: 1;
+        background: rgba(0, 0, 0, 0.08);
+      }
+      .status-close svg {
+        width: 12px;
+        height: 12px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 2.2;
+        stroke-linecap: round;
+      }
+      .status-ok {
+        background: var(--c-succ-bg);
+        color: var(--c-succ-txt);
+        border-color: var(--c-succ-bdr);
+      }
+      .status-err {
+        background: var(--c-dang-bg);
+        color: var(--c-dang-txt);
+        border-color: var(--c-dang-bdr);
+      }
+      .status-loading {
+        background: var(--c-bg2);
+        color: var(--c-text2);
+        border-color: var(--c-border-strong);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div class="page-header">
+        <div class="top-bar">
+          <div class="top-left">
+            <div class="top-icon">
+              <svg viewBox="0 0 24 24">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+              </svg>
+            </div>
+            <div class="top-title-block">
+              <div class="top-title">
+                Meter Allocations
+                <span class="mode-pill pill-create" id="mode-pill">Create</span>
+              </div>
+              <div class="top-subtitle warn" id="top-subtitle">
+                Create mode — add rows below, configure each, then click Save.
+              </div>
+            </div>
+          </div>
+          <button
+            class="btn-save"
+            id="save-btn"
+            onclick="handleSave()"
+            disabled
+          >
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"
+              />
+              <polyline points="17 21 17 13 7 13 7 21" />
+              <polyline points="7 3 7 8 15 8" />
+            </svg>
+            Save
+          </button>
+        </div>
+        <div id="error-banner" style="display: none" class="banner-error">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <line x1="15" y1="9" x2="9" y2="15" />
+            <line x1="9" y1="9" x2="15" y2="15" />
+          </svg>
+          <span id="error-banner-text"></span>
+        </div>
+        <div id="status-msg" style="display: none" class="status"></div>
+      </div>
+
+      <div class="page-body">
+        <div id="loading-state" style="padding-top: 12px">
+          <div class="skeleton skel-bar"></div>
+          <div class="skeleton skel-list"></div>
+        </div>
+
+        <div id="main-content" style="display: none; padding-top: 12px">
+          <div
+            id="alloc-summary"
+            class="alloc-summary alloc-warn"
+            style="display: none"
+          >
+            <div class="alloc-summary-left">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <span id="alloc-summary-msg"
+                >Total allocation must equal 100%</span
+              >
+            </div>
+            <span class="alloc-pct" id="alloc-total-pct">0%</span>
+          </div>
+
+          <span class="section-label">Meter Allocations</span>
+          <div class="assoc-card">
+            <div class="card-header">
+              <div class="card-header-left">
+                <span class="card-title">Rows</span>
+                <span class="sel-count" id="row-count">0 rows</span>
+              </div>
+              <button class="btn-add" onclick="addRow()">
+                <svg viewBox="0 0 24 24">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                Add row
+              </button>
+            </div>
+            <div id="row-list" class="rows-scroll"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const ASSOC_TYPE_MAP = {
+        126330000: "lease",
+        126330001: "unit",
+        126330002: "customer",
+      };
+      const ASSOC_TYPE_REV = {
+        lease: 126330000,
+        unit: 126330001,
+        customer: 126330002,
+      };
+      const ALLOC_METHOD_MAP = { 126330000: "fixed", 126330001: "area" };
+      const ALLOC_METHOD_REV = { fixed: 126330000, area: 126330001 };
+      const REMAINING_ALLOC_MAP = { 126330000: "landlord", 126330001: "split" };
+      const REMAINING_ALLOC_REV = { landlord: 126330000, split: 126330001 };
+      const SPACE_TYPE_MAP = { 590930000: "leased", 590930001: "common" };
+      const SPACE_TYPE_LABEL = { leased: "LEASED", common: "COMMON AREA" };
+      const CUSTOMER_BIND_ACCOUNT = "array_Customer_account";
+      const CUSTOMER_BIND_CONTACT = "array_Customer_contact";
+
+      let meterId = "",
+        propertyId = "";
+      let allLeases = [],
+        allUnits = [],
+        allAccounts = [],
+        allContacts = [];
+      let meterStatusCode = null;
+      let isReadOnly = false;
+
+      const STATUS_DRAFT = 126330002;
+      const STATUS_LABELS = {
+        1: "Active",
+        2: "Inactive",
+        126330001: "Expired",
+        126330002: "Draft",
+      };
+      function statusLabel(code) {
+        return STATUS_LABELS[code] || "Status " + code;
+      }
+
+      let rows = [];
+      let _initialMeterId = "";
+      let isEditMode = false;
+      let _uidCounter = 0;
+      function newUid() {
+        return "r" + ++_uidCounter;
+      }
+
+      function hasCustomerRow() {
+        return rows.some(function (r) {
+          return r.type === "customer";
+        });
+      }
+
+      function forceFixedOnNonCustomerRows() {
+        var converted = 0;
+        rows.forEach(function (r) {
+          if (r.type !== "customer" && r.method === "area") {
+            r.method = "fixed";
+            r.calcedPct = null;
+            r.calcError = null;
+            r.calcLoading = false;
+            r.dirty = true;
+            converted++;
+          }
+        });
+        return converted;
+      }
+
+      function getParam(name) {
+        try {
+          var p = new URLSearchParams(window.location.search);
+          if (p.get(name)) return p.get(name);
+          var data = p.get("data");
+          if (data) {
+            var inner = new URLSearchParams(decodeURIComponent(data));
+            if (inner.get(name)) return inner.get(name);
+          }
+        } catch (e) {}
+        return "";
+      }
+      function getXrm() {
+        try {
+          if (parent && parent.Xrm) return parent.Xrm;
+        } catch (e) {}
+        return null;
+      }
+      function getXrmRecordId() {
+        try {
+          var Xrm = getXrm();
+          if (Xrm && Xrm.Page && Xrm.Page.data && Xrm.Page.data.entity) {
+            var id = Xrm.Page.data.entity.getId();
+            return id ? id.replace(/^\{|\}$/g, "") : "";
+          }
+        } catch (e) {}
+        return "";
+      }
+      async function xrmRetrieve(entityName, id, columns) {
+        return await getXrm().WebApi.retrieveRecord(
+          entityName,
+          id,
+          "?$select=" + columns.join(","),
+        );
+      }
+      async function xrmRetrieveMultiple(entityName, options) {
+        const r = await getXrm().WebApi.retrieveMultipleRecords(
+          entityName,
+          options,
+        );
+        return r.entities || [];
+      }
+      async function xrmCreate(entityName, data) {
+        return await getXrm().WebApi.createRecord(entityName, data);
+      }
+      async function xrmUpdate(entityName, id, data) {
+        return await getXrm().WebApi.updateRecord(entityName, id, data);
+      }
+      async function xrmDelete(entityName, id) {
+        await getXrm().WebApi.deleteRecord(entityName, id);
+      }
+
+      let _listenersRegistered = false;
+      function registerFieldChangeListeners() {
+        if (_listenersRegistered) return;
+        _listenersRegistered = true;
+        try {
+          var fc = getXrm() && getXrm().Page;
+          if (!fc || !fc.getAttribute) return;
+          var names = [
+            "array_property",
+            "array_propertyid",
+            "array_property_id",
+          ];
+          for (var i = 0; i < names.length; i++) {
+            try {
+              var a = fc.getAttribute(names[i]);
+              if (a) {
+                a.addOnChange(function () {
+                  _initialMeterId = "";
+                  setTimeout(init, 400);
+                });
+                break;
+              }
+            } catch (e) {}
+          }
+        } catch (e) {}
+      }
+
+      async function init() {
+        registerFieldChangeListeners();
+        rows = [];
+        allLeases = [];
+        allUnits = [];
+        allAccounts = [];
+        allContacts = [];
+        propertyId = "";
+        isEditMode = false;
+        meterStatusCode = null;
+        isReadOnly = false;
+
+        document.getElementById("main-content").style.display = "none";
+        document.getElementById("loading-state").style.display = "block";
+        document.getElementById("status-msg").style.display = "none";
+        document.getElementById("error-banner").style.display = "none";
+
+        if (!_initialMeterId)
+          _initialMeterId =
+            getParam("id") || getParam("meterid") || getXrmRecordId();
+        meterId = _initialMeterId;
+        if (!meterId) {
+          document.getElementById("loading-state").style.display = "none";
+          document.querySelector(".page").style.display = "none";
+          return;
+        }
+        meterId = meterId.replace(/^\{|\}$/g, "");
+
+        try {
+          const meter = await xrmRetrieve("array_meter", meterId, [
+            "array_meterid",
+            "_array_property_value",
+            "statuscode",
+          ]);
+          meterStatusCode =
+            meter["statuscode"] != null
+              ? parseInt(meter["statuscode"], 10)
+              : null;
+          isReadOnly = meterStatusCode !== STATUS_DRAFT;
+
+          try {
+            var fc = getXrm() && getXrm().Page;
+            if (fc && fc.getAttribute) {
+              var names = [
+                "array_property",
+                "array_propertyid",
+                "array_property_id",
+              ];
+              for (var i = 0; i < names.length; i++) {
+                var a = fc.getAttribute(names[i]);
+                if (a) {
+                  var v = a.getValue();
+                  if (v && v.length) {
+                    propertyId = v[0].id.replace(/^\{|\}$/g, "");
+                    break;
+                  }
+                }
+              }
+            }
+          } catch (e) {}
+          if (!propertyId && meter["_array_property_value"])
+            propertyId = meter["_array_property_value"].replace(/^\{|\}$/g, "");
+
+          await Promise.all([
+            loadLeases(),
+            loadUnits(),
+            loadAccounts(),
+            loadContacts(),
+          ]);
+          await loadExistingAssociations();
+
+          if (rows.length > 0) isEditMode = true;
+
+          renderRows();
+          //recalcAllAreaRows();
+          updateAllocSummary();
+
+          if (isReadOnly) {
+            setSubtitle("readonly");
+            setPill("readonly");
+          } else {
+            setSubtitle(isEditMode ? "edit" : "create");
+            setPill(isEditMode ? "edit" : "create");
+          }
+          applyReadOnlyToControls();
+
+          document.getElementById("loading-state").style.display = "none";
+          document.getElementById("main-content").style.display = "block";
+          document.getElementById("save-btn").disabled = isReadOnly;
+        } catch (e) {
+          showErrorBanner("Failed to load: " + e.message);
+          document.getElementById("loading-state").style.display = "none";
+        }
+      }
+
+      async function loadLeases() {
+        let opts =
+          "?$select=array_leaseagreementid,array_leasename,array_leaserecordid,array_leasestartdate,array_leaseenddate,_array_property_value,array_totalareaofunits";
+        if (propertyId)
+          opts +=
+            "&$filter=_array_property_value eq '" +
+            propertyId +
+            "' and statuscode eq 1";
+        allLeases = await xrmRetrieveMultiple("array_leaseagreement", opts);
+      }
+      async function loadUnits() {
+        let opts =
+          "?$select=array_unitid,array_unitname,array_unitrecordid,_array_property_value,_array_unittype_value,array_unitareasqm,_array_currentlease_value,array_spacetype";
+        if (propertyId)
+          opts +=
+            "&$filter=_array_property_value eq '" +
+            propertyId +
+            "' and statecode eq 0";
+        else opts += "&$filter=statecode eq 0";
+        allUnits = await xrmRetrieveMultiple("array_unit", opts);
+      }
+      async function loadAccounts() {
+        allAccounts = await xrmRetrieveMultiple(
+          "account",
+          "?$select=accountid,name,accountnumber" +
+            "&$filter=statecode eq 0" +
+            " and statuscode eq 1" +
+            " and _glb_typeofaccount_value eq 8c300e62-9812-ef11-9f89-002248d47a47" +
+            "&$orderby=name asc",
+        );
+      }
+
+      async function loadContacts() {
+        allContacts = await xrmRetrieveMultiple(
+          "contact",
+          "?$select=contactid,fullname,emailaddress1,_parentcustomerid_value" +
+            "&$filter=statecode eq 0" +
+            " and _glb_typeofcontact_value eq 8c300e62-9812-ef11-9f89-002248d47a47" +
+            "&$orderby=fullname asc",
+        );
+      }
+
+      async function loadExistingAssociations() {
+        var opts =
+          "?$select=array_meterassociationid,_array_leaseagreement_value,_array_unit_value,_array_customer_value," +
+          "array_allocationpercenatage,array_meterassociationtype,array_allocationmethod,array_prorationenabled," +
+          "array_remainingamountallocation,array_combinedline" +
+          "&$filter=_array_meter_value eq '" +
+          meterId +
+          "' and statecode eq 0";
+        var recs = await xrmRetrieveMultiple("array_meterassociation", opts);
+        recs.forEach(function (r) {
+          var row = {
+            uid: newUid(),
+            assocId: r.array_meterassociationid,
+            type: "",
+            method: "",
+            recordId: "",
+            customerType: "",
+            pct:
+              r.array_allocationpercenatage != null
+                ? r.array_allocationpercenatage
+                : 0,
+            calcedPct: null,
+            calcLoading: false,
+            calcError: null,
+            dirty: false,
+            prorationEnabled: r.array_prorationenabled === true,
+            // Existing rows: preserve whatever value is stored (may be '' if never set)
+            remainingAlloc:
+              r["array_remainingamountallocation"] != null
+                ? REMAINING_ALLOC_MAP[
+                    String(r["array_remainingamountallocation"])
+                  ] || ""
+                : "",
+            combinedLine:
+              r.array_combinedline === true || r.array_combinedline === 1,
+            isExistingRow: true, // flag to distinguish loaded rows from new rows
+          };
+          if (r["array_meterassociationtype"] != null)
+            row.type =
+              ASSOC_TYPE_MAP[String(r["array_meterassociationtype"])] || "";
+          if (r["array_allocationmethod"] != null)
+            row.method =
+              ALLOC_METHOD_MAP[String(r["array_allocationmethod"])] || "";
+          if (row.type === "lease" && r._array_leaseagreement_value)
+            row.recordId = r._array_leaseagreement_value;
+          else if (row.type === "unit" && r._array_unit_value)
+            row.recordId = r._array_unit_value;
+          else if (row.type === "customer" && r._array_customer_value) {
+            row.recordId = r._array_customer_value;
+            var lln =
+              r[
+                "_array_customer_value@Microsoft.Dynamics.CRM.lookuplogicalname"
+              ];
+            row.customerType = lln === "contact" ? "contact" : "account";
+          }
+          rows.push(row);
+        });
+      }
+
+      function addRow() {
+        if (isReadOnly) return;
+        // New rows go to the top; remainingAlloc defaults to 'landlord'; isExistingRow is false
+        rows.unshift({
+          uid: newUid(),
+          assocId: null,
+          type: "",
+          method: "",
+          recordId: "",
+          customerType: "",
+          pct: 0,
+          calcedPct: null,
+          calcLoading: false,
+          calcError: null,
+          dirty: true,
+          prorationEnabled: false,
+          remainingAlloc: "landlord", // default for new rows
+          combinedLine: true,
+          isExistingRow: false,
+        });
+        renderRows();
+        updateAllocSummary();
+        var body = document.querySelector(".page-body");
+        if (body) body.scrollTop = 0;
+      }
+
+      function removeRow(uid) {
+        if (isReadOnly) return;
+        var idx = rows.findIndex(function (r) {
+          return r.uid === uid;
+        });
+        if (idx < 0) return;
+        var row = rows[idx];
+        if (row.assocId) {
+          xrmDelete("array_meterassociation", row.assocId)
+            .then(function () {
+              setStatus("ok", "Association removed.");
+            })
+            .catch(function (e) {
+              setStatus("err", "Failed to delete: " + e.message);
+            });
+        }
+        rows.splice(idx, 1);
+        renderRows();
+        recalcAllAreaRows();
+        updateAllocSummary();
+      }
+
+      function showTypeChangeConfirm(uid, newType) {
+        var pd = parent.document;
+
+        var CONFIRM_STYLE_ID = "ma-confirm-styles";
+        if (!pd.getElementById(CONFIRM_STYLE_ID)) {
+          var s = pd.createElement("style");
+          s.id = CONFIRM_STYLE_ID;
+          s.textContent = [
+            '#ma-confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:999999;padding:20px;font-family:"DM Sans","Segoe UI",system-ui,sans-serif;}',
+            "#ma-confirm-overlay .ma-confirm-box{background:#fff;border-radius:12px;border:1px solid #dadce0;width:100%;max-width:400px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.18);animation:ma-confirm-in .15s ease;}",
+            "@keyframes ma-confirm-in{from{opacity:0;transform:scale(.96) translateY(6px)}to{opacity:1;transform:scale(1) translateY(0)}}",
+            "#ma-confirm-overlay .ma-confirm-head{display:flex;align-items:center;gap:10px;padding:16px 16px 12px;}",
+            "#ma-confirm-overlay .ma-confirm-icon{width:34px;height:34px;border-radius:8px;background:#fef7e0;display:flex;align-items:center;justify-content:center;flex-shrink:0;}",
+            "#ma-confirm-overlay .ma-confirm-icon svg{width:18px;height:18px;stroke:#b06000;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}",
+            "#ma-confirm-overlay .ma-confirm-title{font-size:14px;font-weight:600;color:#1a1a1a;line-height:1.3;}",
+            "#ma-confirm-overlay .ma-confirm-body{padding:0 16px 16px;font-size:13px;color:#5f6368;line-height:1.55;}",
+            "#ma-confirm-overlay .ma-confirm-body strong{color:#1a1a1a;font-weight:600;}",
+            "#ma-confirm-overlay .ma-confirm-footer{display:flex;justify-content:flex-end;gap:8px;padding:12px 16px;border-top:1px solid #e3e5e8;background:#f8f9fa;}",
+            "#ma-confirm-overlay .ma-btn{height:32px;padding:0 16px;border-radius:6px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background .12s,transform .1s;border:1px solid transparent;}",
+            "#ma-confirm-overlay .ma-btn:active{transform:scale(.97);}",
+            "#ma-confirm-overlay .ma-btn-cancel{background:#fff;color:#5f6368;border-color:#dadce0;}",
+            "#ma-confirm-overlay .ma-btn-cancel:hover{background:#f1f3f4;}",
+            "#ma-confirm-overlay .ma-btn-confirm{background:#1a73e8;color:#fff;border-color:#1a73e8;}",
+            "#ma-confirm-overlay .ma-btn-confirm:hover{background:#c86200;}",
+          ].join("");
+          pd.head.appendChild(s);
+        }
+
+        var old = pd.getElementById("ma-confirm-overlay");
+        if (old) old.remove();
+
+        var overlay = pd.createElement("div");
+        overlay.id = "ma-confirm-overlay";
+
+        var typeLabel =
+          newType === "lease"
+            ? "Lease"
+            : newType === "unit"
+              ? "Unit"
+              : "Tenant";
+
+        overlay.innerHTML =
+          '<div class="ma-confirm-box" role="dialog" aria-modal="true" aria-labelledby="ma-confirm-title">' +
+          '<div class="ma-confirm-head">' +
+          '<div class="ma-confirm-icon"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>' +
+          '<span class="ma-confirm-title" id="ma-confirm-title">Change row type to ' +
+          typeLabel +
+          "?</span>" +
+          "</div>" +
+          '<div class="ma-confirm-body">The currently selected <strong>record</strong> and <strong>allocation %</strong> will be cleared and need to be set again.</div>' +
+          '<div class="ma-confirm-footer">' +
+          '<button class="ma-btn ma-btn-cancel" id="ma-confirm-cancel">Keep current</button>' +
+          '<button class="ma-btn ma-btn-confirm" id="ma-confirm-ok">Change type</button>' +
+          "</div>" +
+          "</div>";
+
+        overlay.addEventListener("click", function (e) {
+          if (e.target === overlay) closeConfirm();
+        });
+        pd.body.appendChild(overlay);
+
+        pd.getElementById("ma-confirm-cancel").addEventListener(
+          "click",
+          function () {
+            closeConfirm();
+            renderRows();
+          },
+        );
+
+        pd.getElementById("ma-confirm-ok").addEventListener(
+          "click",
+          function () {
+            closeConfirm();
+            var row = rows.find(function (r) {
+              return r.uid === uid;
+            });
+            if (!row) return;
+            row.recordId = "";
+            row.customerType = "";
+            row.pct = 0;
+            row.calcedPct = null;
+            row.calcError = null;
+            row.type = newType;
+            if (newType === "customer") {
+              row.method = "fixed";
+              row.prorationEnabled = false;
+            } else {
+              row.customerType = "";
+            }
+            row.dirty = true;
+            if (newType === "customer") {
+              var converted = forceFixedOnNonCustomerRows();
+              if (converted > 0)
+                setStatus(
+                  "ok",
+                  converted +
+                    " row(s) switched to Fixed % because a Tenant row is present.",
+                );
+            }
+            renderRows();
+            recalcAllAreaRows();
+            updateAllocSummary();
+          },
+        );
+      }
+
+      function closeConfirm() {
+        try {
+          var el = parent.document.getElementById("ma-confirm-overlay");
+          if (el) el.remove();
+        } catch (e) {}
+      }
+
+      function onTypeChange(uid, newType) {
+        if (isReadOnly) return;
+        var row = rows.find(function (r) {
+          return r.uid === uid;
+        });
+        if (!row) return;
+        if (row.recordId && row.type && row.type !== newType) {
+          showTypeChangeConfirm(uid, newType);
+          return;
+        }
+        row.type = newType;
+        if (newType === "customer") {
+          row.method = "fixed";
+          row.prorationEnabled = false;
+        } else {
+          row.customerType = "";
+        }
+        row.dirty = true;
+        if (newType === "customer") {
+          var converted = forceFixedOnNonCustomerRows();
+          if (converted > 0)
+            setStatus(
+              "ok",
+              converted +
+                " row(s) switched to Fixed % because a Tenant row is present.",
+            );
+        }
+        renderRows();
+        recalcAllAreaRows();
+        updateAllocSummary();
+      }
+
+      function onMethodChange(uid, newMethod) {
+        if (isReadOnly) return;
+        var row = rows.find(function (r) {
+          return r.uid === uid;
+        });
+        if (!row) return;
+        var prev = row.method;
+        row.method = newMethod;
+        row.dirty = true;
+        if (prev !== newMethod) {
+          row.pct = 0;
+          row.calcedPct = null;
+          row.calcError = null;
+        }
+        renderRows();
+        recalcAllAreaRows();
+      }
+
+      function onProrationChange(uid, val) {
+        if (isReadOnly) return;
+        var row = rows.find(function (r) {
+          return r.uid === uid;
+        });
+        if (!row) return;
+        row.prorationEnabled = val === "yes";
+        row.dirty = true;
+      }
+
+      function onRemainingAllocChange(uid, val) {
+        if (isReadOnly) return;
+        var row = rows.find(function (r) {
+          return r.uid === uid;
+        });
+        if (!row) return;
+        row.remainingAlloc = val;
+        row.dirty = true;
+      }
+
+      function onCombinedLineChange(uid, val) {
+        if (isReadOnly) return;
+        var row = rows.find(function (r) {
+          return r.uid === uid;
+        });
+        if (!row) return;
+        row.combinedLine = val === "yes";
+        row.dirty = true;
+      }
+
+      function onPctChange(uid, val) {
+        if (isReadOnly) return;
+        var row = rows.find(function (r) {
+          return r.uid === uid;
+        });
+        if (!row) return;
+        row.pct = val === "" ? 0 : parseFloat(val) || 0;
+        row.dirty = true;
+        updateAllocSummary();
+        var rowEl = document.querySelector('.row[data-uid="' + uid + '"]');
+        if (rowEl && parseFloat(val) > 0) {
+          rowEl.classList.remove("pct-error");
+          var inp = rowEl.querySelector(".alloc-pct-input");
+          if (inp) inp.classList.remove("err");
+        }
+      }
+
+      function onPctBlur(uid, val) {
+        if (isReadOnly) return;
+        var row = rows.find(function (r) {
+          return r.uid === uid;
+        });
+        if (!row) return;
+        var n = parseFloat(val);
+        if (isNaN(n)) n = 0;
+        n = Math.max(0, Math.min(100, Math.round(n * 100) / 100));
+        row.pct = n;
+        var inp = document.getElementById("pct-" + uid);
+        if (inp) inp.value = n;
+        updateAllocSummary();
+      }
+
+      const POPUP_ID = "ma-popup-overlay";
+      const POPUP_STYLE_ID = "ma-popup-styles";
+      let _popupTargetUid = null;
+      let _popupType = "";
+      let _popupCustomerMode = "account";
+
+      function injectPopupStyles() {
+        var pd = parent.document;
+        if (pd.getElementById(POPUP_STYLE_ID)) return;
+        var style = pd.createElement("style");
+        style.id = POPUP_STYLE_ID;
+        style.textContent = [
+          '#ma-popup-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:99999;padding:20px;font-family:"DM Sans","Segoe UI",system-ui,sans-serif;}',
+          "#ma-popup-overlay .ma-popup{background:#fff;border-radius:12px;border:1px solid #dadce0;width:100%;max-width:520px;max-height:600px;display:flex;flex-direction:column;overflow:clip;box-shadow:0 12px 48px rgba(0,0,0,.22);animation:ma-popup-in .18s ease;}",
+          "@keyframes ma-popup-in{from{opacity:0;transform:scale(.95) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}",
+          "#ma-popup-overlay .ma-ph{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #dadce0;flex-shrink:0;}",
+          "#ma-popup-overlay .ma-ph-title{font-size:14px;font-weight:600;color:#1a1a1a;}",
+          "#ma-popup-overlay .ma-close-btn{width:28px;height:28px;border-radius:6px;border:1px solid #dadce0;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#5f6368;font-size:18px;}",
+          "#ma-popup-overlay .ma-close-btn:hover{background:#f5f5f5;}",
+          "#ma-popup-overlay .ma-toggle{display:flex;gap:6px;padding:10px 12px;border-bottom:1px solid #dadce0;flex-shrink:0;}",
+          "#ma-popup-overlay .ma-toggle button{flex:1;height:32px;border:1px solid #dadce0;background:#fff;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;color:#5f6368;font-family:inherit;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:background .12s,color .12s,border-color .12s;}",
+          "#ma-popup-overlay .ma-toggle button:hover{background:#f5f5f5;}",
+          "#ma-popup-overlay .ma-toggle button.active{background:#e8f0fe;color:#1a73e8;border-color:#a8c7fa;}",
+          "#ma-popup-overlay .ma-search{padding:8px 10px;border-bottom:1px solid #dadce0;flex-shrink:0;}",
+          "#ma-popup-overlay .ma-search input{width:100%;height:30px;padding:0 10px 0 30px;border:1px solid #dadce0;border-radius:6px;font-size:12px;font-family:inherit;color:#1a1a1a;background:#fff url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='%239aa0a6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E\") no-repeat 9px center;box-sizing:border-box;}",
+          "#ma-popup-overlay .ma-search input:focus{outline:none;border-color:#1a73e8;box-shadow:0 0 0 2px rgba(26,115,232,.15);}",
+          "#ma-popup-overlay .ma-list{flex:1;overflow-y:auto;padding:4px 0;}",
+          "#ma-popup-overlay .ma-list::-webkit-scrollbar{width:5px;}",
+          "#ma-popup-overlay .ma-list::-webkit-scrollbar-thumb{background:#dadce0;border-radius:3px;}",
+          "#ma-popup-overlay .ma-item{display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;border-bottom:1px solid #dadce0;transition:background .1s;}",
+          "#ma-popup-overlay .ma-item:last-child{border-bottom:none;}",
+          "#ma-popup-overlay .ma-item:hover{background:#e8f0fe;}",
+          "#ma-popup-overlay .ma-item-body{flex:1;min-width:0;}",
+          "#ma-popup-overlay .ma-item-name{font-size:13px;font-weight:500;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}",
+          "#ma-popup-overlay .ma-item-sub{font-size:11px;color:#5f6368;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}",
+          "#ma-popup-overlay .ma-empty{padding:32px 16px;text-align:center;color:#9aa0a6;font-size:12px;}",
+          "#ma-popup-overlay .ma-footer{padding:10px 14px;border-top:1px solid #dadce0;background:#f5f5f5;font-size:11px;color:#5f6368;flex-shrink:0;}",
+        ].join("\n");
+        pd.head.appendChild(style);
+      }
+
+      function openRecordPicker(uid) {
+        if (isReadOnly) return;
+        var row = rows.find(function (r) {
+          return r.uid === uid;
+        });
+        if (!row || !row.type) return;
+        _popupTargetUid = uid;
+        _popupType = row.type;
+        if (row.type === "customer")
+          _popupCustomerMode = row.customerType || "account";
+        try {
+          var pd = parent.document;
+          injectPopupStyles();
+          var old = pd.getElementById(POPUP_ID);
+          if (old) old.remove();
+          var overlay = pd.createElement("div");
+          overlay.id = POPUP_ID;
+          overlay.innerHTML = buildPickerHTML();
+          overlay.addEventListener("click", function (e) {
+            if (e.target === overlay) closePicker();
+          });
+          pd.body.appendChild(overlay);
+          setTimeout(function () {
+            var inp = pd.getElementById("ma-search-input");
+            if (inp) inp.focus();
+          }, 60);
+          parent.window.maClosePopup = closePicker;
+          parent.window.maRenderPopup = renderPicker;
+          parent.window.maSelectRecord = selectRecord;
+          parent.window.maSetCustomerMode = setCustomerMode;
+        } catch (e) {
+          setStatus("err", "Unable to open picker: " + e.message);
+        }
+      }
+
+      function closePicker() {
+        try {
+          var el = parent.document.getElementById(POPUP_ID);
+          if (el) el.remove();
+        } catch (e) {}
+        _popupTargetUid = null;
+      }
+
+      function buildPickerHTML() {
+        var titleNoun =
+          _popupType === "lease"
+            ? "lease agreement"
+            : _popupType === "unit"
+              ? "unit"
+              : "customer";
+        var toggle = "";
+        if (_popupType === "customer") {
+          toggle =
+            '<div class="ma-toggle" id="ma-toggle">' +
+            '<button id="ma-tg-account" class="' +
+            (_popupCustomerMode === "account" ? "active" : "") +
+            '" onclick="window.maSetCustomerMode(\'account\')">Account</button>' +
+            '<button id="ma-tg-contact" class="' +
+            (_popupCustomerMode === "contact" ? "active" : "") +
+            '" onclick="window.maSetCustomerMode(\'contact\')">Contact</button>' +
+            "</div>";
+        }
+        return (
+          '<div class="ma-popup" role="dialog" aria-modal="true">' +
+          '<div class="ma-ph"><span class="ma-ph-title">Select ' +
+          titleNoun +
+          "</span>" +
+          '<button class="ma-close-btn" onclick="window.maClosePopup()" aria-label="Close">&#x2715;</button></div>' +
+          toggle +
+          '<div class="ma-search"><input type="text" id="ma-search-input" placeholder="Search\u2026" oninput="window.maRenderPopup()"></div>' +
+          '<div class="ma-list" id="ma-popup-list">' +
+          buildPickerItems("") +
+          "</div>" +
+          '<div class="ma-footer">Records already used in other rows are hidden.</div>' +
+          "</div>"
+        );
+      }
+
+      function setCustomerMode(mode) {
+        _popupCustomerMode = mode === "contact" ? "contact" : "account";
+        try {
+          var pd = parent.document;
+          var a = pd.getElementById("ma-tg-account"),
+            c = pd.getElementById("ma-tg-contact");
+          if (a) a.className = _popupCustomerMode === "account" ? "active" : "";
+          if (c) c.className = _popupCustomerMode === "contact" ? "active" : "";
+          var inp = pd.getElementById("ma-search-input");
+          var list = pd.getElementById("ma-popup-list");
+          if (list) list.innerHTML = buildPickerItems(inp ? inp.value : "");
+        } catch (e) {}
+      }
+
+      function getUsedIdsForType(type, excludeUid, customerMode) {
+        var used = new Set();
+        rows.forEach(function (r) {
+          if (r.uid === excludeUid) return;
+          if (r.type !== type || !r.recordId) return;
+          if (type === "customer" && r.customerType !== customerMode) return;
+          used.add(r.recordId);
+        });
+        return used;
+      }
+
+      function buildPickerItems(query) {
+        var q = (query || "").toLowerCase();
+        var isCustomer = _popupType === "customer";
+        var custContact = isCustomer && _popupCustomerMode === "contact";
+        var used = getUsedIdsForType(
+          _popupType,
+          _popupTargetUid,
+          _popupCustomerMode,
+        );
+        var items =
+          _popupType === "lease"
+            ? allLeases
+            : _popupType === "unit"
+              ? allUnits
+              : custContact
+                ? allContacts
+                : allAccounts;
+        var filtered = items.filter(function (i) {
+          var id =
+            _popupType === "lease"
+              ? i.array_leaseagreementid
+              : _popupType === "unit"
+                ? i.array_unitid
+                : custContact
+                  ? i.contactid
+                  : i.accountid;
+          if (used.has(id)) return false;
+          if (!q) return true;
+          if (_popupType === "lease")
+            return (
+              (i.array_leasename || "").toLowerCase().includes(q) ||
+              (i.array_leaserecordid || "").toLowerCase().includes(q)
+            );
+          if (_popupType === "unit")
+            return (
+              (i.array_unitname || "").toLowerCase().includes(q) ||
+              (i.array_unitrecordid || "").toLowerCase().includes(q)
+            );
+          if (custContact)
+            return (
+              (i.fullname || "").toLowerCase().includes(q) ||
+              (i.emailaddress1 || "").toLowerCase().includes(q)
+            );
+          return (
+            (i.name || "").toLowerCase().includes(q) ||
+            (i.accountnumber || "").toLowerCase().includes(q)
+          );
+        });
+        if (!filtered.length)
+          return '<div class="ma-empty">No records available</div>';
+        return filtered
+          .map(function (item) {
+            var id, name, sub;
+            if (_popupType === "lease") {
+              id = item.array_leaseagreementid;
+              name = esc(item.array_leasename || "(no name)");
+              var s = item.array_leasestartdate
+                ? item.array_leasestartdate.substring(0, 10)
+                : "—";
+              var e = item.array_leaseenddate
+                ? item.array_leaseenddate.substring(0, 10)
+                : "—";
+              sub =
+                esc(item.array_leaserecordid || "") +
+                " &middot; " +
+                s +
+                " &rarr; " +
+                e;
+            } else if (_popupType === "unit") {
+              id = item.array_unitid;
+              var baseName = esc(item.array_unitname || "(unnamed)");
+              var stKey =
+                item.array_spacetype != null
+                  ? SPACE_TYPE_MAP[String(item.array_spacetype)]
+                  : null;
+              var stPill = stKey
+                ? '<span class="space-badge-inline ' +
+                  stKey +
+                  '">' +
+                  SPACE_TYPE_LABEL[stKey] +
+                  "</span>"
+                : "";
+              name = baseName + stPill;
+              var tl =
+                item[
+                  "_array_unittype_value@OData.Community.Display.V1.FormattedValue"
+                ] || "";
+              sub =
+                esc(item.array_unitrecordid || "") +
+                (tl ? " &middot; " + esc(tl) : "");
+            } else if (custContact) {
+              id = item.contactid;
+              name = esc(item.fullname || "(no name)");
+              var pc =
+                item[
+                  "_parentcustomerid_value@OData.Community.Display.V1.FormattedValue"
+                ] || "";
+              sub =
+                esc(item.emailaddress1 || "") +
+                (pc ? (item.emailaddress1 ? " &middot; " : "") + esc(pc) : "");
+            } else {
+              id = item.accountid;
+              name = esc(item.name || "(unnamed)");
+              sub = esc(item.accountnumber || "");
+            }
+            return (
+              '<div class="ma-item" onclick="window.maSelectRecord(\'' +
+              id +
+              "')\">" +
+              '<div class="ma-item-body"><div class="ma-item-name">' +
+              name +
+              "</div>" +
+              (sub ? '<div class="ma-item-sub">' + sub + "</div>" : "") +
+              "</div></div>"
+            );
+          })
+          .join("");
+      }
+
+      function renderPicker() {
+        try {
+          var pd = parent.document;
+          var inp = pd.getElementById("ma-search-input");
+          var list = pd.getElementById("ma-popup-list");
+          if (list) list.innerHTML = buildPickerItems(inp ? inp.value : "");
+        } catch (e) {}
+      }
+
+      function selectRecord(recordId) {
+        var row = rows.find(function (r) {
+          return r.uid === _popupTargetUid;
+        });
+        if (!row) {
+          closePicker();
+          return;
+        }
+        row.recordId = recordId;
+        if (row.type === "customer") row.customerType = _popupCustomerMode;
+        row.dirty = true;
+        closePicker();
+        if (row.method === "area") recalcAllAreaRows();
+        else {
+          renderRows();
+          updateAllocSummary();
+        }
+      }
+
+      function getUnitSpaceType(unitId) {
+        if (!unitId) return null;
+        var u = allUnits.find(function (x) {
+          return x.array_unitid === unitId;
+        });
+        if (!u || u.array_spacetype == null) return null;
+        return SPACE_TYPE_MAP[String(u.array_spacetype)] || null;
+      }
+
+      function getAreaForRow(row) {
+        if (!row.recordId) return 0;
+        if (row.type === "lease") {
+          var l = allLeases.find(function (x) {
+            return x.array_leaseagreementid === row.recordId;
+          });
+          var v =
+            l && l.array_totalareaofunits != null
+              ? parseFloat(l.array_totalareaofunits)
+              : 0;
+          return isNaN(v) ? 0 : v;
+        }
+        if (row.type === "unit") {
+          var u = allUnits.find(function (x) {
+            return x.array_unitid === row.recordId;
+          });
+          var v2 =
+            u && u.array_unitareasqm != null
+              ? parseFloat(u.array_unitareasqm)
+              : 0;
+          return isNaN(v2) ? 0 : v2;
+        }
+        return 0;
+      }
+
+      function recalcAllAreaRows() {
+        var eligible = rows.filter(function (r) {
+          return (
+            r.method === "area" &&
+            r.recordId &&
+            (r.type === "lease" || r.type === "unit")
+          );
+        });
+        var denom = eligible.reduce(function (s, r) {
+          return s + getAreaForRow(r);
+        }, 0);
+        eligible.forEach(function (r) {
+          r.calcError = null;
+          r.calcLoading = false;
+          if (denom <= 0) {
+            r.calcedPct = 0;
+            r.pct = 0;
+            return;
+          }
+          var pct = Math.round((getAreaForRow(r) / denom) * 10000) / 100;
+          r.calcedPct = pct;
+          r.pct = pct;
+          r.dirty = true;
+        });
+        // Rounding can leave the area rows at 99.99 / 100.01 — put the
+        // difference on the largest row so they total exactly 100.
+        if (denom > 0 && eligible.length) {
+          var sum = eligible.reduce(function (s, r) {
+            return s + r.pct;
+          }, 0);
+          var diff = Math.round((100 - sum) * 100) / 100;
+          if (diff !== 0) {
+            var largest = eligible.reduce(function (a, b) {
+              return b.pct > a.pct ? b : a;
+            });
+            largest.pct = Math.round((largest.pct + diff) * 100) / 100;
+            largest.calcedPct = largest.pct;
+          }
+        }
+        renderRows();
+        updateAllocSummary();
+      }
+
+      function applyReadOnlyToControls() {
+        if (!isReadOnly) return;
+        var root = document.getElementById("main-content");
+        if (!root) return;
+        root
+          .querySelectorAll(".row-select, .alloc-pct-input")
+          .forEach(function (el) {
+            el.disabled = true;
+          });
+        var addBtn = root.querySelector(".btn-add");
+        if (addBtn) {
+          addBtn.disabled = true;
+          addBtn.style.opacity = "0.5";
+          addBtn.style.cursor = "not-allowed";
+        }
+        root.querySelectorAll(".btn-remove").forEach(function (el) {
+          el.disabled = true;
+          el.style.opacity = "0.5";
+          el.style.cursor = "not-allowed";
+        });
+        root.querySelectorAll(".record-picker").forEach(function (el) {
+          el.classList.add("disabled");
+          el.onclick = null;
+        });
+      }
+
+      function dupKey(r) {
+        return r.type === "customer"
+          ? r.type + "|" + r.customerType + "|" + r.recordId
+          : r.type + "|" + r.recordId;
+      }
+
+      function renderRows() {
+        var cnt = document.getElementById("row-count");
+        cnt.textContent = rows.length + " row" + (rows.length === 1 ? "" : "s");
+        cnt.className = "sel-count" + (rows.length ? " has" : "");
+        var el = document.getElementById("row-list");
+        if (!rows.length) {
+          el.innerHTML =
+            '<div class="empty-state">' +
+            '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
+            "<p>No associations yet.<br>Click \u201cAdd row\u201d to begin.</p></div>";
+          return;
+        }
+        var dupSet = computeDuplicates();
+        var customerPresent = hasCustomerRow();
+        el.innerHTML = rows
+          .map(function (row) {
+            return buildRowHTML(row, dupSet, customerPresent);
+          })
+          .join("");
+        applyReadOnlyToControls();
+      }
+
+      function computeDuplicates() {
+        var seen = {};
+        rows.forEach(function (r) {
+          if (!r.type || !r.recordId) return;
+          var k = dupKey(r);
+          seen[k] = (seen[k] || 0) + 1;
+        });
+        var dup = new Set();
+        Object.keys(seen).forEach(function (k) {
+          if (seen[k] > 1) dup.add(k);
+        });
+        return dup;
+      }
+
+      function buildRowHTML(row, dupSet, customerPresent) {
+        var typeOpts =
+          '<option value="" ' +
+          (!row.type ? "selected" : "") +
+          ">type\u2026</option>" +
+          '<option value="lease" ' +
+          (row.type === "lease" ? "selected" : "") +
+          ">Lease</option>" +
+          '<option value="unit" ' +
+          (row.type === "unit" ? "selected" : "") +
+          ">Unit</option>" +
+          '<option value="customer" ' +
+          (row.type === "customer" ? "selected" : "") +
+          ">Tenant</option>";
+
+        var areaDisabled =
+          row.type === "customer" ||
+          (customerPresent && row.type !== "customer");
+        var methodOpts =
+          '<option value="" ' +
+          (!row.method ? "selected" : "") +
+          ">method\u2026</option>" +
+          '<option value="fixed" ' +
+          (row.method === "fixed" ? "selected" : "") +
+          ">Fixed %</option>" +
+          '<option value="area"  ' +
+          (row.method === "area" ? "selected" : "") +
+          (areaDisabled ? " disabled" : "") +
+          ">By Area" +
+          (areaDisabled ? " (n/a)" : "") +
+          "</option>";
+
+        var pickerText,
+          pickerCls = "record-picker",
+          pickerDisabled = !row.type;
+        if (!row.type) {
+          pickerText = '<span class="placeholder">Choose type first</span>';
+          pickerCls += " disabled";
+        } else if (!row.recordId) {
+          pickerText =
+            '<span class="placeholder">Select ' + row.type + "\u2026</span>";
+        } else {
+          var rec;
+          if (row.type === "lease")
+            rec = allLeases.find(function (l) {
+              return l.array_leaseagreementid === row.recordId;
+            });
+          else if (row.type === "unit")
+            rec = allUnits.find(function (u) {
+              return u.array_unitid === row.recordId;
+            });
+          else if (row.customerType === "contact")
+            rec = allContacts.find(function (c) {
+              return c.contactid === row.recordId;
+            });
+          else
+            rec = allAccounts.find(function (a) {
+              return a.accountid === row.recordId;
+            });
+          if (rec) {
+            if (row.type === "lease")
+              pickerText = esc(rec.array_leasename || "(no name)");
+            else if (row.type === "unit")
+              pickerText = esc(rec.array_unitname || "(unnamed)");
+            else if (row.customerType === "contact")
+              pickerText = esc(rec.fullname || "(no name)");
+            else pickerText = esc(rec.name || "(unnamed)");
+          } else pickerText = "(unknown record)";
+        }
+
+        var dupBadge =
+          row.type && row.recordId && dupSet.has(dupKey(row))
+            ? '<span class="dup-badge" title="Duplicate">DUP</span>'
+            : "";
+        var savedBadge = row.assocId
+          ? '<span class="saved-badge">saved</span>'
+          : "";
+        var spaceBadge = "";
+        if (row.type === "unit" && row.recordId) {
+          var st = getUnitSpaceType(row.recordId);
+          if (st)
+            spaceBadge =
+              '<span class="space-badge ' +
+              st +
+              '" title="Space type">' +
+              SPACE_TYPE_LABEL[st] +
+              "</span>";
+        }
+        var custSub =
+          row.type === "customer" && row.recordId && row.customerType
+            ? '<span class="cust-sub ' +
+              row.customerType +
+              '">' +
+              row.customerType +
+              "</span>"
+            : "";
+
+        var areaDisplay = "";
+        if (row.type && row.recordId && row.method === "area") {
+          var areaVal = 0;
+          if (row.type === "lease") {
+            var l = allLeases.find(function (x) {
+              return x.array_leaseagreementid === row.recordId;
+            });
+            if (l && l.array_totalareaofunits != null)
+              areaVal = parseFloat(l.array_totalareaofunits) || 0;
+          } else if (row.type === "unit") {
+            var u = allUnits.find(function (x) {
+              return x.array_unitid === row.recordId;
+            });
+            if (u && u.array_unitareasqm != null)
+              areaVal = parseFloat(u.array_unitareasqm) || 0;
+          }
+          areaDisplay =
+            '<span class="area-display" title="Area in square metres"><strong>' +
+            areaVal.toLocaleString() +
+            '</strong><span class="unit-label">sqm</span></span>';
+        }
+
+        var typeBadge = row.type
+          ? '<span class="type-badge ' + row.type + '">' + row.type + "</span>"
+          : '<span class="type-badge empty">\u2014</span>';
+
+        /* ── Line 1: primary controls ── */
+        var line1 =
+          typeBadge +
+          '<div class="field-group"><span class="field-label">Type *</span>' +
+          '<select class="row-select sel-type" onchange="onTypeChange(\'' +
+          row.uid +
+          "',this.value)\">" +
+          typeOpts +
+          "</select>" +
+          "</div>" +
+          '<div class="field-group"><span class="field-label">Allocation Method *</span>' +
+          '<select class="row-select sel-method" onchange="onMethodChange(\'' +
+          row.uid +
+          "',this.value)\">" +
+          methodOpts +
+          "</select>" +
+          "</div>" +
+          '<div class="field-group" style="flex:1 1 240px;min-width:220px"><span class="field-label">Record *</span>' +
+          '<div class="' +
+          pickerCls +
+          '" style="width:100%;min-width:0;flex:0 0 auto"' +
+          (pickerDisabled
+            ? ""
+            : " onclick=\"openRecordPicker('" + row.uid + "')\"") +
+          ">" +
+          '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
+          '<span class="record-picker-text">' +
+          pickerText +
+          "</span>" +
+          "</div>" +
+          "</div>" +
+          '<div class="field-group"><span class="field-label">Allocation % *</span>' +
+          buildPctCell(row) +
+          "</div>" +
+          custSub +
+          areaDisplay +
+          spaceBadge +
+          savedBadge +
+          dupBadge +
+          '<button class="btn-remove" onclick="removeRow(\'' +
+          row.uid +
+          '\')" title="Remove row">' +
+          '<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>' +
+          "</button>";
+
+        /* ── Line 2: secondary controls ── */
+        var line2 = "";
+
+        /* Proration (lease / unit only) */
+        if (row.type === "lease" || row.type === "unit") {
+          var pYes = row.prorationEnabled ? "selected" : "";
+          var pNo = row.prorationEnabled ? "" : "selected";
+          var disabled = !row.recordId ? " disabled" : "";
+
+          line2 +=
+            '<div class="field-group"><span class="field-label">Proration</span>' +
+            '<select class="row-select sel-proration"' +
+            disabled +
+            " onchange=\"onProrationChange('" +
+            row.uid +
+            "',this.value)\">" +
+            '<option value="no" ' +
+            pNo +
+            ">No</option>" +
+            '<option value="yes" ' +
+            pYes +
+            ">Yes</option>" +
+            "</select></div>";
+        }
+
+        /* Remaining Amount Allocation — lease / unit only, NOT shown for customer/tenant */
+        if (row.type && row.type !== "customer") {
+          var remInner;
+          if (!row.type || !row.recordId) {
+            // Not yet configured — show disabled placeholder
+            remInner =
+              '<select class="row-select sel-remaining" disabled><option value="">—</option></select>';
+          } else if (row.isExistingRow && !row.remainingAlloc) {
+            // Existing saved row with no value set — show "Not set" + two real options so user can pick
+            remInner =
+              '<select class="row-select sel-remaining" onchange="onRemainingAllocChange(\'' +
+              row.uid +
+              "',this.value)\">" +
+              '<option value="" selected>Not set</option>' +
+              '<option value="landlord">Landlord Absorb</option>' +
+              '<option value="split">Split Between Tenants</option>' +
+              "</select>";
+          } else {
+            // New rows (default landlord) or existing rows that already have a value — no "Not set"
+            var selL = row.remainingAlloc === "landlord" ? "selected" : "";
+            var selS = row.remainingAlloc === "split" ? "selected" : "";
+            remInner =
+              '<select class="row-select sel-remaining" onchange="onRemainingAllocChange(\'' +
+              row.uid +
+              "',this.value)\">" +
+              '<option value="landlord" ' +
+              selL +
+              ">Landlord Absorb</option>" +
+              '<option value="split" ' +
+              selS +
+              ">Split Between Tenants</option>" +
+              "</select>";
+          }
+          line2 +=
+            '<div class="field-group"><span class="field-label">Remaining Amount Allocation</span>' +
+            remInner +
+            "</div>";
+        }
+
+        /* Combine Line on Invoice — lease, unit, AND customer/tenant */
+        if (row.type) {
+          var clYes = row.combinedLine ? "selected" : "";
+          var clNo = row.combinedLine ? "" : "selected";
+          line2 +=
+            '<div class="field-group"><span class="field-label">Combine Line on Invoice</span>' +
+            '<select class="row-select" style="width:100px" ' +
+            "onchange=\"onCombinedLineChange('" +
+            row.uid +
+            "',this.value)\">" +
+            '<option value="no" ' +
+            clNo +
+            ">No</option>" +
+            '<option value="yes" ' +
+            clYes +
+            ">Yes</option>" +
+            "</select></div>";
+        }
+
+        return (
+          '<div class="row" data-uid="' +
+          row.uid +
+          '">' +
+          '<div class="row-line1">' +
+          line1 +
+          "</div>" +
+          (line2 ? '<div class="row-line2">' + line2 + "</div>" : "") +
+          "</div>"
+        );
+      }
+
+      function buildPctCell(row) {
+        if (!row.method || !row.type || !row.recordId) {
+          return '<div class="alloc-pct-input-wrap"><input type="number" class="alloc-pct-input" value="" disabled placeholder="\u2014"><span class="alloc-pct-symbol">%</span></div>';
+        }
+        if (row.method === "area" && row.calcLoading) {
+          return '<span class="alloc-calc-badge loading"><span class="mini-spin"></span> Calc\u2026</span>';
+        }
+        if (row.method === "area" && row.calcError) {
+          return (
+            '<span class="alloc-calc-badge error" title="' +
+            esc(row.calcError) +
+            '">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>' +
+            " Error</span>"
+          );
+        }
+        var val = row.pct != null ? row.pct : "";
+        var hint =
+          row.method === "area" && row.calcedPct != null
+            ? ' title="Auto-calculated: ' + row.calcedPct + '%"'
+            : "";
+        return (
+          '<div class="alloc-pct-input-wrap">' +
+          '<input type="number" class="alloc-pct-input" id="pct-' +
+          row.uid +
+          '" min="0" max="100" step="0.01" value="' +
+          esc(String(val)) +
+          '" ' +
+          "oninput=\"onPctChange('" +
+          row.uid +
+          "',this.value)\" " +
+          "onblur=\"onPctBlur('" +
+          row.uid +
+          '\',this.value)" placeholder="0"' +
+          hint +
+          ">" +
+          '<span class="alloc-pct-symbol">%</span></div>'
+        );
+      }
+
+      function updateAllocSummary() {
+        var configured = rows.filter(function (r) {
+          return r.type && r.recordId && r.method;
+        });
+        if (!configured.length) {
+          document.getElementById("alloc-summary").style.display = "none";
+          return;
+        }
+        var total =
+          Math.round(
+            configured.reduce(function (s, r) {
+              return s + (parseFloat(r.pct) || 0);
+            }, 0) * 100,
+          ) / 100;
+        var el = document.getElementById("alloc-summary");
+        var msg = document.getElementById("alloc-summary-msg");
+        var pct = document.getElementById("alloc-total-pct");
+        el.style.display = "flex";
+        pct.textContent = total + "%";
+        if (total === 100) {
+          el.className = "alloc-summary alloc-ok";
+          msg.textContent = "Total allocation equals 100% \u2713";
+          return;
+        }
+        var gap = Math.round(Math.abs(100 - total) * 100) / 100;
+        el.className = "alloc-summary alloc-warn";
+        msg.textContent =
+          totalRuleText(configured) +
+          (total > 100
+            ? " \u2014 reduce by " + gap + "%"
+            : " \u2014 add " + gap + "%");
+      }
+
+      // "Fixed % allocations must total 100%" etc., based on the methods in use
+      function totalRuleText(list) {
+        var hasFixed = list.some(function (r) {
+          return r.method === "fixed";
+        });
+        var hasArea = list.some(function (r) {
+          return r.method === "area";
+        });
+        if (hasFixed && hasArea)
+          return "Fixed % and By Area allocations together must total 100%";
+        if (hasArea) return "By Area allocations must total 100%";
+        return "Fixed % allocations must total 100%";
+      }
+
+      function validateBeforeSave() {
+        var errors = [];
+        var incomplete = rows.filter(function (r) {
+          return !r.type || !r.method || !r.recordId;
+        });
+        if (incomplete.length)
+          errors.push(
+            incomplete.length +
+              " row(s) incomplete \u2014 set type, allocation method, record and allocation % on every row.",
+          );
+        var missingBasisIds = [];
+        var zeroIds = rows
+          .filter(function (r) {
+            var v = parseFloat(r.pct);
+            return r.type && r.recordId && r.method && (isNaN(v) || v <= 0);
+          })
+          .map(function (r) {
+            return r.uid;
+          });
+        if (zeroIds.length)
+          errors.push(
+            zeroIds.length + " row(s) have 0% or missing percentage.",
+          );
+        var negIds = rows
+          .filter(function (r) {
+            var v = parseFloat(r.pct);
+            return r.type && r.recordId && r.method && !isNaN(v) && v < 0;
+          })
+          .map(function (r) {
+            return r.uid;
+          });
+        if (negIds.length)
+          errors.push(negIds.length + " row(s) have a negative percentage.");
+        if (hasCustomerRow()) {
+          var bad = rows.filter(function (r) {
+            return r.type !== "customer" && r.method === "area";
+          });
+          if (bad.length)
+            errors.push(
+              "When a tenant row is present, all rows must use Fixed % \u2014 found " +
+                bad.length +
+                " on By Area.",
+            );
+        }
+        var dups = computeDuplicates();
+        if (dups.size)
+          errors.push(
+            "Duplicate records detected \u2014 the same lease/unit/tenant appears in multiple rows.",
+          );
+        var calcErrs = rows.filter(function (r) {
+          return r.calcError;
+        });
+        if (calcErrs.length)
+          errors.push(calcErrs.length + " row(s) have calculation errors.");
+        if (!incomplete.length && !zeroIds.length && rows.length > 0) {
+          var total =
+            Math.round(
+              rows.reduce(function (s, r) {
+                return s + (parseFloat(r.pct) || 0);
+              }, 0) * 100,
+            ) / 100;
+          if (total !== 100)
+            errors.push(
+              totalRuleText(rows) +
+                " \u2014 currently " +
+                total +
+                "%.",
+            );
+        }
+        highlightErrorRows(zeroIds, missingBasisIds);
+        return errors;
+      }
+
+      function highlightErrorRows(uids, basisUids) {
+        var set = new Set(uids);
+        document.querySelectorAll(".row").forEach(function (rowEl) {
+          var uid = rowEl.getAttribute("data-uid");
+          if (set.has(uid)) {
+            rowEl.classList.add("pct-error");
+            var inp = rowEl.querySelector(".alloc-pct-input");
+            if (inp) inp.classList.add("err");
+          } else rowEl.classList.remove("pct-error");
+        });
+      }
+
+      async function handleSave() {
+        if (isReadOnly) {
+          setStatus(
+            "err",
+            "Cannot save \u2014 meter is " +
+              statusLabel(meterStatusCode) +
+              ". Only Draft meters are editable.",
+          );
+          return;
+        }
+        var errs = validateBeforeSave();
+        if (errs.length) {
+          setStatus("err", errs.join(" \u2022 "));
+          return;
+        }
+
+        var btn = document.getElementById("save-btn");
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Saving\u2026';
+        setStatus("loading", "Saving associations\u2026");
+
+        try {
+          for (var i = 0; i < rows.length; i++) {
+            var row = rows[i];
+            var data = {
+              "array_Meter@odata.bind": "/array_meters(" + meterId + ")",
+              array_meterassociationtype: ASSOC_TYPE_REV[row.type],
+              array_allocationmethod: ALLOC_METHOD_REV[row.method],
+              array_allocationpercenatage: parseFloat(row.pct) || 0,
+              array_prorationenabled:
+                row.type === "lease" || row.type === "unit"
+                  ? !!row.prorationEnabled
+                  : false,
+            };
+            data["array_combinedline"] = !!row.combinedLine;
+            data["array_remainingamountallocation"] =
+              row.type !== "customer" &&
+              row.remainingAlloc &&
+              REMAINING_ALLOC_REV[row.remainingAlloc] != null
+                ? REMAINING_ALLOC_REV[row.remainingAlloc]
+                : null;
+            if (row.type === "lease") {
+              data["array_LeaseAgreement@odata.bind"] =
+                "/array_leaseagreements(" + row.recordId + ")";
+            } else if (row.type === "unit") {
+              data["array_Unit@odata.bind"] =
+                "/array_units(" + row.recordId + ")";
+            } else if (row.type === "customer") {
+              if (row.customerType === "contact")
+                data[CUSTOMER_BIND_CONTACT + "@odata.bind"] =
+                  "/contacts(" + row.recordId + ")";
+              else
+                data[CUSTOMER_BIND_ACCOUNT + "@odata.bind"] =
+                  "/accounts(" + row.recordId + ")";
+            }
+            if (!row.assocId) {
+              var res = await xrmCreate("array_meterassociation", data);
+              if (res && res.id) row.assocId = res.id;
+            } else if (row.dirty) {
+              await xrmUpdate("array_meterassociation", row.assocId, data);
+            }
+            row.dirty = false;
+            // After saving, mark as existing row so behaviour is consistent on re-render
+            row.isExistingRow = true;
+          }
+          isEditMode = true;
+          setSubtitle("edit");
+          setPill("edit");
+          setStatus("ok", "Associations saved successfully.");
+          try {
+            var x = getXrm();
+            if (x && x.Page && x.Page.ui)
+              x.Page.ui.clearFormNotification("ASSOC_MISSING");
+          } catch (e) {}
+          renderRows();
+        } catch (e) {
+          setStatus("err", "Save failed: " + e.message);
+        }
+
+        btn.disabled = false;
+        btn.innerHTML =
+          '<svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save';
+      }
+
+      function setSubtitle(mode) {
+        var el = document.getElementById("top-subtitle");
+        if (mode === "readonly") {
+          el.className = "top-subtitle error";
+          el.textContent =
+            "Read-only \u2014 meter status is " +
+            statusLabel(meterStatusCode) +
+            ". Only Draft meters can be edited.";
+        } else if (mode === "edit") {
+          el.className = "top-subtitle info";
+          el.textContent =
+            "Editing existing associations. Each row has its own type and allocation method.";
+        } else {
+          el.className = "top-subtitle warn";
+          el.textContent =
+            "Create mode \u2014 add rows below, configure each, then click Save.";
+        }
+      }
+
+      function setPill(mode) {
+        var el = document.getElementById("mode-pill");
+        if (mode === "readonly") {
+          el.textContent = statusLabel(meterStatusCode) + " \u00b7 Read-only";
+          el.className = "mode-pill pill-readonly";
+        } else if (mode === "edit") {
+          el.textContent = "Edit";
+          el.className = "mode-pill pill-edit";
+        } else {
+          el.textContent = "Create";
+          el.className = "mode-pill pill-create";
+        }
+      }
+
+      function showErrorBanner(msg) {
+        document.getElementById("error-banner").style.display = "flex";
+        document.getElementById("error-banner-text").textContent = msg;
+      }
+
+      function setStatus(type, msg) {
+        var el = document.getElementById("status-msg");
+        el.style.display = "flex";
+        var icons = {
+          ok: '<circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/>',
+          err: '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>',
+          loading:
+            '<line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/>',
+        };
+        var cls = {
+          ok: "status status-ok",
+          err: "status status-err",
+          loading: "status status-loading",
+        };
+        el.className = cls[type] || cls.loading;
+        el.innerHTML =
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+          (icons[type] || "") +
+          "</svg>" +
+          '<span class="status-msg-text">' +
+          esc(msg) +
+          "</span>" +
+          (type === "loading"
+            ? ""
+            : '<button class="status-close" onclick="hideStatus()" aria-label="Dismiss"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>');
+      }
+
+      function hideStatus() {
+        document.getElementById("status-msg").style.display = "none";
+      }
+
+      function esc(s) {
+        return String(s)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      // Demo-only stub: real widget uses Xrm WebApi. This lets the layout be
+      // previewed here without a live Dataverse environment behind it.
+      if (!getXrm()) {
+        document.querySelector(".page").style.display = "flex";
+        document.getElementById("loading-state").style.display = "none";
+        document.getElementById("main-content").style.display = "block";
+        rows = [
+          {
+            uid: "r1",
+            assocId: "existing-1",
+            type: "unit",
+            method: "area",
+            recordId: "unit-1",
+            customerType: "",
+            pct: 62.5,
+            calcedPct: 62.5,
+            calcLoading: false,
+            calcError: null,
+            dirty: false,
+            prorationEnabled: true,
+            remainingAlloc: "landlord",
+            combinedLine: true,
+            isExistingRow: true,
+          },
+          {
+            uid: "r2",
+            assocId: "existing-2",
+            type: "unit",
+            method: "fixed",
+            recordId: "unit-2",
+            customerType: "",
+            pct: 37.5,
+            calcedPct: null,
+            calcLoading: false,
+            calcError: null,
+            dirty: false,
+            prorationEnabled: false,
+            remainingAlloc: "split",
+            combinedLine: false,
+            isExistingRow: true,
+          },
+        ];
+        allUnits = [
+          {
+            array_unitid: "unit-1",
+            array_unitname: "Unit 101",
+            array_unitareasqm: 62.5,
+            array_spacetype: 590930000,
+          },
+          {
+            array_unitid: "unit-2",
+            array_unitname: "Unit 102",
+            array_unitareasqm: 37.5,
+            array_spacetype: 590930001,
+          },
+        ];
+        document.getElementById("mode-pill").textContent = "Edit";
+        document.getElementById("mode-pill").className = "mode-pill pill-edit";
+        document.getElementById("top-subtitle").textContent =
+          "Editing existing associations. Each row has its own type and allocation method.";
+        document.getElementById("top-subtitle").className = "top-subtitle info";
+        renderRows();
+        updateAllocSummary();
+      } else {
+        init();
+      }
+    </script>
+  </body>
+</html>
