@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice PDF Preview</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f9fafb;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background: white;
+        }
+        
+        .header {
+            padding: 8px 12px;
+            background: #f3f2f1;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .pdf-icon {
+            color: #dc2626;
+            font-size: 16px;
+        }
+
+        .pdf-title {
+            font-weight: 500;
+            color: #374151;
+            max-width: 400px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn {
+            padding: 4px 10px;
+            background: #0078d4;
+            color: white;
+            border: 1px solid #0078d4;
+            border-radius: 2px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 400;
+            transition: all 0.2s ease;
+            min-height: 28px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .btn:hover:not(:disabled) {
+            background: #106ebe;
+            border-color: #106ebe;
+        }
+
+        .btn.refresh-btn:hover:not(:disabled) {
+            background: #0e6b0e;
+            border-color: #0e6b0e;
+        }
+        
+        .btn:disabled {
+            background: #f3f2f1;
+            color: #a19f9d;
+            border-color: #edebe9;
+            cursor: not-allowed;
+        }
+        
+        .pdf-viewer {
+            flex: 1;
+            background: #525252;
+            overflow: hidden;
+            position: relative;
+            min-height: 0;
+        }
+        
+        #pdfIframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: white;
+        }
+        
+        .loading {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: #f9fafb;
+            color: #6b7280;
+            z-index: 10;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #0078d4;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 16px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error-message {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: #f9fafb;
+            color: #dc2626;
+            padding: 20px;
+            text-align: center;
+            z-index: 10;
+        }
+        
+        .error-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+        
+        .error-text {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+        
+        .error-detail {
+            font-size: 14px;
+            color: #6b7280;
+            max-width: 600px;
+            line-height: 1.5;
+        }
+
+        .debug-info {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            max-width: 400px;
+            font-family: monospace;
+            z-index: 9999;
+            display: none;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .debug-info.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+  
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <span class="pdf-icon">📄</span>
+                <span class="pdf-title" id="pdfTitle">Invoice PDF</span>
+            </div>
+            <div class="controls">
+                <button class="btn" id="refreshBtn" title="Refresh PDF from subgrid" style="background: #107c10; border-color: #107c10;">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M13.65 2.35A7.958 7.958 0 0 0 8 0C3.58 0 0 3.58 0 8s3.58 8 8 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L9 7h7V0l-2.35 2.35z"/>
+                    </svg>
+                    Refresh
+                </button>
+                <button class="btn" id="openNewWindowBtn" title="Open in new window" disabled>
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M14 2v9a1 1 0 01-1 1H9v2h2v1H5v-1h2v-2H3a1 1 0 01-1-1V2a1 1 0 011-1h10a1 1 0 011 1zM3 3v7h10V3H3z"/>
+                    </svg>
+                    Open in New Window
+                </button>
+                <button class="btn" id="downloadBtn" title="Download PDF" disabled>
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M8.5 11.5l3.5-3.5h-2.5V2h-2v6H5l3.5 3.5zM14 14H2v-2h12v2z"/>
+                    </svg>
+                    Download
+                </button>
+            </div>
+        </div>
+        
+        <div class="pdf-viewer" id="pdfViewer">
+            <div class="loading" id="loadingIndicator">
+                <div class="spinner"></div>
+                <div>Loading PDF...</div>
+            </div>
+            <iframe id="pdfIframe" style="display: none;"></iframe>
+        </div>
+    </div>
+
+    <!-- Debug Info Panel (Press Ctrl+D to toggle) -->
+    <div class="debug-info" id="debugInfo">
+        <strong>Debug Information:</strong><br>
+        <span id="debugContent">Initializing...</span>
+    </div>
+
+    <script>
+        // Debug panel toggle (Ctrl+D)
+        let debugMode = false;
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'd') {
+                e.preventDefault();
+                debugMode = !debugMode;
+                document.getElementById('debugInfo').classList.toggle('show', debugMode);
+            }
+        });
+
+        function updateDebug(message) {
+            const debugContent = document.getElementById('debugContent');
+            const timestamp = new Date().toLocaleTimeString();
+            debugContent.innerHTML += `<br>[${timestamp}] ${message}`;
+            console.log(message);
+        }
+
+        // Get form context
+        let formContext = null;
+        
+        function getFormContext() {
+            debugger;
+            try {
+                if (window.parent && window.parent.Xrm && window.parent.Xrm.Page) {
+                    formContext = window.parent.Xrm.Page;
+                    updateDebug('✓ Found form context in parent.Xrm.Page');
+                    return true;
+                } else if (window.Xrm && window.Xrm.Page) {
+                    formContext = window.Xrm.Page;
+                    updateDebug('✓ Found form context in Xrm.Page');
+                    return true;
+                } else if (window.parent && window.parent.parent && window.parent.parent.Xrm && window.parent.parent.Xrm.Page) {
+                    formContext = window.parent.parent.Xrm.Page;
+                    updateDebug('✓ Found form context in parent.parent.Xrm.Page');
+                    return true;
+                }
+                updateDebug('✗ Form context not found');
+                return false;
+            } catch (error) {
+                updateDebug('✗ Error getting form context: ' + error.message);
+                return false;
+            }
+        }
+
+        function encodeUrlPath(path) {
+            return path.split('/').map(segment => {
+                return encodeURIComponent(segment)
+                    .replace(/%2F/g, '/')
+                    .replace(/%2D/g, '-')
+                    .replace(/%5F/g, '_');
+            }).join('/');
+        }
+
+        function getPdfUrlFromSubgrid() {
+            if (!formContext) {
+                updateDebug('✗ Form context not available');
+                return null;
+            }
+
+            try {
+                updateDebug('Attempting to get PDF URL from subgrid');
+                
+                const subgridControl = formContext.getControl("Subgrid_new_4");
+                
+                if (!subgridControl) {
+                    updateDebug('✗ Subgrid control not found');
+                    return null;
+                }
+                
+                updateDebug('✓ Subgrid control found');
+
+                const grid = subgridControl.getGrid();
+                
+                if (!grid) {
+                    updateDebug('✗ Grid not available');
+                    return null;
+                }
+
+                const rows = grid.getRows();
+                
+                if (!rows) {
+                    updateDebug('✗ Rows not available');
+                    return null;
+                }
+                
+                const rowCount = rows.getLength();
+                updateDebug(`Grid has ${rowCount} rows`);
+                
+                if (rowCount === 0) {
+                    updateDebug('✗ No rows in subgrid - try refreshing');
+                    return null;
+                }
+
+                const firstRow = rows.get(0);
+                const data = firstRow.getData();
+                const entity = data.getEntity();
+                
+                updateDebug('✓ Got first row entity');
+
+                const allAttributes = entity.attributes.get();
+                updateDebug(`Entity has ${allAttributes.length} attributes`);
+                
+                allAttributes.forEach(function(attr, index) {
+                    const attrName = attr.getName();
+                    const attrValue = attr.getValue();
+                    updateDebug(`  Attr[${index}]: ${attrName} = ${attrValue}`);
+                });
+
+                let pdfUrl = null;
+                let fileName = null;
+                
+                const urlAttributes = [
+                    'absoluteurl',
+                    'readurl',
+                    'editurl',
+                    'fullname',
+                    'locationurl',
+                    'relativelocation',
+                    'documentlocation'
+                ];
+
+                const nameAttributes = [
+                    'name',
+                    'filename',
+                    'documentname',
+                    'title'
+                ];
+                
+                // Get filename
+                for (let attrName of nameAttributes) {
+                    try {
+                        const attr = entity.attributes.get(attrName);
+                        if (attr && attr.getValue()) {
+                            fileName = attr.getValue();
+                            updateDebug(`✓ Found filename in attribute '${attrName}': ${fileName}`);
+                            break;
+                        }
+                    } catch (e) {
+                        // Continue
+                    }
+                }
+
+                // Get URL
+                for (let attrName of urlAttributes) {
+                    try {
+                        const attr = entity.attributes.get(attrName);
+                        if (attr && attr.getValue()) {
+                            let urlValue = attr.getValue();
+                            updateDebug(`✓ Found URL in attribute '${attrName}': ${urlValue}`);
+                            
+                            if (urlValue.startsWith('http://') || urlValue.startsWith('https://')) {
+                                pdfUrl = urlValue;
+                                break;
+                            } else if (urlValue && !pdfUrl) {
+                                pdfUrl = urlValue;
+                            }
+                        }
+                    } catch (e) {
+                        // Continue
+                    }
+                }
+                
+                if (pdfUrl) {
+                    if (pdfUrl.startsWith('http://') || pdfUrl.startsWith('https://')) {
+                        updateDebug(`✓ Using full URL: ${pdfUrl}`);
+                        return { url: pdfUrl, fileName: fileName };
+                    } else {
+                        const baseUrl = 'https://newbridge2.sharepoint.com/sites/GreenmanPolandDev';
+                        const fullUrl = `${baseUrl}/${pdfUrl}`;
+                        updateDebug(`✓ Constructed full URL: ${fullUrl}`);
+                        return { url: fullUrl, fileName: fileName };
+                    }
+                }
+                
+                updateDebug('✗ No URL found in any attribute');
+                return null;
+                
+            } catch (error) {
+                updateDebug('✗ Error getting PDF URL: ' + error.message);
+                updateDebug('Stack: ' + error.stack);
+                console.error('Error details:', error);
+                return null;
+            }
+        }
+
+        function showError(message, detail) {
+            const viewer = document.getElementById('pdfViewer');
+            const loading = document.getElementById('loadingIndicator');
+            if (loading) loading.style.display = 'none';
+            
+            const iframe = document.getElementById('pdfIframe');
+            iframe.style.display = 'none';
+            
+            // Remove any existing error
+            const existingError = viewer.querySelector('.error-message');
+            if (existingError) existingError.remove();
+            
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.innerHTML = `
+                <div class="error-icon">⚠️</div>
+                <div class="error-text">${message}</div>
+                <div class="error-detail">${detail}</div>
+            `;
+            viewer.appendChild(errorDiv);
+        }
+
+        function showLoading() {
+            const loading = document.getElementById('loadingIndicator');
+            const iframe = document.getElementById('pdfIframe');
+            
+            // Remove any existing error
+            const viewer = document.getElementById('pdfViewer');
+            const existingError = viewer.querySelector('.error-message');
+            if (existingError) existingError.remove();
+            
+            loading.style.display = 'flex';
+            iframe.style.display = 'none';
+        }
+
+        function loadPdfInIframe(pdfUrl, fileName) {
+            updateDebug('=== Loading PDF in iframe ===');
+            updateDebug(`URL: ${pdfUrl}`);
+
+            const iframe = document.getElementById('pdfIframe');
+            const loading = document.getElementById('loadingIndicator');
+
+            // Update title
+            if (fileName) {
+                document.getElementById('pdfTitle').textContent = fileName;
+            }
+
+            // Set iframe source
+            iframe.src = pdfUrl;
+
+            // Handle iframe load
+            iframe.onload = function() {
+                updateDebug('✓ PDF iframe loaded successfully');
+                loading.style.display = 'none';
+                iframe.style.display = 'block';
+            };
+
+            iframe.onerror = function() {
+                updateDebug('✗ Error loading PDF in iframe');
+                showError(
+                    'Unable to load PDF',
+                    'The PDF could not be loaded. This may be due to authentication or access restrictions. Try opening it in a new window.'
+                );
+            };
+
+            // Timeout fallback
+            setTimeout(function() {
+                if (iframe.style.display === 'none') {
+                    updateDebug('⚠ Iframe load timeout - showing anyway');
+                    loading.style.display = 'none';
+                    iframe.style.display = 'block';
+                }
+            }, 3000);
+        }
+
+        function initializePdfViewer() {
+            updateDebug('=== Initializing PDF Viewer ===');
+            
+            showLoading();
+            
+            // Disable buttons while loading
+            document.getElementById('openNewWindowBtn').disabled = true;
+            document.getElementById('downloadBtn').disabled = true;
+            
+            if (!getFormContext()) {
+                updateDebug('✗ Cannot proceed without form context');
+                showError('Form context not available', 'Please ensure this web resource is loaded within a Dynamics 365 form. Try clicking Refresh.');
+                return;
+            }
+
+            const result = getPdfUrlFromSubgrid();
+
+            if (!result || !result.url) {
+                updateDebug('✗ Could not retrieve PDF URL');
+                showError('PDF URL not found', 'Unable to locate the PDF document in the subgrid. The subgrid may still be loading. Click the Refresh button to try again.');
+                return;
+            }
+
+            const pdfUrl = result.url;
+            const fileName = result.fileName;
+
+            updateDebug(`=== Final PDF URL ===`);
+            updateDebug(pdfUrl);
+            if (fileName) {
+                updateDebug(`=== File Name ===`);
+                updateDebug(fileName);
+            }
+
+            // Enable and set up buttons
+            document.getElementById('openNewWindowBtn').disabled = false;
+            document.getElementById('openNewWindowBtn').onclick = function() {
+                updateDebug('Opening PDF in new window...');
+                window.open(pdfUrl, '_blank');
+            };
+
+            document.getElementById('downloadBtn').disabled = false;
+            document.getElementById('downloadBtn').onclick = function() {
+                updateDebug('Downloading PDF...');
+                window.open(pdfUrl, '_blank');
+            };
+
+            // Load the PDF in iframe
+            loadPdfInIframe(pdfUrl, fileName);
+        }
+
+       // =========================================================
+// Retry Logic - wait for subgrid to populate
+// =========================================================
+let retryCount = 0;
+const MAX_RETRIES = 10;
+const RETRY_INTERVAL = 1500;
+
+function initializeWithRetry() {
+    updateDebug(`=== Init attempt ${retryCount + 1} of ${MAX_RETRIES} ===`);
+
+    if (!getFormContext()) {
+        updateDebug('✗ Cannot proceed without form context');
+        showError('Form context not available', 'Please ensure this web resource is loaded within a Dynamics 365 form.');
+        return;
+    }
+
+    const subgridControl = formContext.getControl("Subgrid_new_4");
+
+    if (!subgridControl) {
+        updateDebug('✗ Subgrid control not found yet');
+        scheduleRetry();
+        return;
+    }
+
+    const grid = subgridControl.getGrid();
+    if (!grid) {
+        updateDebug('✗ Grid not ready yet');
+        scheduleRetry();
+        return;
+    }
+
+    const rows = grid.getRows();
+    const rowCount = rows ? rows.getLength() : 0;
+    updateDebug(`Grid has ${rowCount} rows`);
+
+    if (rowCount === 0) {
+        updateDebug('✗ Subgrid empty - retrying...');
+        scheduleRetry();
+        return;
+    }
+
+    // ✅ Rows found - proceed
+    retryCount = 0;
+    initializePdfViewer();
+}
+
+function scheduleRetry() {
+    retryCount++;
+    if (retryCount < MAX_RETRIES) {
+        updateDebug(`Retrying in ${RETRY_INTERVAL / 1000}s... (${retryCount}/${MAX_RETRIES})`);
+        setTimeout(initializeWithRetry, RETRY_INTERVAL);
+    } else {
+        updateDebug('✗ Max retries reached. Subgrid did not load.');
+        showError(
+            'PDF not found',
+            'The SharePoint subgrid did not load in time. Click Refresh to try again.'
+        );
+    }
+}
+
+function startup() {
+    document.getElementById('refreshBtn').onclick = function() {
+        updateDebug('=== MANUAL REFRESH TRIGGERED ===');
+        retryCount = 0;
+        initializeWithRetry();
+    };
+
+    setTimeout(initializeWithRetry, 2000);
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startup);
+} else {
+    startup();
+}
+    </script>
+</body>
+</html>
