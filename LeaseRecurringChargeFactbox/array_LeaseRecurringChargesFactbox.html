@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <title>Lease Recurring Charges Factbox</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #ffffff;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .invoice-box {
+      width: 100%;
+      height: 100%;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Loading state ── */
+    #factTableContainer {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+    }
+    #factTableContainer:not(.is-loading) .loading-placeholder { display: none; }
+    .loading-placeholder { display: none; }
+
+    /* ── 2-column body ── */
+    .lease-body {
+      display: grid;
+      grid-template-columns: 210px 1fr;
+      align-items: stretch;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    /* ── Panels ── */
+    .panel-left {
+      border-right: 1px solid #eaecf0;
+      padding: 0 14px 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: #fafbfc;
+      overflow-y: auto;
+      overflow-x: hidden;
+      background-clip: content-box;
+    }
+
+    .panel-mid {
+      padding: 0 18px 14px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      align-self: start;
+    }
+
+    /* Thin scrollbars for panels */
+    .panel-left::-webkit-scrollbar,
+    .panel-mid::-webkit-scrollbar { width: 4px; }
+    .panel-left::-webkit-scrollbar-thumb,
+    .panel-mid::-webkit-scrollbar-thumb { background: #d0d7e2; border-radius: 4px; }
+    .panel-left::-webkit-scrollbar-track,
+    .panel-mid::-webkit-scrollbar-track { background: transparent; }
+
+    /* ── Labels / Values ── */
+    .field-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #8fa0b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 2px;
+    }
+
+    .field-value {
+      font-size: 15px;
+      color: #1a2233;
+      font-weight: 500;
+      line-height: 1.4;
+    }
+
+    .field-value.large {
+      font-size: 20.5px;
+      font-weight: 700;
+      color: #1a2233;
+      line-height: 1.1;
+    }
+
+    .field-value.sentence {
+      font-size: 12.5px;
+      color: #4a5568;
+      font-weight: 400;
+      line-height: 1.45;
+    }
+
+    .field-value.green  { color: #2e7d32; font-weight: 700; }
+    .field-value.red    { color: #c62828; font-weight: 700; }
+    .field-value.orange { color: #ef6c00; font-weight: 700; }
+    .field-value.blue   { color: #1565c0; font-weight: 700; }
+    .field-value.purple { color: #6a1b9a; font-weight: 700; }
+
+    /* ── Divider ── */
+    .divider { height: 1px; background: #eaecf0; flex-shrink: 0; }
+
+    /* ── Section headings ── */
+    .section-heading {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: #8fa0b8;
+      margin-bottom: 5px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex-shrink: 0;
+    }
+    .section-heading::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #eaecf0;
+    }
+
+    /* ── Badges / Tags ── */
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 500;
+      border: 1px solid;
+    }
+    .tag-blue   { background: #e3f2fd; color: #1565c0; border-color: #90caf9; }
+    .tag-purple { background: #f3e5f5; color: #6a1b9a; border-color: #ce93d8; }
+    .tag-teal   { background: #e0f2f1; color: #00695c; border-color: #80cbc4; }
+    .tag-green  { background: #e8f5e9; color: #2e7d32; border-color: #a5d6a7; }
+
+    /* ── Expiry status badges ── */
+    .expiry-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 9px 3px 7px;
+      border-radius: 5px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid;
+      margin-top: 3px;
+      letter-spacing: 0.1px;
+      white-space: normal;
+      word-break: break-word;
+      max-width: 100%;
+      line-height: 1.4;
+    }
+    .expiry-badge::before {
+      content: '';
+      width: 7px;
+      height: 7px;
+      min-width: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      align-self: flex-start;
+      margin-top: 4px;
+    }
+
+    .eb-overdue        { background: #fffde7; color: #f9a825; border-color: #fff176; }
+    .eb-overdue::before        { background: #f9a825; }
+    .eb-atrisk         { background: #fff3e0; color: #e65100; border-color: #ffcc80; }
+    .eb-atrisk::before         { background: #fb8c00; }
+    .eb-highrisk       { background: #fbe9e7; color: #bf360c; border-color: #ffab91; }
+    .eb-highrisk::before       { background: #e53935; }
+    .eb-critical       { background: #fce4ec; color: #880e4f; border-color: #f48fb1; }
+    .eb-critical::before       { background: #b71c1c; }
+    .eb-expiring       { background: #f9fbe7; color: #827717; border-color: #e6ee9c; }
+    .eb-expiring::before       { background: #c6d426; }
+    .eb-active         { background: #e8f5e9; color: #2e7d32; border-color: #a5d6a7; }
+    .eb-active::before         { background: #43a047; }
+    .eb-notdue         { background: #f1f8e9; color: #33691e; border-color: #aed581; }
+    .eb-notdue::before         { background: #7cb342; }
+    .eb-paid           { background: #e0f7fa; color: #006064; border-color: #80deea; }
+    .eb-paid::before           { background: #00bcd4; }
+    .eb-cancelled      { background: #f5f5f5; color: #616161; border-color: #bdbdbd; }
+    .eb-cancelled::before      { background: #9e9e9e; }
+    .eb-leasebreakrisk { background: #fbe9e7; color: #bf360c; border-color: #ffab91; }
+    .eb-leasebreakrisk::before { background: #e53935; }
+
+    .tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 2px; }
+
+    /* ── Stat row (two-up) ── */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    .stat-item { display: flex; flex-direction: column; gap: 1px; }
+
+    /* ── Progress bar ── */
+    .bar-bg {
+      height: 5px;
+      background: #e8ecf1;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 3px;
+    }
+    .bar-fill { height: 100%; border-radius: 10px; }
+    .bar-green  { background: linear-gradient(90deg, #43a047, #81c784); }
+    .bar-orange { background: linear-gradient(90deg, #ef6c00, #ffb74d); }
+    .bar-red    { background: linear-gradient(90deg, #c62828, #ef9a9a); }
+
+    /* ── Deposit card rows ── */
+    .dep-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 0;
+    }
+    .dep-label { font-size: 12.5px; color: #4a5568; font-weight: 500; }
+    .dep-val   { font-size: 13px; font-weight: 700; font-family: 'DM Sans', sans-serif; }
+    .dep-val.green  { color: #2e7d32; }
+    .dep-val.red    { color: #c62828; }
+    .dep-val.blue   { color: #1565c0; }
+
+    .dep-sep { font-size: 11.5px; color: #c8d0dc; padding: 0 3px; }
+
+    /* ── Shimmer ── */
+    .loading-shimmer {
+      background: linear-gradient(90deg, #f0f2f5 25%, #e0e4ea 50%, #f0f2f5 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+      border-radius: 4px;
+      color: transparent !important;
+      user-select: none;
+    }
+    @keyframes shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* ── Progress label row ── */
+    .progress-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .progress-label-text {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: #8fa0b8;
+      white-space: nowrap;
+      min-width: 70px;
+    }
+    .progress-pct {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #4a5568;
+      min-width: 28px;
+      text-align: right;
+    }
+
+    /* ══════════════════════════════════════════════
+       RESPONSIVE — small screens
+    ══════════════════════════════════════════════ */
+
+    /* ── Narrow viewport ── */
+    @media (max-width: 480px) {
+      .lease-body {
+        grid-template-columns: 140px 1fr;
+      }
+
+      /* ↑ Increased gap and padding to fill extra vertical space from smaller fonts */
+      .panel-left {
+        padding: 6px 8px 18px 8px;
+        gap: 12px;
+      }
+
+      .panel-mid {
+        padding: 6px 10px 18px 10px;
+        gap: 14px;
+      }
+
+      .field-value.large {
+        font-size: 15px;
+      }
+
+      .field-value {
+        font-size: 13px;
+      }
+
+      #additionalChargesEUR,
+      #additionalChargesPLN {
+        font-size: 12px !important;
+      }
+
+      #depositRequired {
+        font-size: 11px !important;
+        word-break: break-word;
+      }
+
+      .expiry-badge {
+        font-size: 10.5px;
+        padding: 2px 6px 2px 5px;
+      }
+
+      #totalEUR, #totalPLN {
+        font-size: 13px !important;
+      }
+
+      #paidEUR, #paidPLN, #remEUR, #remPLN {
+        font-size: 12.5px !important;
+      }
+
+      .field-label {
+        font-size: 10px;
+        letter-spacing: 0.3px;
+      }
+
+      .section-heading {
+        font-size: 10px;
+        letter-spacing: 0.4px;
+        margin-bottom: 7px;
+      }
+
+      .stat-grid {
+        gap: 8px;
+      }
+
+      .dep-label { font-size: 11px; }
+      .dep-val   { font-size: 11.5px; }
+
+      /* ↑ More breathing room between deposit rows */
+      .dep-row {
+        padding: 6px 0;
+      }
+
+      .tag { font-size: 11px; padding: 1px 6px; }
+
+      .progress-label-text { font-size: 10px; min-width: 50px; }
+      .progress-pct        { font-size: 10px; }
+
+      /* ↑ More space above progress bar */
+      .progress-row {
+        margin-top: 10px;
+      }
+
+      .field-value.sentence {
+        font-size: 11px;
+        margin-top: 10px !important;
+      }
+    }
+
+    /* ── Very narrow (e.g. 320px Dynamics sidebar) ── */
+    @media (max-width: 360px) {
+      .lease-body {
+        grid-template-columns: 118px 1fr;
+      }
+
+      /* ↑ Same approach: larger gap/padding to fill space */
+      .panel-left {
+        padding: 6px 6px 20px 6px;
+        gap: 14px;
+      }
+
+      .panel-mid {
+        padding: 6px 8px 20px 8px;
+        gap: 16px;
+      }
+
+      .field-value.large {
+        font-size: 13px;
+      }
+
+      #totalEUR, #totalPLN {
+        font-size: 12px !important;
+      }
+
+      #depositRequired {
+        font-size: 10px !important;
+      }
+
+      .dep-row {
+        padding: 7px 0;
+      }
+
+      .stat-grid {
+        gap: 10px;
+      }
+    }
+
+    /* ── Wider: restore comfortable sizes ── */
+    @media (min-width: 560px) {
+      .lease-body {
+        grid-template-columns: 210px 1fr;
+      }
+    }
+
+    /* ── Medium band (480–560px): moderate left panel ── */
+    @media (min-width: 480px) and (max-width: 559px) {
+      .lease-body {
+        grid-template-columns: 170px 1fr;
+      }
+
+      /* ↑ Slightly more padding here too for balance */
+      .panel-left {
+        padding: 4px 10px 16px 10px;
+        gap: 10px;
+      }
+
+      .panel-mid  {
+        padding: 4px 12px 16px 12px;
+        gap: 12px;
+      }
+
+      .field-value.large { font-size: 17px; }
+
+      #totalEUR, #totalPLN { font-size: 14.5px !important; }
+      #paidEUR, #paidPLN, #remEUR, #remPLN { font-size: 13.5px !important; }
+
+      .field-label { font-size: 11px; }
+      .section-heading {
+        font-size: 11px;
+        margin-bottom: 6px;
+      }
+
+      .stat-grid { gap: 7px; }
+      .dep-row   { padding: 5px 0; }
+    }
+
+  </style>
+</head>
+
+<body>
+<div class="invoice-box">
+  <div id="factTableContainer" class="is-loading">
+
+    <!-- Loading placeholder -->
+    <div class="loading-placeholder">Loading recurring charges…</div>
+
+    <!-- Main layout — always visible; fields shimmer until data arrives -->
+    <div class="lease-body">
+
+      <!-- ── LEFT PANEL ── -->
+      <div class="panel-left">
+
+        <!-- Rent -->
+        <div>
+          <div class="field-label">Total Rent</div>
+          <div class="field-value large loading-shimmer" id="rentTotal" style="min-width:100px;">&nbsp;</div>
+        </div>
+
+        <!-- Next invoice -->
+        <div>
+          <div class="field-label">Next Invoice Day</div>
+          <div class="field-value blue loading-shimmer" id="upcomingRentDay" style="font-size:14.5px; min-width:80px;">&nbsp;</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Additional charges -->
+        <div>
+          <div class="field-label">Additional Charges</div>
+          <div class="field-value loading-shimmer" id="additionalChargesEUR" style="font-size:14px; min-width:90px; margin-bottom:4px;">&nbsp;</div>
+          <div class="field-value loading-shimmer" id="additionalChargesPLN" style="font-size:14px; min-width:90px;">&nbsp;</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Deposit required -->
+        <div>
+          <div class="field-label">Deposit Required</div>
+          <div class="field-value loading-shimmer" id="depositRequired" style="font-size:13.5px; font-weight:700; min-width:110px;">&nbsp;</div>
+        </div>
+
+        <!-- Expiry Status -->
+        <div>
+          <div class="field-label">Expiry Status</div>
+          <div id="expiryStatusBadge" class="loading-shimmer" style="min-width:90px; height:24px; border-radius:5px;">&nbsp;</div>
+        </div>
+      </div>
+
+      <!-- ── MID PANEL ── -->
+      <div class="panel-mid">
+
+        <!-- Invoice totals -->
+        <div>
+          <div class="section-heading">Total Invoiced Amount</div>
+          <div class="stat-grid">
+            <div class="stat-item">
+              <div class="field-label">EUR</div>
+              <div class="field-value loading-shimmer" id="totalEUR" style="font-size:16.5px; font-weight:700; min-width:100px;">&nbsp;</div>
+            </div>
+            <div class="stat-item">
+              <div class="field-label">PLN</div>
+              <div class="field-value loading-shimmer" id="totalPLN" style="font-size:16.5px; font-weight:700; min-width:100px;">&nbsp;</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Paid / Remaining -->
+        <div>
+          <div class="section-heading">Payment Summary</div>
+          <div class="stat-grid">
+            <div class="stat-item">
+              <div class="field-label">Amount Paid · EUR</div>
+              <div class="field-value loading-shimmer" id="paidEUR" style="font-size:15.5px; min-width:90px;">&nbsp;</div>
+            </div>
+            <div class="stat-item">
+              <div class="field-label">Amount Paid · PLN</div>
+              <div class="field-value loading-shimmer" id="paidPLN" style="font-size:15.5px; min-width:90px;">&nbsp;</div>
+            </div>
+            <div class="stat-item">
+              <div class="field-label">Remaining · EUR</div>
+              <div class="field-value loading-shimmer" id="remEUR" style="font-size:15.5px; min-width:90px;">&nbsp;</div>
+            </div>
+            <div class="stat-item">
+              <div class="field-label">Remaining · PLN</div>
+              <div class="field-value loading-shimmer" id="remPLN" style="font-size:15.5px; min-width:90px;">&nbsp;</div>
+            </div>
+          </div>
+
+          <!-- Progress bar (EUR paid %) -->
+          <div class="progress-row" style="margin-top:8px;">
+            <span class="progress-label-text">EUR Paid</span>
+            <div class="bar-bg" style="flex:1;">
+              <div class="bar-fill bar-green loading-shimmer" id="paidBar" style="width:60%"></div>
+            </div>
+            <span class="progress-pct loading-shimmer" id="paidPct" style="min-width:28px;">&nbsp;</span>
+          </div>
+
+          <!-- Description sentence -->
+          <div class="field-value sentence loading-shimmer" id="paymentSentence" style="margin-top:8px; min-width:100%; height:30px;">&nbsp;</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- ── DEPOSIT BREAKDOWN ── -->
+        <div>
+          <div class="section-heading">Deposit Breakdown</div>
+          <div class="deposit-inner-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:2px;">
+
+            <!-- EUR block -->
+            <div>
+              <div class="tags" style="margin-bottom:5px;">
+                <span class="tag tag-blue">EUR</span>
+              </div>
+              <div class="dep-row">
+                <span class="dep-label">Required</span>
+                <span class="dep-val loading-shimmer" id="depReqEUR" style="min-width:60px;">&nbsp;</span>
+              </div>
+              <div class="dep-row">
+                <span class="dep-label">Received</span>
+                <span class="dep-val loading-shimmer" id="depRecEUR" style="min-width:60px;">&nbsp;</span>
+              </div>
+              <div class="dep-row" style="border-top:1px solid #eaecf0; padding-top:5px; margin-top:2px;">
+                <span class="dep-label" style="font-weight:600;">Due</span>
+                <span class="dep-val loading-shimmer" id="depDueEUR" style="min-width:60px;">&nbsp;</span>
+              </div>
+            </div>
+
+            <!-- PLN block -->
+            <div>
+              <div class="tags" style="margin-bottom:5px;">
+                <span class="tag tag-teal">PLN</span>
+              </div>
+              <div class="dep-row">
+                <span class="dep-label">Required</span>
+                <span class="dep-val loading-shimmer" id="depReqPLN" style="min-width:60px;">&nbsp;</span>
+              </div>
+              <div class="dep-row">
+                <span class="dep-label">Received</span>
+                <span class="dep-val loading-shimmer" id="depRecPLN" style="min-width:60px;">&nbsp;</span>
+              </div>
+              <div class="dep-row" style="border-top:1px solid #eaecf0; padding-top:5px; margin-top:2px;">
+                <span class="dep-label" style="font-weight:600;">Due</span>
+                <span class="dep-val loading-shimmer" id="depDuePLN" style="min-width:60px;">&nbsp;</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div><!-- /.panel-mid -->
+    </div><!-- /.lease-body -->
+
+  </div><!-- /#factTableContainer -->
+</div>
+
+<script>
+  // ============================================================================
+  // EXPIRY STATUS MAP
+  // ============================================================================
+  var EXPIRY_MAP = {
+    126330000: { label: "Overdue",          cls: "eb-overdue"        },
+    126330001: { label: "At Risk",          cls: "eb-atrisk"         },
+    126330002: { label: "High Risk",        cls: "eb-highrisk"       },
+    126330003: { label: "Critical",         cls: "eb-critical"       },
+    126330004: { label: "Expiring Soon",    cls: "eb-expiring"       },
+    126330005: { label: "Active",           cls: "eb-active"         },
+    126330006: { label: "Not Due",          cls: "eb-notdue"         },
+    126330007: { label: "Paid",             cls: "eb-paid"           },
+    126330008: { label: "Cancelled",        cls: "eb-cancelled"      },
+    126330009: { label: "Lease Break Risk", cls: "eb-leasebreakrisk" }
+  };
+
+  // ============================================================================
+  // CONFIGURATION
+  // ============================================================================
+  var RECURRING_CHARGE_CONFIG = {
+    entityName: "array_recurringcharge",
+    lookupFieldName: "array_leaseagreement",
+    amountFieldName: "array_amount",
+    frequencyFieldName: "array_frequency",
+    chargeIdFieldName: "array_recurringchargeid",
+    currencyFieldName: "transactioncurrencyid",
+    chargeTypeFieldName: "array_chargetype",
+    upcomingInvoiceDayFieldName: "array_upcominginvoicegenerationday",
+    depositEntityName: "array_deposit",
+    depositAmountFieldName: "array_requiredamount",
+    depositReceivedFieldName: "array_amountreceived",
+    depositLookupFieldName: "array_leaseagreement",
+    depositCurrencyNavProperty: "array_RequiredAmountCurrency",
+    totalAmountFieldName: "array_totalamount",
+    amountPaidFieldName: "array_amountpaid",
+    remainingAmountFieldName: "array_remainingamount",
+    transactionCurrencyIdFieldName: "_transactioncurrencyid_value",
+    collateralConfigEntityName: "array_collateralconfiguration",
+    collateralConfigTypeFieldName: "array_type",
+    collateralConfigRuleFieldName: "_array_rule_value",
+    collateralConfigCoefficient: "array_coefficient",
+    collateralDepositTypeValue: 126330007,
+    collateralRuleEntityName: "array_collateralcalculationrule",
+    collateralRuleChargeTypeField: "_array_chargetype_value",
+    collateralRuleLeaseField: "_array_leaseagreement_value",
+  };
+
+  var ENV_VAR_SCHEMA = {
+    rentChargeTypeGUID: "array_RentChargeTypeGUID",
+    serviceChargeChargeTypeGUID: "array_ServiceChargeChargeTypeGUID",
+  };
+
+  var RESOLVED_GUIDS = {
+    rentChargeTypeGUID: null,
+    serviceChargeTypeGUID: null,
+  };
+
+  // ============================================================================
+  // ENVIRONMENT VARIABLE FETCH
+  // ============================================================================
+
+  function fetchEnvironmentVariable(schemaName) {
+    return new Promise(function (resolve) {
+      try {
+        var Xrm = window.parent && window.parent.Xrm;
+        if (!Xrm) { resolve(null); return; }
+
+        var query = [
+          "?$filter=schemaname eq '" + schemaName + "'",
+          "&$select=environmentvariabledefinitionid,defaultvalue,schemaname",
+          "&$expand=environmentvariabledefinition_environmentvariablevalue($select=value)",
+        ].join("");
+
+        Xrm.WebApi.retrieveMultipleRecords("environmentvariabledefinition", query)
+          .then(function (result) {
+            if (!result.entities || result.entities.length === 0) { resolve(null); return; }
+            var def = result.entities[0];
+            var valueRecords = def["environmentvariabledefinition_environmentvariablevalue"] || [];
+            var resolvedValue = null;
+            if (valueRecords.length > 0 && valueRecords[0].value) {
+              resolvedValue = valueRecords[0].value;
+            } else if (def.defaultvalue) {
+              resolvedValue = def.defaultvalue;
+            }
+            resolve(resolvedValue);
+          })
+          .catch(function (err) { resolve(null); });
+      } catch (e) { resolve(null); }
+    });
+  }
+
+  function initializeEnvironmentVariables() {
+    return Promise.all([
+      fetchEnvironmentVariable(ENV_VAR_SCHEMA.rentChargeTypeGUID),
+      fetchEnvironmentVariable(ENV_VAR_SCHEMA.serviceChargeChargeTypeGUID),
+    ]).then(function (values) {
+      RESOLVED_GUIDS.rentChargeTypeGUID = values[0];
+      RESOLVED_GUIDS.serviceChargeTypeGUID = values[1];
+    });
+  }
+
+  // ============================================================================
+  // DISPLAY FUNCTIONS
+  // ============================================================================
+
+  window.openRecord = function (guid) {
+    if (!guid) return;
+    try {
+      if (window.parent && window.parent.Xrm && window.parent.Xrm.Navigation) {
+        var entityFormOptions = {};
+        entityFormOptions["entityName"] = RECURRING_CHARGE_CONFIG.entityName;
+        entityFormOptions["entityId"] = guid;
+        entityFormOptions["openInNewWindow"] = true;
+        window.parent.Xrm.Navigation.openForm(entityFormOptions).catch(function (e) {});
+      }
+    } catch (e) {}
+  };
+
+  window.updateFactboxDisplay = function (payload) {
+    try {
+      var container = document.getElementById("factTableContainer");
+
+      if (!payload) {
+        container.classList.remove("is-loading");
+        document.getElementById("rentTotal").textContent = "—";
+        return;
+      }
+
+      var rentTotal          = payload.rentTotal || 0;
+      var chargesByCurrency  = payload.chargesByCurrency || {};
+      var depositEUR         = payload.depositEUR || 0;
+      var depositPLN         = payload.depositPLN || 0;
+      var depositReceivedEUR = payload.depositReceivedEUR || 0;
+      var depositReceivedPLN = payload.depositReceivedPLN || 0;
+      var depositDueEUR      = payload.depositDueEUR || 0;
+      var depositDuePLN      = payload.depositDuePLN || 0;
+      var depositRequiredEUR = payload.depositRequiredEUR || 0;
+      var depositRequiredPLN = payload.depositRequiredPLN || 0;
+      var currencySymbol     = payload.currencySymbol || "EUR";
+      var rentCurrency       = payload.rentCurrency || currencySymbol;
+      var upcomingRentDay    = payload.upcomingRentDay;
+      var totalEUR = payload.totalEUR || 0;
+      var paidEUR  = payload.paidEUR  || 0;
+      var remEUR   = payload.remEUR   || 0;
+      var totalPLN = payload.totalPLN || 0;
+      var paidPLN  = payload.paidPLN  || 0;
+      var remPLN   = payload.remPLN   || 0;
+
+      function reveal(id, text) {
+        var el = document.getElementById(id);
+        el.classList.remove("loading-shimmer");
+        el.textContent = text;
+        el.style.minWidth = "";
+        el.style.height = "";
+      }
+
+      // ── LEFT PANEL ──
+      reveal("rentTotal", rentTotal > 0 ? formatCurrency(rentTotal, rentCurrency) : "—");
+      reveal("upcomingRentDay", upcomingRentDay || "—");
+
+      var addEUREl = document.getElementById("additionalChargesEUR");
+      addEUREl.classList.remove("loading-shimmer");
+      addEUREl.textContent = chargesByCurrency["EUR"] ? formatCurrency(chargesByCurrency["EUR"], "EUR") : "—";
+      addEUREl.style.minWidth = "";
+
+      var addPLNEl = document.getElementById("additionalChargesPLN");
+      addPLNEl.classList.remove("loading-shimmer");
+      addPLNEl.textContent = chargesByCurrency["PLN"] ? formatCurrency(chargesByCurrency["PLN"], "PLN") : "—";
+      addPLNEl.style.minWidth = "";
+
+      var depReqEl = document.getElementById("depositRequired");
+      depReqEl.classList.remove("loading-shimmer");
+      depReqEl.textContent = formatCurrency(depositRequiredEUR, "EUR") + " · " + formatCurrency(depositRequiredPLN, "PLN");
+      depReqEl.style.minWidth = "";
+
+      // ── EXPIRY STATUS BADGE ──
+      var badgeEl = document.getElementById("expiryStatusBadge");
+      badgeEl.classList.remove("loading-shimmer");
+      badgeEl.style.minWidth = "";
+      badgeEl.style.height = "";
+
+      var expiryStatusVal = payload.expiryStatusVal;
+      var expiryStatusFmt = payload.expiryStatusFmt;
+      var daysRemaining   = payload.daysRemaining;
+
+      if (expiryStatusVal !== null && expiryStatusVal !== undefined) {
+        var info     = EXPIRY_MAP[expiryStatusVal] || null;
+        var badgeCls = info ? info.cls : "eb-active";
+        var label    = expiryStatusFmt || (info ? info.label : "Active");
+        var daysStr  = (daysRemaining !== null && daysRemaining !== undefined)
+                       ? " (" + daysRemaining + " days)" : "";
+        badgeEl.className   = "expiry-badge " + badgeCls;
+        badgeEl.textContent = label + daysStr;
+      } else {
+        badgeEl.className = "";
+        badgeEl.style.fontSize  = "13px";
+        badgeEl.style.color     = "#8fa0b8";
+        badgeEl.textContent     = "—";
+      }
+
+      // ── MID PANEL ──
+      reveal("totalEUR", formatCurrency(totalEUR, "EUR"));
+      reveal("totalPLN", formatCurrency(totalPLN, "PLN"));
+      reveal("paidEUR",  formatCurrency(paidEUR,  "EUR"));
+      reveal("paidPLN",  formatCurrency(paidPLN,  "PLN"));
+      reveal("remEUR",   formatCurrency(remEUR,   "EUR"));
+      reveal("remPLN",   formatCurrency(remPLN,   "PLN"));
+
+      var paidPct = totalEUR > 0 ? Math.min(100, Math.round((paidEUR / totalEUR) * 100)) : 0;
+      var paidBarEl = document.getElementById("paidBar");
+      paidBarEl.classList.remove("loading-shimmer");
+      paidBarEl.style.width = paidPct + "%";
+      paidBarEl.className   = "bar-fill " + (paidPct >= 90 ? "bar-green" : paidPct >= 50 ? "bar-orange" : "bar-red");
+
+      var paidPctEl = document.getElementById("paidPct");
+      paidPctEl.classList.remove("loading-shimmer");
+      paidPctEl.textContent = paidPct + "%";
+      paidPctEl.style.minWidth = "";
+
+      var sentence = "—";
+      if (totalEUR > 0 || totalPLN > 0) {
+        sentence = "Lease agreement with a total invoiced value of " +
+          formatCurrency(totalEUR, "EUR") + " / " + formatCurrency(totalPLN, "PLN") + ". " +
+          formatCurrency(paidEUR, "EUR") + " has been paid so far (" + paidPct + "%), with " +
+          formatCurrency(remEUR, "EUR") + " remaining.";
+        if (rentTotal > 0) sentence += " Monthly rent is " + formatCurrency(rentTotal, rentCurrency) + ".";
+        if (upcomingRentDay) sentence += " Next invoice due on " + upcomingRentDay + ".";
+      }
+      var sentenceEl = document.getElementById("paymentSentence");
+      sentenceEl.classList.remove("loading-shimmer");
+      sentenceEl.textContent = sentence;
+      sentenceEl.style.minWidth = "";
+      sentenceEl.style.height = "";
+
+      // ── DEPOSIT BREAKDOWN ──
+      reveal("depReqEUR", formatCurrency(depositRequiredEUR, "EUR"));
+      reveal("depRecEUR", formatCurrency(depositReceivedEUR, "EUR"));
+      reveal("depDueEUR", formatCurrency(depositDueEUR, "EUR"));
+
+      reveal("depReqPLN", formatCurrency(depositRequiredPLN, "PLN"));
+      reveal("depRecPLN", formatCurrency(depositReceivedPLN, "PLN"));
+      reveal("depDuePLN", formatCurrency(depositDuePLN, "PLN"));
+
+      container.classList.remove("is-loading");
+
+    } catch (e) {
+      console.error("Factbox display error:", e);
+    }
+  };
+
+  // ============================================================================
+  // DATA FETCHING
+  // ============================================================================
+
+  function fmt(amount) {
+    return Number(amount).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
+
+  function fetchRecurringCharges() {
+    try {
+      if (!window.parent || !window.parent.Xrm) { console.error("Xrm not available"); return; }
+
+      var Xrm = window.parent.Xrm;
+      var formContext = Xrm.Page;
+      var leaseAgreementId = formContext.data.entity.getId();
+
+      if (!leaseAgreementId) { console.log("Lease Agreement ID not available yet"); return; }
+
+      leaseAgreementId = leaseAgreementId.replace(/[{}]/g, "");
+      var config = RECURRING_CHARGE_CONFIG;
+      var currencySymbol = getCurrencySymbol(formContext);
+
+      var aggregateFetch = [
+        "<fetch aggregate='true'>",
+        "  <entity name='" + config.entityName + "'>",
+        "    <attribute name='" + config.amountFieldName + "' alias='totalsum'   aggregate='sum'   />",
+        "    <attribute name='" + config.chargeIdFieldName + "' alias='totalcount' aggregate='count' />",
+        "    <filter>",
+        "      <condition attribute='" + config.lookupFieldName + "' operator='eq' value='" + leaseAgreementId + "' />",
+        "      <condition attribute='statecode' operator='eq' value='0' />",
+        "    </filter>",
+        "  </entity>",
+        "</fetch>",
+      ].join("");
+
+      Xrm.WebApi.retrieveMultipleRecords(config.entityName, "?fetchXml=" + encodeURIComponent(aggregateFetch))
+        .then(function (aggregateResult) {
+          var totalSum = parseFloat(aggregateResult.entities[0].totalsum) || 0;
+          var totalCount = parseInt(aggregateResult.entities[0].totalcount) || 0;
+
+          var detailFetch = [
+            "<fetch>",
+            "  <entity name='" + config.entityName + "'>",
+            "    <attribute name='" + config.chargeIdFieldName + "' />",
+            "    <attribute name='" + config.amountFieldName + "' />",
+            "    <attribute name='" + config.frequencyFieldName + "' />",
+            "    <attribute name='" + config.currencyFieldName + "' />",
+            "    <attribute name='" + config.chargeTypeFieldName + "' />",
+            "    <attribute name='" + config.upcomingInvoiceDayFieldName + "' />",
+            "    <link-entity name='transactioncurrency' from='transactioncurrencyid' to='" + config.currencyFieldName + "' alias='rentcurrency'>",
+            "      <attribute name='isocurrencycode' />",
+            "    </link-entity>",
+            "    <filter>",
+            "      <condition attribute='" + config.lookupFieldName + "' operator='eq' value='" + leaseAgreementId + "' />",
+            "      <condition attribute='statecode' operator='eq' value='0' />",
+            "    </filter>",
+            "    <order attribute='" + config.amountFieldName + "' descending='true' />",
+            "  </entity>",
+            "</fetch>",
+          ].join("");
+
+          return Xrm.WebApi.retrieveMultipleRecords(config.entityName, "?fetchXml=" + encodeURIComponent(detailFetch))
+            .then(function (detailResult) {
+              return { totalSum: totalSum, totalCount: totalCount, details: detailResult.entities };
+            });
+        })
+        .then(function (data) {
+          var rentTotal = 0;
+          var chargesByCurrency = {};
+          var rentInvoiceDays = [];
+          var rentCurrency = currencySymbol;
+          var rentGUID = normalizeGuid(RESOLVED_GUIDS.rentChargeTypeGUID);
+
+          data.details.forEach(function (record) {
+            var amount = parseFloat(record[config.amountFieldName]) || 0;
+            var upcomingDay = record[config.upcomingInvoiceDayFieldName];
+            var recordCurrency = record["rentcurrency.isocurrencycode"] || currencySymbol;
+            var chargeTypeGuid = normalizeGuid(record["_" + config.chargeTypeFieldName + "_value"]);
+            var isRent = rentGUID && chargeTypeGuid === rentGUID;
+
+            if (isRent) {
+              rentTotal += amount;
+              if (rentCurrency === currencySymbol) rentCurrency = recordCurrency;
+              if (upcomingDay) rentInvoiceDays.push(new Date(upcomingDay));
+            } else {
+              if (!chargesByCurrency[recordCurrency]) chargesByCurrency[recordCurrency] = 0;
+              chargesByCurrency[recordCurrency] += amount;
+            }
+          });
+
+          var upcomingRentDay = null;
+          if (rentInvoiceDays.length > 0) {
+            rentInvoiceDays.sort(function (a, b) { return a - b; });
+            upcomingRentDay = formatDate(rentInvoiceDays[0]);
+          }
+
+          return { rentTotal: rentTotal, chargesByCurrency: chargesByCurrency, rentCurrency: rentCurrency, upcomingRentDay: upcomingRentDay };
+        })
+        .then(function (chargesData) {
+          return Xrm.WebApi.retrieveRecord(
+            "array_leaseagreement",
+            leaseAgreementId,
+            "?$select=array_totalamounteuro,array_amountpaideuro,array_remainingamounteuro," +
+            "array_totalamountpln,array_amountpaidpln,array_remainingamountpln," +
+            "_transactioncurrencyid_value,array_expirystatus,array_leasedaysremaining"
+          ).then(function (leaseData) {
+            var totalEUR = leaseData.array_totalamounteuro || 0;
+            var paidEUR  = leaseData.array_amountpaideuro  || 0;
+            var remEUR   = leaseData.array_remainingamounteuro || 0;
+            var totalPLN = leaseData.array_totalamountpln  || 0;
+            var paidPLN  = leaseData.array_amountpaidpln   || 0;
+            var remPLN   = leaseData.array_remainingamountpln || 0;
+            var leaCurrencyId = leaseData._transactioncurrencyid_value;
+            var expiryStatusVal = leaseData["array_expirystatus"];
+            var expiryStatusFmt = leaseData["array_expirystatus@OData.Community.Display.V1.FormattedValue"] || null;
+            var daysRemaining   = leaseData["array_leasedaysremaining"];
+
+            return fetchCurrencySymbol(leaCurrencyId).then(function (leaCurrencySymbol) {
+              return {
+                totalEUR: totalEUR, paidEUR: paidEUR, remEUR: remEUR,
+                totalPLN: totalPLN, paidPLN: paidPLN, remPLN: remPLN,
+                chargesData: chargesData, leaCurrencySymbol: leaCurrencySymbol,
+                expiryStatusVal: expiryStatusVal, expiryStatusFmt: expiryStatusFmt, daysRemaining: daysRemaining,
+              };
+            });
+          });
+        })
+        .then(function (combinedData) {
+          fetchDeposits(
+            leaseAgreementId, currencySymbol,
+            function (depositEUR, depositPLN, receivedEUR, receivedPLN, depositDueEUR, depositDuePLN, requiredEUR, requiredPLN) {
+              window.updateFactboxDisplay({
+                rentTotal: combinedData.chargesData.rentTotal,
+                chargesByCurrency: combinedData.chargesData.chargesByCurrency,
+                depositEUR: depositEUR, depositPLN: depositPLN,
+                depositReceivedEUR: receivedEUR, depositReceivedPLN: receivedPLN,
+                depositDueEUR: depositDueEUR, depositDuePLN: depositDuePLN,
+                depositRequiredEUR: requiredEUR, depositRequiredPLN: requiredPLN,
+                currencySymbol: currencySymbol,
+                rentCurrency: combinedData.chargesData.rentCurrency,
+                upcomingRentDay: combinedData.chargesData.upcomingRentDay,
+                totalEUR: combinedData.totalEUR, paidEUR: combinedData.paidEUR, remEUR: combinedData.remEUR,
+                totalPLN: combinedData.totalPLN, paidPLN: combinedData.paidPLN, remPLN: combinedData.remPLN,
+                leaCurrencySymbol: combinedData.leaCurrencySymbol,
+                expiryStatusVal: combinedData.expiryStatusVal,
+                expiryStatusFmt: combinedData.expiryStatusFmt,
+                daysRemaining: combinedData.daysRemaining,
+              });
+            }
+          );
+        })
+        .catch(function (error) {
+          console.error("Error fetching recurring charges:", error);
+          window.updateFactboxDisplay({
+            rentTotal: 0, chargesByCurrency: {},
+            depositEUR: 0, depositPLN: 0,
+            depositReceivedEUR: 0, depositReceivedPLN: 0,
+            depositDueEUR: 0, depositDuePLN: 0,
+            depositRequiredEUR: 0, depositRequiredPLN: 0,
+            currencySymbol: currencySymbol, rentCurrency: currencySymbol,
+            upcomingRentDay: null,
+            totalEUR: 0, paidEUR: 0, remEUR: 0,
+            totalPLN: 0, paidPLN: 0, remPLN: 0,
+            leaCurrencySymbol: currencySymbol,
+            expiryStatusVal: null, expiryStatusFmt: null, daysRemaining: null,
+          });
+        });
+    } catch (error) {
+      console.error("Error in fetchRecurringCharges:", error);
+    }
+  }
+
+  // ============================================================================
+  // DEPOSIT CALCULATION
+  // ============================================================================
+
+  async function calculateRequiredDepositForFactbox(leaseId) {
+    var Xrm = window.parent.Xrm;
+    var config = RECURRING_CHARGE_CONFIG;
+    var result = { EUR: 0, PLN: 0 };
+
+    var configResult = await Xrm.WebApi.retrieveMultipleRecords(
+      config.collateralConfigEntityName,
+      "?$select=" + config.collateralConfigRuleFieldName +
+      "&$filter=statecode eq 0 and " + config.collateralConfigTypeFieldName + " eq " + config.collateralDepositTypeValue
+    );
+
+    if (!configResult.entities || configResult.entities.length === 0) return result;
+
+    var configPromises = configResult.entities.map(async function (cfg) {
+      var ruleId = cfg[config.collateralConfigRuleFieldName];
+      if (!ruleId) return;
+
+      var rule;
+      try {
+        rule = await Xrm.WebApi.retrieveRecord(
+          config.collateralRuleEntityName, ruleId,
+          "?$select=" + config.collateralRuleChargeTypeField +
+          "," + config.collateralRuleLeaseField +
+          "," + config.collateralConfigCoefficient + ",statecode"
+        );
+      } catch (e) { return; }
+
+      if (rule.statecode !== 0) return;
+
+      var ruleLeaseId = (rule[config.collateralRuleLeaseField] || "").replace(/[{}]/g, "").toLowerCase();
+      if (ruleLeaseId !== leaseId.toLowerCase()) return;
+
+      var coefficient = parseFloat(rule[config.collateralConfigCoefficient]) || 0;
+      var chargeTypeId = rule[config.collateralRuleChargeTypeField];
+      if (!chargeTypeId || coefficient === 0) return;
+
+      var chargeResult = await Xrm.WebApi.retrieveMultipleRecords(
+        config.entityName,
+        "?$select=" + config.amountFieldName +
+        "&$expand=transactioncurrencyid($select=isocurrencycode)" +
+        "&$filter=_" + config.lookupFieldName + "_value eq " + leaseId +
+        " and _" + config.chargeTypeFieldName + "_value eq " + chargeTypeId +
+        " and statecode eq 0"
+      );
+
+      if (!chargeResult.entities || chargeResult.entities.length === 0) return;
+
+      chargeResult.entities.forEach(function (charge) {
+        var amount = parseFloat(charge[config.amountFieldName]) || 0;
+        var currency = (charge["transactioncurrencyid"] && charge["transactioncurrencyid"]["isocurrencycode"]) || "";
+        if (currency === "EUR") result.EUR += amount * coefficient;
+        else if (currency === "PLN") result.PLN += amount * coefficient;
+      });
+    });
+
+    await Promise.all(configPromises);
+    return result;
+  }
+
+  async function fetchDeposits(leaseAgreementId, currencySymbol, callback) {
+    try {
+      if (!window.parent || !window.parent.Xrm) { callback(0, 0, 0, 0, 0, 0, 0, 0); return; }
+
+      var Xrm = window.parent.Xrm;
+      var config = RECURRING_CHARGE_CONFIG;
+
+      var depositFetchPromise = Xrm.WebApi.retrieveMultipleRecords(
+        config.depositEntityName,
+        "?$select=" + config.depositAmountFieldName + "," + config.depositReceivedFieldName +
+        "&$expand=" + config.depositCurrencyNavProperty + "($select=isocurrencycode)" +
+        "&$filter=_" + config.depositLookupFieldName + "_value eq " + leaseAgreementId + " and statecode eq 0"
+      );
+
+      var requiredPromise = calculateRequiredDepositForFactbox(leaseAgreementId);
+      var depositResult = await depositFetchPromise;
+      var required = await requiredPromise;
+
+      var depositEUR = 0, depositPLN = 0, receivedEUR = 0, receivedPLN = 0;
+
+      depositResult.entities.forEach(function (record) {
+        var depositAmount = parseFloat(record[config.depositAmountFieldName]) || 0;
+        var amountReceived = parseFloat(record[config.depositReceivedFieldName]) || 0;
+        var depositIso = (record[config.depositCurrencyNavProperty] && record[config.depositCurrencyNavProperty]["isocurrencycode"]) || "";
+        if (depositIso === "EUR") { depositEUR += depositAmount; receivedEUR += amountReceived; }
+        else if (depositIso === "PLN") { depositPLN += depositAmount; receivedPLN += amountReceived; }
+      });
+
+      var requiredEUR = required?.EUR || 0;
+      var requiredPLN = required?.PLN || 0;
+      var depositDueEUR = Math.max(0, requiredEUR - receivedEUR);
+      var depositDuePLN = Math.max(0, requiredPLN - receivedPLN);
+
+      callback(depositEUR, depositPLN, receivedEUR, receivedPLN, depositDueEUR, depositDuePLN, requiredEUR, requiredPLN);
+    } catch (error) {
+      console.error("Error in fetchDeposits:", error);
+      callback(0, 0, 0, 0, 0, 0, 0, 0);
+    }
+  }
+
+  // ============================================================================
+  // UTILITY FUNCTIONS
+  // ============================================================================
+
+  function normalizeGuid(guid) {
+    if (!guid) return null;
+    return String(guid).replace(/[{}]/g, "").toLowerCase().trim();
+  }
+
+  function fetchCurrencySymbol(currencyId) {
+    return new Promise(function (resolve) {
+      if (!currencyId) { resolve("EUR"); return; }
+      try {
+        window.parent.Xrm.WebApi.retrieveRecord("transactioncurrency", currencyId, "?$select=isocurrencycode")
+          .then(function (result) { resolve(result.isocurrencycode || "EUR"); })
+          .catch(function (e) { resolve("EUR"); });
+      } catch (e) { resolve("EUR"); }
+    });
+  }
+
+  function formatCurrency(amount, currencyCode) {
+    try {
+      if (amount === null || amount === undefined) amount = 0;
+      var formattedNumber = Number(amount).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+      var currencyFormats = {
+        EUR: { symbol: "€", position: "before" },
+        PLN: { symbol: "zł", position: "after" },
+        USD: { symbol: "$", position: "before" },
+        GBP: { symbol: "£", position: "before" },
+      };
+      var format = currencyFormats[currencyCode] || { symbol: currencyCode, position: "before" };
+      return format.position === "after"
+        ? formattedNumber + " " + format.symbol
+        : format.symbol + formattedNumber;
+    } catch (e) {
+      return (currencyCode || "EUR") + " " + Number(amount).toFixed(2);
+    }
+  }
+
+  function formatDate(date) {
+    try {
+      if (!date) return null;
+      var d = new Date(date);
+      var day = String(d.getDate()).padStart(2, "0");
+      var month = String(d.getMonth() + 1).padStart(2, "0");
+      var year = d.getFullYear();
+      return month + "/" + day + "/" + year;
+    } catch (e) { return null; }
+  }
+
+  function getCurrencySymbol(formContext) {
+    try {
+      var currencyLookup = formContext.getAttribute("transactioncurrencyid");
+      if (currencyLookup && currencyLookup.getValue()) return "EUR";
+    } catch (error) {}
+    return "EUR";
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (m) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m];
+    });
+  }
+
+  // ============================================================================
+  // INITIALIZATION
+  // ============================================================================
+
+  window.addEventListener("load", function () {
+    setTimeout(function () {
+      initializeEnvironmentVariables()
+        .then(function () { fetchRecurringCharges(); })
+        .catch(function (err) { fetchRecurringCharges(); });
+    }, 500);
+  });
+
+  window.refreshFactbox = function () {
+    initializeEnvironmentVariables().then(function () { fetchRecurringCharges(); });
+  };
+</script>
+</body>
+</html>
