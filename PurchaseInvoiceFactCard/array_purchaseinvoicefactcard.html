@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Purchase Invoice Info Box</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #ffffff;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .invoice-box {
+    width: 100%;
+    height: 100vh;
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .body {
+    display: grid;
+    grid-template-columns: 210px 1fr 230px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .panel-left {
+    border-right: 1px solid #eaecf0;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: #fafbfc;
+    min-width: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .panel-mid {
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .panel-right {
+    border-left: 1px solid #eaecf0;
+    padding: 16px;
+    background: #fafbfc;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    min-width: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  /* Thin scrollbar styling for all panels */
+  .panel-left::-webkit-scrollbar,
+  .panel-mid::-webkit-scrollbar,
+  .panel-right::-webkit-scrollbar {
+    width: 3px;
+  }
+  .panel-left::-webkit-scrollbar-track,
+  .panel-mid::-webkit-scrollbar-track,
+  .panel-right::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .panel-left::-webkit-scrollbar-thumb,
+  .panel-mid::-webkit-scrollbar-thumb,
+  .panel-right::-webkit-scrollbar-thumb {
+    background: #d0d7e2;
+    border-radius: 10px;
+  }
+  .panel-left::-webkit-scrollbar-thumb:hover,
+  .panel-mid::-webkit-scrollbar-thumb:hover,
+  .panel-right::-webkit-scrollbar-thumb:hover {
+    background: #a0aec0;
+  }
+
+  /* ── Responsive breakpoints — always keep 3 columns, just scale widths ── */
+
+  /* Medium screens: tighten column widths */
+  @media (max-width: 900px) {
+    .body {
+      grid-template-columns: 180px 1fr 190px;
+    }
+  }
+
+  /* Small screens: compress further but keep 3-column */
+  @media (max-width: 600px) {
+    .body {
+      grid-template-columns: 130px 1fr 130px;
+    }
+    .panel-left { padding: 10px 10px; }
+    .panel-mid  { padding: 12px 10px; }
+    .panel-right { padding: 10px 10px; }
+    .field-value.large { font-size: 17px; }
+  }
+
+  /* Very small screens: minimal widths */
+  @media (max-width: 400px) {
+    .body {
+      grid-template-columns: 100px 1fr 100px;
+    }
+  }
+
+  .field-label {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #8fa0b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+  }
+  .field-value { font-size: 14.5px; color: #1a2233; font-weight: 500; line-height: 1.4; }
+  .field-value.mono { font-family: 'DM Sans', sans-serif; }
+  .field-value.large {
+    font-size: 21.5px; font-weight: 700; color: #1a2233;
+    font-family: 'DM Sans', sans-serif; line-height: 1.1;
+  }
+  .field-value.sentence { font-size: 11.5px; color: #4a5568; font-weight: 400; line-height: 1.4; }
+
+  .tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 3px; }
+  .tag { padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; border: 1px solid; }
+  .tag-blue   { background: #e3f2fd; color: #1565c0; border-color: #90caf9; }
+  .tag-purple { background: #f3e5f5; color: #6a1b9a; border-color: #ce93d8; }
+  .tag-teal   { background: #e0f2f1; color: #00695c; border-color: #80cbc4; }
+
+  .divider { height: 1px; background: #eaecf0; flex-shrink: 0; }
+
+  .status-row { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .dot-green  { background: #2e7d32; box-shadow: 0 0 0 2px #c8e6c9; }
+  .dot-red    { background: #c62828; box-shadow: 0 0 0 2px #ffcdd2; }
+  .status-text-approved { color: #2e7d32; }
+  .status-text-highrisk { color: #c62828; font-weight: 600; }
+
+  .wo-card {
+    border: 1px solid #e4e8f0;
+    border-radius: 8px;
+    padding: 8px 11px;
+    background: #fff;
+    margin-bottom: 6px;
+    font-family: 'DM Sans', sans-serif;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    transition: box-shadow 0.15s;
+  }
+  .wo-card:last-child { margin-bottom: 0; }
+  .wo-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .wo-card-top {
+    display: flex; align-items: center;
+    justify-content: space-between; gap: 6px;
+    margin-bottom: 4px;
+  }
+  .wo-number {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px; font-weight: 600; color: #1a2233;
+    letter-spacing: 0.2px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .wo-card-meta {
+    display: flex; align-items: center; gap: 8px;
+    flex-wrap: wrap;
+  }
+  .wo-type {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11.5px; color: #4a5568; font-weight: 400;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .wo-dot { width: 3px; height: 3px; border-radius: 50%; background: #c8d0dc; flex-shrink: 0; }
+  .wo-dates {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11.5px; color: #8fa0b8; font-weight: 400;
+    white-space: nowrap;
+  }
+  .wo-status-chip {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 10.5px; font-weight: 600;
+    padding: 2px 7px; border-radius: 20px;
+    white-space: nowrap; flex-shrink: 0;
+    letter-spacing: 0.1px;
+  }
+  .wo-status-completed  { background: #e8f5e9; color: #2e7d32; }
+  .wo-status-inprogress { background: #fff3e0; color: #e65100; }
+  .wo-status-cancelled  { background: #fce4ec; color: #c62828; }
+  .wo-status-new        { background: #e8eaf6; color: #3949ab; }
+  .wo-empty {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11.5px; color: #8fa0b8; padding: 8px 0;
+  }
+
+  .section-heading {
+    font-size: 11.5px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.7px; color: #8fa0b8; margin-bottom: 6px;
+    display: flex; align-items: center; gap: 5px; flex-shrink: 0;
+  }
+  .section-heading::after { content: ''; flex: 1; height: 1px; background: #eaecf0; }
+
+  .budget-item { flex-shrink: 0; margin-bottom: 6px; }
+  .budget-item:last-child { margin-bottom: 0; }
+  .budget-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px; gap: 4px; }
+  .blabel { font-size: 12px; color: #4a5568; font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bamount { font-size: 11.5px; font-family: 'DM Sans', sans-serif; font-weight: 600; white-space: nowrap; flex-shrink: 0; }
+  .bamount.over  { color: #c62828; }
+  .bamount.under { color: #2e7d32; }
+
+  .bar-bg { height: 5px; background: #e8ecf1; border-radius: 10px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 10px; }
+  .bar-green  { background: linear-gradient(90deg, #43a047, #81c784); }
+  .bar-orange { background: linear-gradient(90deg, #ef6c00, #ffb74d); }
+  .bar-red    { background: linear-gradient(90deg, #c62828, #ef9a9a); }
+
+  .variance-chip {
+    display: inline-block; font-size: 10.5px; font-weight: 600;
+    padding: 1px 5px; border-radius: 3px; margin-top: 2px;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .chip-green { background: #e8f5e9; color: #2e7d32; }
+  .chip-red   { background: #ffebee; color: #c62828; }
+
+  /* Loading state */
+  .loading-shimmer {
+    background: linear-gradient(90deg, #f0f2f5 25%, #e0e4ea 50%, #f0f2f5 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+    border-radius: 4px;
+    color: transparent !important;
+    user-select: none;
+  }
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* Long text wraps within panel width */
+  .field-value, .field-value.sentence {
+    overflow-wrap: break-word;
+  }
+</style>
+</head>
+<body>
+
+<div class="invoice-box">
+  <div class="body">
+
+    <!-- LEFT -->
+    <div class="panel-left">
+      <div>
+        <div class="field-label">Invoice Amount</div>
+        <!-- Populated dynamically from array_totalamount -->
+        <div class="field-value large" id="invoiceAmount">—</div>
+        <div class="field-value sentence" id="invoiceDescription" style="margin-top:3px;">—</div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:2px;">
+        <div class="field-label">Left to be Settled</div>
+        <div class="field-value mono" id="leftToBeSettled" style="font-size:13px; font-weight:700; color:#ef6c00;">—</div>
+      </div>
+      <!-- Reinvoice Amount — shown only when Utility Invoice = Yes -->
+      <div id="reinvoiceAmountBlock" style="flex-direction:column; gap:2px; display:none;">
+        <div class="field-label">Reinvoice Amount</div>
+        <div class="field-value mono" id="reinvoiceAmount" style="font-size:13px; font-weight:700; color:#6a1b9a;">—</div>
+      </div>
+      <!-- Split Payment Amount — always shown -->
+      <div style="display:flex; flex-direction:column; gap:2px;">
+        <div class="field-label">Split Payment Amount</div>
+        <div class="field-value mono" id="splitPaymentAmount" style="font-size:13px; font-weight:700; color:#1565c0;">—</div>
+      </div>
+      <div class="divider"></div>
+      <div>
+        <div class="field-label">Supplier</div>
+        <div class="field-value" id="supplierName" style="font-size:13px; font-weight:600;">—</div>
+        <div class="status-row">
+          <div class="status-dot dot-green" id="supplierStatusDot"></div>
+          <div class="field-value sentence" id="supplierStatusText">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MID -->
+    <div class="panel-mid">
+      <div>
+        <div class="section-heading">Categories</div>
+        <div class="tags" id="categoryTags">
+          <span class="tag tag-blue loading-shimmer" style="min-width:54px;">&nbsp;</span>
+          <span class="tag tag-blue loading-shimmer" style="min-width:42px;">&nbsp;</span>
+          <span class="tag tag-blue loading-shimmer" style="min-width:48px;">&nbsp;</span>
+        </div>
+        <div class="field-value sentence" id="categoryDescription" style="margin-top:6px;">—</div>
+      </div>
+      <div class="divider"></div>
+      <div>
+        <div class="section-heading">Potential Work Orders Associated with this Invoice</div>
+        <div id="workOrderList">
+          <div class="wo-card loading-shimmer" style="height:44px; margin-bottom:5px;">&nbsp;</div>
+          <div class="wo-card loading-shimmer" style="height:44px; margin-bottom:5px;">&nbsp;</div>
+          <div class="wo-card loading-shimmer" style="height:44px;">&nbsp;</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="panel-right">
+      <div class="section-heading">Actual vs Budget</div>
+      <div id="budgetItems">
+        <!-- shimmer placeholders -->
+        <div class="budget-item" style="margin-bottom:6px;">
+          <div class="budget-row">
+            <span class="blabel loading-shimmer" style="min-width:60px;">&nbsp;</span>
+            <span class="bamount loading-shimmer" style="min-width:90px;">&nbsp;</span>
+          </div>
+          <div class="bar-bg" style="margin-top:4px;"><div class="bar-fill bar-green loading-shimmer" style="width:70%"></div></div>
+        </div>
+        <div class="budget-item" style="margin-bottom:6px;">
+          <div class="budget-row">
+            <span class="blabel loading-shimmer" style="min-width:48px;">&nbsp;</span>
+            <span class="bamount loading-shimmer" style="min-width:90px;">&nbsp;</span>
+          </div>
+          <div class="bar-bg" style="margin-top:4px;"><div class="bar-fill bar-green loading-shimmer" style="width:55%"></div></div>
+        </div>
+        <div class="budget-item">
+          <div class="budget-row">
+            <span class="blabel loading-shimmer" style="min-width:52px;">&nbsp;</span>
+            <span class="bamount loading-shimmer" style="min-width:90px;">&nbsp;</span>
+          </div>
+          <div class="bar-bg" style="margin-top:4px;"><div class="bar-fill bar-green loading-shimmer" style="width:85%"></div></div>
+        </div>
+      </div>
+      <div class="divider" id="budgetDivider"></div>
+      <div id="budgetTotal"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  /**
+   * ─────────────────────────────────────────────────────────────
+   *  D365 FORM CONTEXT INTEGRATION
+   *  Table  : array_purchaseinvoice
+   *  Step 1 : array_totalamount        → Invoice Amount
+   *  Step 2 : array_supplier (Lookup)  → Supplier name + status
+   *           Fetches account.name, account.statuscode, account.createdon
+   *           statuscode === 126330002 → "Approved Vendor since <year>"
+   *           else                    → "Vendor is not approved · High Risk"
+   * ─────────────────────────────────────────────────────────────
+   */
+
+  const APPROVED_STATUS_CODE = 126330002;
+
+  /** Format a number as zł currency */
+  function formatCurrency(value) {
+    const num = parseFloat(value);
+    if (isNaN(num)) return '—';
+    return 'zł' + num.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  }
+
+  /** Get formContext safely from parent D365 window */
+  function getFormContext() {
+    try {
+      const fc = window.parent.Xrm.Page.ui.formContext || window.parent.Xrm.Page;
+      if (!fc) { console.warn('[InvoiceCard] formContext not available.'); return null; }
+      return fc;
+    } catch (e) {
+      console.error('[InvoiceCard] Could not access formContext:', e);
+      return null;
+    }
+  }
+
+  /** ── STEP 1: Invoice Amount ── */
+  function loadInvoiceAmount(formContext) {
+    const el = document.getElementById('invoiceAmount');
+    el.classList.add('loading-shimmer');
+    el.textContent = 'Loading...';
+    try {
+      const attr = formContext.getAttribute('array_totalamount');
+      el.classList.remove('loading-shimmer');
+      el.textContent = attr ? formatCurrency(attr.getValue()) : '—';
+    } catch (e) {
+      console.error('[InvoiceCard] array_totalamount error:', e);
+      el.classList.remove('loading-shimmer');
+      el.textContent = '—';
+    }
+  }
+
+  /** ── STEP 2: Left to be Settled ── */
+  function loadLeftToBeSettled(formContext) {
+    const el = document.getElementById('leftToBeSettled');
+    el.classList.add('loading-shimmer');
+    el.textContent = 'Loading...';
+    try {
+      const attr = formContext.getAttribute('array_lefttobesettled');
+      el.classList.remove('loading-shimmer');
+      if (!attr) {
+        console.warn('[InvoiceCard] Field "array_lefttobesettled" not found on form.');
+        el.textContent = '—';
+        return;
+      }
+      const val = attr.getValue();
+      el.textContent = formatCurrency(val);
+      // Colour hint: zero = green (fully settled), >0 = orange
+      el.style.color = (parseFloat(val) <= 0) ? '#2e7d32' : '#ef6c00';
+    } catch (e) {
+      console.error('[InvoiceCard] array_lefttobesettled error:', e);
+      el.classList.remove('loading-shimmer');
+      el.textContent = '—';
+    }
+  }
+
+  // Shared state — supplier name resolved async, description rebuild uses it
+  let _resolvedSupplierName = '—';
+  // Shared state — category names resolved async, used by description & budget
+  let _resolvedCategories = [];
+  // Parallel array of category GUIDs (same order as _resolvedCategories), used by loadBudget
+  let _resolvedCategoryIds = [];
+
+  /**
+   * ── BUDGET: Renders the Actual vs Budget right panel from real D365 data ──
+   *
+   * Logic:
+   *  1. Read array_issuedate from current record → extract year
+   *  2. Read array_property lookup from current record
+   *  3. Find array_budget where array_year = issueYear
+   *                              AND statuscode = 126330001
+   *                              AND statecode = 0
+   *                              AND _array_property_value = propertyId
+   *  4. If found, fetch array_budgetline records linked to that budget
+   *     → build map: costCategoryId → array_annualamount
+   *  5. For actual: fetch all array_purchaseinvoice records where issuedate year = issueYear
+   *     → for each, fetch array_purchaseinvoiceitem records
+   *     → sum array_totalamount (or array_amount) per costCategoryId
+   *  6. Render only categories that exist in _resolvedCategoryIds (from current invoice lines)
+   */
+  async function loadBudget(formContext) {
+    const container = document.getElementById('budgetItems');
+    const totalEl   = document.getElementById('budgetTotal');
+
+    // Show shimmer while loading
+    container.innerHTML = `
+      <div class="budget-item" style="margin-bottom:6px;">
+        <div class="budget-row">
+          <span class="blabel loading-shimmer" style="min-width:60px;">&nbsp;</span>
+          <span class="bamount loading-shimmer" style="min-width:90px;">&nbsp;</span>
+        </div>
+        <div class="bar-bg" style="margin-top:4px;"><div class="bar-fill bar-green loading-shimmer" style="width:70%"></div></div>
+      </div>
+      <div class="budget-item" style="margin-bottom:6px;">
+        <div class="budget-row">
+          <span class="blabel loading-shimmer" style="min-width:48px;">&nbsp;</span>
+          <span class="bamount loading-shimmer" style="min-width:90px;">&nbsp;</span>
+        </div>
+        <div class="bar-bg" style="margin-top:4px;"><div class="bar-fill bar-green loading-shimmer" style="width:55%"></div></div>
+      </div>
+      <div class="budget-item">
+        <div class="budget-row">
+          <span class="blabel loading-shimmer" style="min-width:52px;">&nbsp;</span>
+          <span class="bamount loading-shimmer" style="min-width:90px;">&nbsp;</span>
+        </div>
+        <div class="bar-bg" style="margin-top:4px;"><div class="bar-fill bar-green loading-shimmer" style="width:85%"></div></div>
+      </div>
+    `;
+    totalEl.innerHTML = '';
+
+    try {
+      const Xrm = window.parent.Xrm;
+
+      // ── 1. Get issue date year from current record ──
+      let issueYear = null;
+      const issueDateAttr = formContext.getAttribute('array_issuedate');
+      if (issueDateAttr) {
+        const issueDateVal = issueDateAttr.getValue();
+        if (issueDateVal) {
+          issueYear = new Date(issueDateVal).getFullYear();
+        }
+      }
+
+      if (!issueYear) {
+        container.innerHTML = '<span class="field-value sentence">Issue date not set — cannot load budget.</span>';
+        return;
+      }
+
+      // ── 2. Get property ID from current record ──
+      let propertyId = null;
+      const propAttr = formContext.getAttribute('array_property');
+      if (propAttr) {
+        const propVal = propAttr.getValue();
+        if (propVal && propVal.length) {
+          propertyId = propVal[0].id.replace(/[{}]/g, '');
+        }
+      }
+
+      if (!propertyId) {
+        container.innerHTML = '<span class="field-value sentence">Property not set — cannot load budget.</span>';
+        return;
+      }
+
+      // ── 3. Find matching array_budget record ──
+      const budgetResult = await Xrm.WebApi.retrieveMultipleRecords(
+        'array_budget',
+        `?$select=array_budgetid` +
+        `&$filter=array_year eq ${issueYear}` +
+        ` and statuscode eq 126330001` +
+        ` and statecode eq 0` +
+        ` and _array_property_value eq ${propertyId}` +
+        `&$top=1`
+      );
+
+      const budgetRecords = budgetResult.entities || [];
+
+      if (!budgetRecords.length) {
+        container.innerHTML = '<span class="field-value sentence">No approved budget found for this property and year.</span>';
+        return;
+      }
+
+      const budgetId = budgetRecords[0].array_budgetid;
+
+      // ── 4. Fetch all array_budgetline records for this budget ──
+      const budgetLineResult = await Xrm.WebApi.retrieveMultipleRecords(
+        'array_budgetline',
+        `?$select=_array_costcategory_value,array_annualamount` +
+        `&$filter=_array_budget_value eq ${budgetId}`
+      );
+
+      const budgetLines = budgetLineResult.entities || [];
+
+      // Build map: costCategoryId (lowercase, no braces) → annualAmount
+      const budgetMap = {};
+      budgetLines.forEach(line => {
+        const catId = (line['_array_costcategory_value'] || '').replace(/[{}]/g, '').toLowerCase();
+        if (catId) {
+          const amt = parseFloat(line.array_annualamount) || 0;
+          budgetMap[catId] = (budgetMap[catId] || 0) + amt;
+        }
+      });
+
+      // ── 5. Get actuals: all purchase invoices for same year + their items ──
+      // Fetch all purchase invoices where issuedate falls within the issue year
+      const yearStart = `${issueYear}-01-01T00:00:00Z`;
+      const yearEnd   = `${issueYear}-12-31T23:59:59Z`;
+
+      const allInvoicesResult = await Xrm.WebApi.retrieveMultipleRecords(
+        'array_purchaseinvoice',
+        `?$select=array_purchaseinvoiceid` +
+        `&$filter=array_issuedate ge ${yearStart} and array_issuedate le ${yearEnd}` +
+        ` and _array_property_value eq ${propertyId}`
+      );
+
+      const allInvoices = allInvoicesResult.entities || [];
+
+      // Build actual spend map: costCategoryId → sum of array_totalamount from invoice items
+      const actualMap = {};
+
+      if (allInvoices.length) {
+        const invoiceIds = allInvoices.map(inv => inv.array_purchaseinvoiceid.replace(/[{}]/g, ''));
+
+        // Fetch invoice items for all invoices in batches using $filter with or-conditions
+        // D365 WebAPI supports up to ~10 in one filter; chunk to be safe
+        const chunkSize = 10;
+        for (let i = 0; i < invoiceIds.length; i += chunkSize) {
+          const chunk = invoiceIds.slice(i, i + chunkSize);
+          const orFilter = chunk
+            .map(id => `_array_purchaseinvoice_value eq ${id}`)
+            .join(' or ');
+
+          const itemsResult = await Xrm.WebApi.retrieveMultipleRecords(
+            'array_purchaseinvoiceitem',
+            `?$select=_array_costcategory_value,array_extendedamount` +
+            `&$filter=${orFilter}`
+          );
+
+          (itemsResult.entities || []).forEach(item => {
+            const catId = (item['_array_costcategory_value'] || '').replace(/[{}]/g, '').toLowerCase();
+            if (catId) {
+              const amt = parseFloat(item.array_extendedamount) || 0;
+              actualMap[catId] = (actualMap[catId] || 0) + amt;
+            }
+          });
+        }
+      }
+
+      // ── 6. Render — only for categories on this invoice (_resolvedCategoryIds) ──
+      container.innerHTML = '';
+
+      if (!_resolvedCategoryIds.length) {
+        container.innerHTML = '<span class="field-value sentence">No categories.</span>';
+        totalEl.innerHTML = '';
+        return;
+      }
+
+      let totalActual = 0, totalBudget = 0;
+
+      _resolvedCategoryIds.forEach((catId, idx) => {
+        const normalId = catId.replace(/[{}]/g, '').toLowerCase();
+        const name     = _resolvedCategories[idx] || normalId;
+        const budget   = budgetMap[normalId] || 0;
+        const actual   = actualMap[normalId] || 0;
+
+        totalActual += actual;
+        totalBudget += budget;
+
+        const variance  = actual - budget;
+        const isOver    = variance > 0;
+        const pct       = budget > 0 ? Math.min(100, Math.round((actual / budget) * 100)) : 0;
+        const barClass  = isOver ? 'bar-red' : (pct > 90 ? 'bar-orange' : 'bar-green');
+        const chipClass = isOver ? 'chip-red' : 'chip-green';
+        const chipSign  = isOver ? '+' : '−';
+        const amtClass  = isOver ? 'over' : 'under';
+
+        const div = document.createElement('div');
+        div.className = 'budget-item';
+        div.innerHTML = `
+          <div class="budget-row">
+            <span class="blabel">${name}</span>
+            <span class="bamount ${amtClass}">${formatCurrency(actual)} / ${formatCurrency(budget)}</span>
+          </div>
+          <div class="bar-bg"><div class="bar-fill ${barClass}" style="width:${pct}%"></div></div>
+          <span class="variance-chip ${chipClass}">${chipSign}${formatCurrency(Math.abs(variance))} ${isOver ? 'over' : 'saved'}</span>
+        `;
+        container.appendChild(div);
+      });
+
+      // Total row
+      const totalVariance = totalActual - totalBudget;
+      const totalOver     = totalVariance > 0;
+      const totalSign     = totalOver ? '+' : '−';
+      const totalChip     = totalOver ? 'chip-red' : 'chip-green';
+      totalEl.innerHTML = `
+        <div class="budget-row">
+          <span class="blabel" style="font-weight:700; color:#1a2233;">Total</span>
+          <span class="bamount ${totalOver ? 'over' : 'under'}" style="font-size:11px;">${formatCurrency(totalActual)} / ${formatCurrency(totalBudget)}</span>
+        </div>
+        <span class="variance-chip ${totalChip}">Net ${totalSign}${formatCurrency(Math.abs(totalVariance))} ${totalOver ? 'over budget' : 'under budget'}</span>
+      `;
+
+    } catch (e) {
+      console.error('[InvoiceCard] loadBudget error:', e);
+      container.innerHTML = '<span class="field-value sentence">Could not load budget data.</span>';
+      totalEl.innerHTML = '';
+    }
+  }
+
+  /** renderBudget is now a no-op placeholder — budget is driven by loadBudget(formContext) after categories resolve */
+  function renderBudget() {
+    // Intentionally empty: budget loading is handled by loadBudget() which is called
+    // from the entry point after loadCategories() resolves, ensuring _resolvedCategoryIds is ready.
+  }
+
+  /** Format a Date object as "DD MMM YYYY" e.g. "01 Nov 2024" */
+  function formatDate(dateVal) {
+    if (!dateVal) return '—';
+    const d = new Date(dateVal);
+    if (isNaN(d)) return '—';
+    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
+
+  /**
+   * Renders a contextual summary sentence under the category tags.
+   * Rule-based — built from categories, property, dates, supplier.
+   */
+  function renderCategoryDescription({ isUtility, propertyName, dateFrom, dateTo }) {
+    const el    = document.getElementById('categoryDescription');
+    const count = _resolvedCategories.length;
+    const prop  = propertyName && propertyName !== '—' ? propertyName : 'the property';
+
+    if (!count) {
+      el.textContent = 'No cost categories have been assigned to this invoice.';
+      return;
+    }
+
+    if (isUtility) {
+      const from = formatDate(dateFrom);
+      const to   = formatDate(dateTo);
+      const span = (from !== '—' && to !== '—') ? ` covering the period ${from} to ${to}` : '';
+      el.textContent = count === 1
+        ? `${_resolvedCategories[0]} charges for ${prop}${span}.`
+        : `${count} utility categories charged for ${prop}${span}. Costs span ${_resolvedCategories.join(', ')}.`;
+    } else {
+      el.textContent = count === 1
+        ? `This invoice covers ${_resolvedCategories[0]} works at ${prop}.`
+        : `This invoice covers ${count} cost categories at ${prop}: ${_resolvedCategories.join(', ')}.`;
+    }
+  }
+
+  /** ── STEP 4: Invoice Description (depends on array_utilityinvoice, array_property, dates) ── */
+  async function loadDescription(formContext) {
+    const el = document.getElementById('invoiceDescription');
+    el.classList.add('loading-shimmer');
+    el.textContent = 'Loading...';
+
+    try {
+      // 1. Read array_utilityinvoice (Two Options / boolean)
+      const utilityAttr = formContext.getAttribute('array_utilityinvoice');
+      const isUtility   = utilityAttr ? utilityAttr.getValue() : false;
+
+      // Show/hide Reinvoice Amount based on Utility Invoice flag
+      const reinvoiceBlock = document.getElementById('reinvoiceAmountBlock');
+      reinvoiceBlock.style.display = isUtility ? 'flex' : 'none';
+
+      // 2. Fetch property name — used by both paths
+      let propertyName = '—';
+      const propAttr   = formContext.getAttribute('array_property');
+      if (propAttr) {
+        const propLookup = propAttr.getValue();
+        if (propLookup && propLookup.length) {
+          const propId = propLookup[0].id.replace(/[{}]/g, '');
+          try {
+            const Xrm = window.parent.Xrm;
+            const propRecord = await Xrm.WebApi.retrieveRecord(
+              'array_property',
+              propId,
+              '?$select=array_propertyname'
+            );
+            propertyName = propRecord.array_propertyname || '—';
+          } catch (e) {
+            console.error('[InvoiceCard] array_property fetch error:', e);
+          }
+        }
+      }
+
+      if (isUtility) {
+        // ── Utility path ── includes dates, categories from _resolvedCategories
+        const dateFrom = formContext.getAttribute('array_datefrom')?.getValue();
+        const dateTo   = formContext.getAttribute('array_dateto')?.getValue();
+
+        let categoryPhrase = 'goods and services';
+        if (_resolvedCategories.length === 1) {
+          categoryPhrase = _resolvedCategories[0];
+        } else if (_resolvedCategories.length === 2) {
+          categoryPhrase = `${_resolvedCategories[0]} and ${_resolvedCategories[1]}`;
+        } else if (_resolvedCategories.length > 2) {
+          const last = _resolvedCategories[_resolvedCategories.length - 1];
+          const rest = _resolvedCategories.slice(0, -1).join(', ');
+          categoryPhrase = `${rest}, and ${last}`;
+        }
+
+        el.classList.remove('loading-shimmer');
+        el.textContent =
+          `Tax-inclusive invoice raised by ${_resolvedSupplierName} for the supply of ` +
+          `${categoryPhrase} for ${propertyName} property. ` +
+          `From ${formatDate(dateFrom)} to ${formatDate(dateTo)}.`;
+
+        renderCategoryDescription({ isUtility: true, propertyName, dateFrom, dateTo });
+
+      } else {
+        // ── Non-utility path — same sentence but no dates, categories inline ──
+        let categoryPhrase = 'goods and services';
+        if (_resolvedCategories.length === 1) {
+          categoryPhrase = _resolvedCategories[0];
+        } else if (_resolvedCategories.length === 2) {
+          categoryPhrase = `${_resolvedCategories[0]}, and ${_resolvedCategories[1]}`;
+        } else if (_resolvedCategories.length > 2) {
+          const last = _resolvedCategories[_resolvedCategories.length - 1];
+          const rest = _resolvedCategories.slice(0, -1).join(', ');
+          categoryPhrase = `${rest}, and ${last}`;
+        }
+        el.classList.remove('loading-shimmer');
+        el.textContent =
+          `Tax-inclusive invoice raised by ${_resolvedSupplierName} for the supply of ` +
+          `${categoryPhrase} for ${propertyName} property.`;
+
+        renderCategoryDescription({ isUtility: false, propertyName });
+      }
+
+    } catch (e) {
+      console.error('[InvoiceCard] loadDescription error:', e);
+      el.classList.remove('loading-shimmer');
+      el.textContent = '—';
+    }
+  }
+
+  /** ── STEP 3: Supplier Lookup → fetch account record via WebAPI ── */
+  async function loadSupplier(formContext) {
+    const nameEl      = document.getElementById('supplierName');
+    const dotEl       = document.getElementById('supplierStatusDot');
+    const statusEl    = document.getElementById('supplierStatusText');
+
+    // Shimmer supplier elements
+    [nameEl, statusEl].forEach(el => {
+      el.classList.add('loading-shimmer');
+      el.textContent = 'Loading...';
+    });
+
+    try {
+      const attr = formContext.getAttribute('array_supplier');
+      if (!attr) {
+        console.warn('[InvoiceCard] Field "array_supplier" not found on form.');
+        setSupplierUnknown(nameEl, dotEl, statusEl);
+        return;
+      }
+
+      const lookupVal = attr.getValue();
+      if (!lookupVal || !lookupVal.length) {
+        setSupplierUnknown(nameEl, dotEl, statusEl);
+        return;
+      }
+
+      const accountId = lookupVal[0].id.replace(/[{}]/g, '');
+
+      const Xrm = window.parent.Xrm;
+      const result = await Xrm.WebApi.retrieveRecord(
+        'account',
+        accountId,
+        '?$select=name,statuscode,createdon'
+      );
+
+      const supplierName = result.name || '—';
+      const statusCode   = result.statuscode;
+      const createdOn    = result.createdon
+                           ? new Date(result.createdon).getFullYear()
+                           : null;
+
+      // Store for use in description
+      _resolvedSupplierName = supplierName;
+
+      [nameEl, statusEl].forEach(el => el.classList.remove('loading-shimmer'));
+      nameEl.textContent = supplierName;
+
+      if (statusCode === APPROVED_STATUS_CODE) {
+        dotEl.className = 'status-dot dot-green';
+        statusEl.className = 'field-value sentence status-text-approved';
+        statusEl.textContent = createdOn ? `Approved Vendor since ${createdOn}` : 'Approved Vendor';
+      } else {
+        dotEl.className = 'status-dot dot-red';
+        statusEl.className = 'field-value sentence status-text-highrisk';
+        statusEl.textContent = '⚠ Vendor is not approved · High Risk';
+      }
+
+    } catch (e) {
+      console.error('[InvoiceCard] Supplier load error:', e);
+      setSupplierUnknown(nameEl, dotEl, statusEl);
+    }
+  }
+
+  /** Fallback when supplier cannot be resolved */
+  function setSupplierUnknown(nameEl, dotEl, statusEl) {
+    [nameEl, statusEl].forEach(el => el.classList.remove('loading-shimmer'));
+    nameEl.textContent   = '—';
+    dotEl.className      = 'status-dot dot-red';
+    statusEl.className   = 'field-value sentence';
+    statusEl.textContent = 'Supplier not set';
+  }
+
+  // Cycle through tag colour classes for visual variety
+  const TAG_COLOURS = ['tag-blue', 'tag-teal', 'tag-purple'];
+
+  /** ── STEP 5: Categories from array_purchaseinvoiceitem ── */
+  async function loadCategories(formContext) {
+    const container = document.getElementById('categoryTags');
+
+    try {
+      // 1. Get current record ID
+      const recordId = formContext.data.entity.getId().replace(/[{}]/g, '');
+      if (!recordId) {
+        container.innerHTML = '<span class="field-value sentence">No record ID found.</span>';
+        return;
+      }
+
+      const Xrm = window.parent.Xrm;
+
+      // 2. Query invoice items for this purchase invoice
+      //    Use _array_purchaseinvoice_value (underscore prefix + _value suffix = D365 lookup filter convention)
+      //    GUID must be wrapped in guid'' for OData v4
+      const itemsResult = await Xrm.WebApi.retrieveMultipleRecords(
+        'array_purchaseinvoiceitem',
+        `?$select=_array_costcategory_value` +
+        `&$filter=_array_purchaseinvoice_value eq ${recordId}`
+      );
+
+      const items = itemsResult.entities || [];
+      if (!items.length) {
+        container.innerHTML = '<span class="field-value sentence">No items found.</span>';
+        return;
+      }
+
+      // 3. Collect unique cost category GUIDs from the items
+      const categoryIds = [...new Set(
+        items
+          .map(i => i['_array_costcategory_value'])
+          .filter(Boolean)
+      )];
+
+      if (!categoryIds.length) {
+        container.innerHTML = '<span class="field-value sentence">No categories assigned.</span>';
+        return;
+      }
+
+      // 4. Fetch each cost category record individually for its name
+      //    (avoids $expand complexity — clean and reliable)
+      const categoryNameMap = {}; // catId → name
+      await Promise.all(categoryIds.map(async (catId) => {
+        try {
+          const catRecord = await Xrm.WebApi.retrieveRecord(
+            'array_costcategory',
+            catId,
+            '?$select=array_costcategoryname'
+          );
+          if (catRecord && catRecord.array_costcategoryname) {
+            categoryNameMap[catId] = catRecord.array_costcategoryname.trim();
+          }
+        } catch (e) {
+          console.warn(`[InvoiceCard] Could not fetch cost category ${catId}:`, e);
+        }
+      }));
+
+      // 5. Store globally, render tags, render budget
+      // Build paired array (id + name), filter out any without a resolved name, sort by name
+      const paired = categoryIds
+        .filter(id => categoryNameMap[id])
+        .map(id => ({ id, name: categoryNameMap[id] }));
+      paired.sort((a, b) => a.name.localeCompare(b.name));
+      _resolvedCategories  = paired.map(p => p.name);
+      _resolvedCategoryIds = paired.map(p => p.id);
+      container.innerHTML = '';
+
+      if (!_resolvedCategories.length) {
+        container.innerHTML = '<span class="field-value sentence">No categories found.</span>';
+        renderBudget();
+        return;
+      }
+
+      _resolvedCategories.forEach((name, i) => {
+        const span = document.createElement('span');
+        span.className = `tag ${TAG_COLOURS[i % TAG_COLOURS.length]}`;
+        span.textContent = name;
+        container.appendChild(span);
+      });
+
+      // Drive budget panel from the same category list
+      renderBudget();
+
+    } catch (e) {
+      console.error('[InvoiceCard] loadCategories error:', e);
+      console.error('[InvoiceCard] Details:', JSON.stringify(e));
+      container.innerHTML = '<span class="field-value sentence">Could not load categories.</span>';
+      renderBudget(); // still clear shimmer
+    }
+  }
+
+  /** ── STEP 6: Last 3 Work Orders for this vendor + property ── */
+  async function loadWorkOrders(formContext) {
+    const container = document.getElementById('workOrderList');
+
+    try {
+      const Xrm = window.parent.Xrm;
+
+      // 1. Resolve property ID from array_property lookup
+      let propertyId = null;
+      const propAttr = formContext.getAttribute('array_property');
+      if (propAttr) {
+        const propVal = propAttr.getValue();
+        if (propVal && propVal.length) {
+          propertyId = propVal[0].id.replace(/[{}]/g, '');
+        }
+      }
+
+      // 2. Resolve vendor (account) ID from array_supplier lookup
+      let vendorId = null;
+      const supplierAttr = formContext.getAttribute('array_supplier');
+      if (supplierAttr) {
+        const supplierVal = supplierAttr.getValue();
+        if (supplierVal && supplierVal.length) {
+          vendorId = supplierVal[0].id.replace(/[{}]/g, '');
+        }
+      }
+
+      if (!propertyId || !vendorId) {
+        container.innerHTML = '<div class="wo-empty">No property or vendor set — cannot load work orders.</div>';
+        return;
+      }
+
+      // 3. Query msdyn_workorder filtered by property + service account, latest 3
+      const result = await Xrm.WebApi.retrieveMultipleRecords(
+        'msdyn_workorder',
+        `?$select=msdyn_name,_msdyn_workordertype_value,msdyn_systemstatus,msdyn_datewindowstart,msdyn_datewindowend,createdon` +
+        `&$filter=_array_property_value eq ${propertyId} and _msdyn_serviceaccount_value eq ${vendorId}` +
+        `&$orderby=createdon desc` +
+        `&$top=3`
+      );
+
+      const items = result.entities || [];
+
+      if (!items.length) {
+        container.innerHTML = '<div class="wo-empty">No work orders found for this vendor and property.</div>';
+        return;
+      }
+
+      // 4. Fetch work order type names for unique type IDs
+      const typeIds = [...new Set(items.map(i => i['_msdyn_workordertype_value']).filter(Boolean))];
+      const typeNameMap = {};
+      await Promise.all(typeIds.map(async (typeId) => {
+        try {
+          const rec = await Xrm.WebApi.retrieveRecord('msdyn_workordertype', typeId, '?$select=msdyn_name');
+          if (rec && rec.msdyn_name) typeNameMap[typeId] = rec.msdyn_name;
+        } catch (e) {
+          console.warn(`[InvoiceCard] Could not fetch work order type ${typeId}:`, e);
+        }
+      }));
+
+      // 4. Status code → label + CSS class
+      function woStatusInfo(code) {
+        // msdyn_systemstatus option set values
+        const map = {
+          690970000: { label: 'Unscheduled',   cls: 'wo-status-new' },
+          690970001: { label: 'Scheduled',      cls: 'wo-status-new' },
+          690970002: { label: 'In Progress',    cls: 'wo-status-inprogress' },
+          690970003: { label: 'Completed',      cls: 'wo-status-completed' },
+          690970004: { label: 'Posted',         cls: 'wo-status-completed' },
+          690970005: { label: 'Cancelled',      cls: 'wo-status-cancelled' },
+        };
+        return map[code] || { label: 'Unknown', cls: 'wo-status-new' };
+      }
+
+      // 5. Render minimal cards
+      container.innerHTML = '';
+      items.forEach(wo => {
+        const name      = wo.msdyn_name || '—';
+        const typeId    = wo['_msdyn_workordertype_value'];
+        const typeLabel = (typeId && typeNameMap[typeId]) ? typeNameMap[typeId] : '—';
+        const status    = woStatusInfo(wo.msdyn_systemstatus);
+        const dateStart = wo.msdyn_datewindowstart
+                          ? new Date(wo.msdyn_datewindowstart).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' })
+                          : '—';
+        const dateEnd   = wo.msdyn_datewindowend
+                          ? new Date(wo.msdyn_datewindowend).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' })
+                          : null;
+
+        const card = document.createElement('div');
+        card.className = 'wo-card';
+        card.innerHTML = `
+          <div class="wo-card-top">
+            <span class="wo-number">${name}</span>
+            <span class="wo-status-chip ${status.cls}">${status.label}</span>
+          </div>
+          <div class="wo-card-meta">
+            <span class="wo-type">${typeLabel}</span>
+            <span class="wo-dot"></span>
+            <span class="wo-dates">${dateStart}${dateEnd ? ' → ' + dateEnd : ''}</span>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+
+    } catch (e) {
+      console.error('[InvoiceCard] loadWorkOrders error:', e);
+      container.innerHTML = '<div class="wo-empty">Could not load work orders.</div>';
+    }
+  }
+
+  /** ── STEP 7: Split Payment Amount — sum of array_splitamount from array_splitpaymenthistory ── */
+  async function loadSplitPaymentAmount(formContext) {
+    const el = document.getElementById('splitPaymentAmount');
+    el.classList.add('loading-shimmer');
+    el.textContent = 'Loading...';
+
+    try {
+      const recordId = formContext.data.entity.getId().replace(/[{}]/g, '');
+      if (!recordId) {
+        el.classList.remove('loading-shimmer');
+        el.textContent = '—';
+        return;
+      }
+
+      const Xrm = window.parent.Xrm;
+
+      // Fetch all split payment history records linked to this invoice
+      const result = await Xrm.WebApi.retrieveMultipleRecords(
+        'array_splitpaymenthistory',
+        `?$select=array_splitamount` +
+        `&$filter=_array_purchaseinvoice_value eq ${recordId}`
+      );
+
+      const items = result.entities || [];
+
+      // Sum up array_splitamount across all records
+      const total = items.reduce((sum, item) => {
+        const val = parseFloat(item.array_splitamount);
+        return sum + (isNaN(val) ? 0 : val);
+      }, 0);
+
+      el.classList.remove('loading-shimmer');
+      el.textContent = formatCurrency(total);
+
+    } catch (e) {
+      console.error('[InvoiceCard] loadSplitPaymentAmount error:', e);
+      el.classList.remove('loading-shimmer');
+      el.textContent = '—';
+    }
+  }
+
+  /**
+   * ── STEP 8: Reinvoice Amount ──
+   * Sums array_amount from all array_meterreadings linked to this invoice
+   * where statuscode = 126330001 (only shown when Utility Invoice = Yes).
+   */
+  async function loadReinvoiceAmount(formContext) {
+    const el = document.getElementById('reinvoiceAmount');
+    el.classList.add('loading-shimmer');
+    el.textContent = 'Loading...';
+
+    try {
+      const recordId = formContext.data.entity.getId().replace(/[{}]/g, '');
+      if (!recordId) {
+        el.classList.remove('loading-shimmer');
+        el.textContent = '—';
+        return;
+      }
+
+      const Xrm = window.parent.Xrm;
+
+      // Fetch all meter readings linked to this invoice with the approved statuscode
+      const result = await Xrm.WebApi.retrieveMultipleRecords(
+        'array_meterreadings',
+        `?$select=array_amount` +
+        `&$filter=_array_purchaseinvoice_value eq ${recordId} and statuscode eq 126330001`
+      );
+
+      const items = result.entities || [];
+
+      // Sum array_amount across all matching records
+      const total = items.reduce((sum, item) => {
+        const val = parseFloat(item.array_amount);
+        return sum + (isNaN(val) ? 0 : val);
+      }, 0);
+
+      el.classList.remove('loading-shimmer');
+      el.textContent = formatCurrency(total);
+
+    } catch (e) {
+      console.error('[InvoiceCard] loadReinvoiceAmount error:', e);
+      el.classList.remove('loading-shimmer');
+      el.textContent = '—';
+    }
+  }
+
+  /** Entry point */
+  window.addEventListener('load', async function () {
+    await new Promise(resolve => setTimeout(resolve, 3000));
+
+    const formContext = getFormContext();
+    if (!formContext) return;
+
+    loadInvoiceAmount(formContext);
+    loadLeftToBeSettled(formContext);
+    loadSplitPaymentAmount(formContext);
+
+    // Await both supplier + categories before building description
+    // (description needs both _resolvedSupplierName and _resolvedCategories)
+    await Promise.all([
+      loadSupplier(formContext),
+      loadCategories(formContext)
+    ]);
+
+    loadDescription(formContext);
+    loadWorkOrders(formContext);
+
+    // Load real budget data — depends on _resolvedCategoryIds being populated by loadCategories
+    loadBudget(formContext);
+
+    // Load reinvoice amount — display is controlled by loadDescription (Utility Invoice flag)
+    loadReinvoiceAmount(formContext);
+  });
+</script>
+
+</body>
+</html>
