@@ -1,0 +1,432 @@
+  <!DOCTYPE html>
+  <html>
+  <head>
+  <meta charset="UTF-8">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #ffffff;
+      color: #1a1d23;
+    }
+
+    .factbox {
+      background: #ffffff;
+      border: 1px solid #e8eaee;
+      border-bottom: none;
+      border-radius: 8px 8px 0 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── 1. STATUS STRIP (TOP) ── */
+    .status-strip {
+      display: flex;
+      gap: 20px;
+      padding: 16px 18px;
+      border-bottom: 1px solid #e8eaee;
+
+    }
+
+    .pill-label {
+      font-size: 10px;
+      font-weight: bold;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #6a6b6d;
+      margin-bottom: 4px;
+      display: block;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      border: 1.5px solid transparent;
+    }
+
+    .status-pill .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ── 2. GRID SECTION (CURRENCY COLUMNS) ── */
+    .factbox-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border-bottom: 1px solid #e8eaee;
+    }
+
+    .col {
+      padding: 18px;
+      /* padding-bottom: 0px; */
+      border-right: 1px solid #e8eaee;
+    }
+
+    .col:last-child { border-right: none; }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #1a1d23;
+      margin-bottom: 20px;
+      display: block;
+      border-bottom: 2px solid #e8eaee;
+      padding-bottom: 4px;
+    }
+    /* Outstanding Credit heading: bigger + separated from the section above */
+    .subsection-heading-wrap {
+    padding: 24px 18px 0 18px;
+    margin-top: 20px;
+    border-top: 1px solid #e8eaee;
+    }
+
+    .subsection-heading {
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #1a1d23;
+    display: block;
+    padding-bottom: 8px;
+    margin-bottom: 4px;
+    border-bottom: 2px solid #e8eaee;
+    }
+
+    .field-block {
+      margin-bottom: 20px;
+    }
+
+    .row-label {
+      font-size: 9px;
+      font-weight: 600;
+      color: #9098a6;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+
+    .value-text {
+      font-size: 20px;
+      font-weight: 600;
+      color: #1a1d23;
+      line-height: 1.2;
+    }
+
+    .value-text.paid { color: #16a34a; }
+    .value-text.remaining { color: #dc2626; }
+
+    /* ── 3. BOTTOM SECTION: STACKED PROGRESS BARS ── */
+    .bottom-progress {
+      padding: 20px 18px 0 18px;
+      /* background: #fcfcfd; */
+      display: flex;
+      flex-direction: column;
+      gap: 15px; /* Space between the two progress bars */
+    }
+
+    .progress-wrap { width: 100%; }
+    .progress-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .progress-pct { font-size: 11px; font-weight: 700; color: #1a1d23; }
+    .progress-track {
+      width: 100%; height: 8px;
+      background: #eef0f3;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #16a34a, #4ade80);
+      width: 0%;
+      transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* ── SKELETON ── */
+    .skeleton {
+      background: linear-gradient(90deg, #f0f2f5 25%, #e4e8ef 50%, #f0f2f5 75%);
+      background-size: 200% 100%;
+      animation: skel 1.4s infinite;
+      border-radius: 4px;
+      display: none;
+    }
+    @keyframes skel { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .skel-val { height: 22px; width: 120px; margin-top: 4px; }
+    .skel-pill { width: 80px; height: 22px; border-radius: 20px; }
+    
+    .skeleton-state .value-text, .skeleton-state .status-pill, .skeleton-state .progress-pct { display: none !important; }
+    .skeleton-state .skeleton { display: block !important; }
+  </style>
+  </head>
+  <body>
+
+  <div class="factbox skeleton-state" id="factbox">
+
+    <div class="status-strip">
+
+      <div class="status-block">
+        <span class="pill-label">Tenant Rank</span>
+        <span class="status-pill" id="pill-tenantrank"><span class="dot"></span><span id="tenantrank-text">—</span></span>
+        <span class="skeleton skel-pill"></span>
+      </div>
+  <div style="width:1px; align-self:stretch; background:#e8eaee; margin: 0 4px;"></div>
+
+      <div class="status-block">
+        <span class="pill-label">Case Frequency</span>
+        <span class="status-pill" id="pill-casestatus"><span class="dot"></span><span id="casestatus-text">—</span></span>
+        <span class="skeleton skel-pill"></span>
+      </div>
+
+    </div>
+
+    <div class="factbox-grid">
+      <div class="col">
+        <span class="section-label">Euro (EUR)</span>
+        <div class="field-block">
+          <div class="row-label">Total Amount</div>
+          <div class="value-text" id="val-total-eur">—</div>
+          <div class="skeleton skel-val"></div>
+        </div>
+        <div class="field-block">
+          <div class="row-label">Amount Paid</div>
+          <div class="value-text paid" id="val-paid-eur">—</div>
+          <div class="skeleton skel-val"></div>
+        </div>
+        <div class="field-block">
+          <div class="row-label">Remaining Balance</div>
+          <div class="value-text remaining" id="val-remaining-eur">—</div>
+          <div class="skeleton skel-val"></div>
+        </div>
+      </div>
+
+      <div class="col">
+        <span class="section-label">Złoty (PLN)</span>
+        <div class="field-block">
+          <div class="row-label">Total Amount</div>
+          <div class="value-text" id="val-total-pln">—</div>
+          <div class="skeleton skel-val"></div>
+        </div>
+        <div class="field-block">
+          <div class="row-label">Amount Paid</div>
+          <div class="value-text paid" id="val-paid-pln">—</div>
+          <div class="skeleton skel-val"></div>
+        </div>
+        <div class="field-block">
+          <div class="row-label">Remaining Balance</div>
+          <div class="value-text remaining" id="val-remaining-pln">—</div>
+          <div class="skeleton skel-val"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom-progress">
+      <div class="progress-wrap">
+        <div class="progress-meta">
+          <span class="pill-label" style="margin:0">Collection Progress (EUR)</span>
+          <span class="progress-pct" id="pct-label-eur">0%</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="progress-fill-eur"></div>
+        </div>
+      </div>
+
+      <div class="progress-wrap">
+        <div class="progress-meta">
+          <span class="pill-label" style="margin:0">Collection Progress (PLN)</span>
+          <span class="progress-pct" id="pct-label-pln">0%</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="progress-fill-pln"></div>
+        </div>
+      </div>
+    </div>
+   <div class="subsection-heading-wrap">
+   <span class="subsection-heading">Outstanding Credit</span>
+</div>
+    <div class="factbox-grid">
+      <div class="col" style="padding-top:0; padding-bottom:18px; border-right: none;">
+        <div class="field-block" style="margin-bottom:0;">
+          <div class="row-label">Outstanding Credit (EUR)</div>
+          <div class="value-text remaining" id="val-credit-eur">—</div>
+          <div class="skeleton skel-val"></div>
+        </div>
+      </div>
+      <div class="col" style="padding-top:0; padding-bottom:18px;">
+        <div class="field-block" style="margin-bottom:0;">
+          <div class="row-label">Outstanding Credit (PLN)</div>
+          <div class="value-text remaining" id="val-credit-pln">—</div>
+          <div class="skeleton skel-val"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    function fmt(symbol, n) {
+      var s = Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      return (n < 0 ? '-' : '') + symbol + '\u00a0' + s;
+    }
+
+    function animNum(el, end, symbol) {
+      var dur = 800;
+      var start = performance.now();
+      (function tick(now) {
+        var p = Math.min((now - start) / dur, 1);
+        var ease = 1 - Math.pow(1 - p, 4);
+        el.textContent = fmt(symbol, end * ease);
+        if (p < 1) requestAnimationFrame(tick);
+      })(start);
+    }
+
+    function qp(k) { return new URLSearchParams(window.location.search).get(k); }
+
+    async function fetchChoiceColors(optionSetName) {
+      try {
+        var url = parent.Xrm.Utility.getGlobalContext().getClientUrl() + "/api/data/v9.2/GlobalOptionSetDefinitions(Name='" + optionSetName + "')";
+        var res = await parent.fetch(url, { headers: { 'OData-MaxVersion': '4.0', 'OData-Version': '4.0', 'Accept': 'application/json' } });
+        var json = await res.json();
+        var colorMap = {};
+        (json.Options || []).forEach(opt => { if (opt.Color) colorMap[opt.Value] = opt.Color; });
+        return colorMap;
+      } catch (e) { return {}; }
+    }
+
+    function hexToRgb(hex) {
+      hex = hex.replace('#', '');
+      if (hex.length === 3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+      var bigint = parseInt(hex, 16);
+      return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 };
+    }
+
+    // function applyPillColor(pillEl, dotEl, hex) {
+    //   var fallback = '#94a3b8';
+    //   var c = hexToRgb(hex || fallback);
+    //   pillEl.style.background = `rgba(${c.r},${c.g},${c.b},0.12)`;
+    //   pillEl.style.borderColor = `rgba(${c.r},${c.g},${c.b},0.3)`;
+    //   pillEl.style.color = `rgb(${Math.round(c.r*0.5)},${Math.round(c.g*0.5)},${Math.round(c.b*0.5)})`;
+    //   dotEl.style.background = hex || fallback;
+    // }
+
+  //   function applyPillColor(pillEl, dotEl, hex) {
+  //   var fallback = '#94a3b8';
+  //   var base = hex || fallback;
+
+  //   // Convert to RGB
+  //   var c = hexToRgb(base);
+
+  //   // Darker border (reduce brightness ~20%)
+  //   var border = `rgb(${Math.round(c.r * 0.8)}, ${Math.round(c.g * 0.8)}, ${Math.round(c.b * 0.8)})`;
+
+  //   // Apply styles
+  //   pillEl.style.background = base;              // ✅ exact hex color
+  //   pillEl.style.borderColor = border;           // ✅ darker version
+  //   pillEl.style.color = '#1a1d23';              // ✅ neutral dark text
+  //   dotEl.style.background = border;             // optional: slightly darker dot
+  // }
+
+
+  // function applyPillColor(pillEl, dotEl, hex) {
+  //   var fallback = '#94a3b8';
+  //   var base = hex || fallback;
+  //   var c = hexToRgb(base);
+
+  //   // Slightly darker border
+  //   var border = `rgb(${Math.round(c.r * 0.8)}, ${Math.round(c.g * 0.8)}, ${Math.round(c.b * 0.8)})`;
+
+  //   // Apply base styles
+  //   pillEl.style.background = base;
+  //   // pillEl.style.borderColor = border;
+  //   pillEl.style.color = '#1a1d23';
+
+  //   // ✨ Subtle glow effect (key part)
+  //   pillEl.style.boxShadow = `
+  //     inset 0 1px 0 rgba(255,255,255,0.25),
+  //     inset 0 -1px 2px rgba(0,0,0,0.08),
+  //     0 0 6px rgba(${c.r}, ${c.g}, ${c.b}, 0.15)
+  //   `;
+
+  //   // Optional: slight highlight gradient overlay
+  //   pillEl.style.backgroundImage = `
+  //     linear-gradient(
+  //       to bottom,
+  //       rgba(255,255,255,0.15),
+  //       rgba(255,255,255,0.05)
+  //     )
+  //   `;
+
+  //   dotEl.style.background = border;
+  // }
+
+    function applyPillColor(pillEl, dotEl, hex) {
+      var fallback = '#94a3b8';
+      var base = hex || fallback;
+
+      var c = hexToRgb(base);
+
+      pillEl.style.background = `rgba(${c.r},${c.g},${c.b},0.18)`;
+      pillEl.style.borderColor = `rgba(${c.r},${c.g},${c.b},0.45)`;
+      pillEl.style.color = "rgb(60 60 60)";
+      pillEl.style.boxShadow = `0 0 4px rgba(${c.r},${c.g},${c.b},0.12)`;
+
+      dotEl.style.background = base;
+    }
+
+    async function load() {
+      try {
+        var recordId = qp('id'), entityName = qp('typename');
+        if (!recordId || !entityName) return;
+        var cleanId = recordId.replace(/[{}]/g, '');
+
+        var [data, caseColors, rankColors] = await Promise.all([
+        parent.Xrm.WebApi.retrieveRecord(entityName, cleanId, '?$select=array_totalamounteuro,array_totalamountpln,array_amountpaideuro,array_amountpaidpln,array_balancedueeuro,array_balanceduepln,array_casestatus,array_tenantrank,array_crediteur,array_creditpln'),          fetchChoiceColors('array_caseloadcategory'),
+          fetchChoiceColors('array_tenantrank')
+        ]);
+
+        document.getElementById('factbox').classList.remove('skeleton-state');
+
+        animNum(document.getElementById('val-total-eur'), data.array_totalamounteuro || 0, '€');
+        animNum(document.getElementById('val-paid-eur'), data.array_amountpaideuro || 0, '€');
+        animNum(document.getElementById('val-remaining-eur'), data.array_balancedueeuro || 0, '€');
+
+        animNum(document.getElementById('val-total-pln'), data.array_totalamountpln || 0, 'zł');
+        animNum(document.getElementById('val-paid-pln'), data.array_amountpaidpln || 0, 'zł');
+        animNum(document.getElementById('val-remaining-pln'), data.array_balanceduepln || 0, 'zł');
+
+        animNum(document.getElementById('val-credit-eur'), data.array_crediteur || 0, '€');
+        animNum(document.getElementById('val-credit-pln'), data.array_creditpln || 0, 'zł');
+
+        applyPillColor(document.getElementById('pill-casestatus'), document.querySelector('#pill-casestatus .dot'), caseColors[data.array_casestatus]);
+        document.getElementById('casestatus-text').textContent = data['array_casestatus@OData.Community.Display.V1.FormattedValue'] || '—';
+
+        applyPillColor(document.getElementById('pill-tenantrank'), document.querySelector('#pill-tenantrank .dot'), rankColors[data.array_tenantrank]);
+        document.getElementById('tenantrank-text').textContent = data['array_tenantrank@OData.Community.Display.V1.FormattedValue'] || '—';
+
+        var pctEur = data.array_totalamounteuro > 0 ? (data.array_amountpaideuro / data.array_totalamounteuro) * 100 : 0;
+        var pctPln = data.array_totalamountpln > 0 ? (data.array_amountpaidpln / data.array_totalamountpln) * 100 : 0;
+
+        setTimeout(() => {
+          document.getElementById('progress-fill-eur').style.width = Math.min(pctEur, 100) + '%';
+          document.getElementById('pct-label-eur').textContent = Math.round(pctEur) + '%';
+          document.getElementById('progress-fill-pln').style.width = Math.min(pctPln, 100) + '%';
+          document.getElementById('pct-label-pln').textContent = Math.round(pctPln) + '%';
+        }, 200);
+
+      } catch (err) { console.error(err); }
+    }
+    window.onload = load;
+  </script>
+  </body>
+  </html>
