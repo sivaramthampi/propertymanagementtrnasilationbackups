@@ -1,0 +1,2066 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Split Net Value</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 24px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f7fb;
+            color: #111827;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            padding: 32px;
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            color: #111827;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .info-card {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 16px;
+        }
+
+        .info-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+
+        .info-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .remaining {
+            color: #2563eb;
+        }
+
+        .remaining.negative {
+            color: #dc2626;
+        }
+
+        .toggle-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f9fafb;
+            padding: 16px;
+            border-radius: 10px;
+            margin-bottom: 24px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .toggle-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .toggle {
+            width: 48px;
+            height: 26px;
+            background: #d1d5db;
+            border-radius: 999px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle.on {
+            background: #10b981;
+        }
+
+        .toggle-knob {
+            width: 22px;
+            height: 22px;
+            background: #ffffff;
+            border-radius: 999px;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle.on .toggle-knob {
+            transform: translateX(22px);
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-bottom: 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        thead {
+            background: #f9fafb;
+        }
+
+        th {
+            color: #6b7280;
+            font-size: 12px;
+            text-align: left;
+            font-weight: 600;
+            padding: 12px 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        th:last-child {
+            text-align: center;
+            width: 80px;
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f3f4f6;
+            vertical-align: middle;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background: #fafbfc;
+        }
+
+        .input {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            background: #ffffff;
+            font-size: 14px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            font-family: inherit;
+        }
+
+        .input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .input:disabled {
+            background: #f0f4ff;
+            color: #555;
+            cursor: not-allowed;
+            border-color: #c5d3f5;
+        }
+
+        .input.date-error {
+            border-color: #dc2626;
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+        }
+
+        .amount-with-currency {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .currency-symbol {
+            color: #6b7280;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .recurring-fields {
+            display: none;
+            margin-top: 0;
+            margin-bottom: 24px;
+            padding: 20px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+        }
+
+        .recurring-fields.visible {
+            display: block;
+        }
+
+        .field-group {
+            margin-bottom: 16px;
+        }
+
+        .field-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .field-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 6px;
+        }
+
+        .date-hint {
+            font-size: 11px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+
+        .date-hint.error {
+            color: #dc2626;
+            font-weight: 600;
+        }
+
+        .account-input {
+            cursor: pointer;
+        }
+
+        .remove-btn {
+            padding: 6px 12px;
+            font-size: 12px;
+            color: #dc2626;
+            background: transparent;
+            border: 1px solid #fecaca;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .remove-btn:hover {
+            background: #fef2f2;
+            border-color: #dc2626;
+        }
+
+        .add-btn {
+            width: 100%;
+            background: #eff6ff;
+            border-radius: 8px;
+            border: 1px dashed #3b82f6;
+            padding: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #2563eb;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .add-btn:hover {
+            background: #dbeafe;
+            border-color: #2563eb;
+        }
+
+        .add-btn:disabled {
+            background: #f3f4f6;
+            border-color: #d1d5db;
+            color: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .alert-box {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            color: #991b1b;
+        }
+
+        .alert-icon {
+            font-size: 18px;
+        }
+
+        .footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .split-section {
+            display: block;
+        }
+
+        .split-section.hidden {
+            display: none;
+        }
+
+        .info-message {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 24px 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            color: #1e40af;
+        }
+
+        /* ── CHANGED: warning message style for insufficient net ── */
+        .warning-message {
+            background: #fef3c7;
+            border: 1px solid #fde68a;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 24px 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            color: #92400e;
+        }
+
+        .info-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .btn-outline {
+            background: #fff;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            border: 1px solid #d1d5db;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #374151;
+        }
+
+        .btn-outline:hover {
+            background: #f9fafb;
+            border-color: #9ca3af;
+        }
+
+        .btn {
+            padding: 10px 24px;
+            background: #2563eb;
+            color: #fff;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background: #1d4ed8;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 24px;
+        }
+
+        .radio-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #374151;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .radio-label:hover {
+            color: #2563eb;
+        }
+
+        .radio-input {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #2563eb;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { transform: scale(0.95); opacity: 0; }
+            to   { transform: scale(1);    opacity: 1; }
+        }
+
+        .modal {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            max-width: 450px;
+            width: 90%;
+            animation: slideIn 0.2s ease;
+        }
+
+        .modal-header {
+            padding: 24px 24px 16px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .modal-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .modal-icon.error   { background: #fef2f2; color: #dc2626; }
+        .modal-icon.success { background: #f0fdf4; color: #16a34a; }
+        .modal-icon.warning { background: #fef3c7; color: #d97706; }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .modal-body {
+            padding: 0 24px 24px 24px;
+            color: #6b7280;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        .modal-btn {
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .modal-btn-primary          { background: #2563eb; color: #fff; }
+        .modal-btn-primary:hover    { background: #1d4ed8; }
+        .modal-btn-secondary        { background: #f3f4f6; color: #374151; }
+        .modal-btn-secondary:hover  { background: #e5e7eb; }
+
+        .split-method-section {
+            margin-bottom: 24px;
+            padding: 20px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+        }
+
+        .split-method-radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* Loader */
+        .loader-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .loader-overlay.active { display: flex; }
+
+        .loader-container {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        .loader-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #e5e7eb;
+            border-top-color: #2563eb;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .loader-text {
+            font-size: 16px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        /* ── Lease cell styles ── */
+        .lease-cell-loading {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #6b7280;
+            font-size: 13px;
+            font-style: italic;
+        }
+
+        .lease-cell-loading .mini-spinner {
+            width: 14px;
+            height: 14px;
+            border: 2px solid #d1d5db;
+            border-top-color: #2563eb;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            flex-shrink: 0;
+        }
+
+        .lease-cell-none {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #9ca3af;
+            font-size: 13px;
+            font-style: italic;
+        }
+
+        .lease-cell-none::before {
+            content: '—';
+            font-style: normal;
+            color: #d1d5db;
+        }
+
+        .lease-select {
+            width: 100%;
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            background: #ffffff;
+            font-size: 13px;
+            color: #111827;
+            font-family: inherit;
+            cursor: pointer;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .lease-select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .lease-single-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 13px;
+            color: #1d4ed8;
+            font-weight: 500;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .lease-single-badge::before {
+            content: '🔗';
+            font-size: 11px;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+
+        <div class="title">Split Net Value</div>
+
+        <div class="info-grid">
+            <div class="info-card">
+                <div class="info-label">Supplier</div>
+                <div class="info-value" id="supplierName">---</div>
+            </div>
+            <div class="info-card">
+                <!-- CHANGED: label updated to reflect net amount -->
+                <div class="info-label">Total Net Amount</div>
+                <div class="info-value">
+                    <span id="currencySymbol"></span>
+                    <span id="currentValue">0.00</span>
+                </div>
+                <div style="font-size: 12px; color: #9ca3af; margin-top: 8px;">
+                    Tax Amount: <span id="taxCurrencySymbol"></span><span id="taxValue">0.00</span>
+                </div>
+            </div>
+            <div class="info-card">
+                <!-- CHANGED: label updated to Remaining Net -->
+                <div class="info-label">Remaining Net</div>
+                <div class="info-value remaining" id="remainingAmount">
+                    <span id="remainingCurrencySymbol"></span>
+                    <span id="remainingValue">0.00</span>
+                </div>
+            </div>
+        </div>
+
+        <!--
+            CHANGED: replaced single zero-amount message with two separate messages:
+            1. insufficientNetMessage — shown when net remaining >= 0 but < 1
+            2. zeroAmountMessage     — kept for when net is exactly 0 (edge case)
+            Both hide the split section.
+        -->
+        <div id="insufficientNetMessage" class="warning-message" style="display: none;">
+            <span class="info-icon">⚠️</span>
+            <span id="insufficientNetText"></span>
+        </div>
+
+        <div id="zeroAmountMessage" class="info-message" style="display: none;">
+            <span class="info-icon">ℹ️</span>
+            <span>There is no remaining net amount available. Custom split is not available.</span>
+        </div>
+
+        <div id="splitSection" class="split-section">
+
+            <div class="toggle-section">
+                <div>
+                    <div class="toggle-label">Save Split As</div>
+                    <div style="font-size: 12px; color: #6b7280; margin-top: 8px;">Choose how to save the split charges</div>
+                </div>
+                <div class="radio-group">
+                    <label class="radio-label">
+                        <input type="radio" name="chargeType" value="invoice" checked class="radio-input" />
+                        <span>Invoice</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="chargeType" value="recurring" class="radio-input" />
+                        <span>Recurring Charge</span>
+                    </label>
+                </div>
+            </div>
+
+            <div id="invoiceFields" class="recurring-fields visible">
+                <div class="field-group" style="margin-bottom: 16px;">
+                    <label class="field-label">Invoice Type <span style="color: #dc2626;">*</span></label>
+                    <input type="text" class="input" id="invoiceTypeLookup" placeholder="Click to select invoice type"
+                        readonly onclick="lookupInvoiceType(this)" style="cursor: pointer;" />
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="field-group" style="margin-bottom: 0;">
+                        <label class="field-label">Invoice Date <span style="color: #dc2626;">*</span></label>
+                        <input type="date" class="input" id="invoiceDate" />
+                    </div>
+                    <div class="field-group" style="margin-bottom: 0;">
+                        <label class="field-label">Due Date <span style="color: #dc2626;">*</span></label>
+                        <input type="date" class="input" id="dueDate" />
+                        <div id="dueDateHint" class="date-hint" style="display: none;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="recurringFields" class="recurring-fields">
+                <div class="field-group">
+                    <label class="field-label">Charge Type <span style="color: #dc2626;">*</span></label>
+                    <select class="input" id="chargeTypeLookupSelect" onchange="onChargeTypeSelectChange()">
+                        <option value="">Loading charge types...</option>
+                    </select>
+                    <input type="hidden" id="chargeTypeId" />
+                    <input type="hidden" id="chargeTypeName" />
+                </div>
+
+                <div class="field-group">
+                    <label class="field-label">Invoice Type <span style="color: #dc2626;">*</span></label>
+                    <input type="text" class="input" id="chargeInvoiceTypeLookup"
+                        placeholder="Auto-populated from charge type..." readonly disabled />
+                    <input type="hidden" id="chargeInvoiceTypeId" />
+                </div>
+
+                <div class="field-group">
+                    <label class="field-label">Frequency <span style="color: #dc2626;">*</span></label>
+                    <select class="input" id="frequencySelect" onchange="onFrequencyChange()">
+                        <option value="">Select frequency</option>
+                    </select>
+                </div>
+
+                <div class="field-group">
+                    <label class="field-label">Start Date <span style="color: #dc2626;">*</span></label>
+                    <input type="date" class="input" id="startDate" />
+                </div>
+
+                <div class="field-group">
+                    <label class="field-label">Number of Installments <span style="color: #dc2626;">*</span></label>
+                    <input type="number" class="input" id="numInstallments" placeholder="Enter number of installments"
+                        min="1" step="1" />
+                </div>
+
+                <div class="field-group">
+                    <label class="field-label">Invoice Generation Date <span style="color: #dc2626;">*</span></label>
+                    <input type="date" class="input" id="chargeGenDate" />
+                </div>
+
+                <div class="field-group">
+                    <label class="field-label">Due Date Rule <span style="color: #dc2626;">*</span></label>
+                    <select class="input" id="dueDateRule">
+                        <option value="">Select due date rule</option>
+                    </select>
+                </div>
+
+                <div class="field-group">
+                    <label class="field-label">Due In Days <span style="color: #dc2626;">*</span></label>
+                    <input type="number" class="input" id="dueInDays" placeholder="Enter number of days" min="0" />
+                </div>
+            </div>
+
+            <div class="split-method-section">
+                <div style="margin-bottom: 16px;">
+                    <label class="field-label" style="margin-bottom: 12px; display: block;">Split Method</label>
+                    <div class="split-method-radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="splitMethod" value="manual" checked class="radio-input" />
+                            <span>Manual Split</span>
+                        </label>
+                        <label class="radio-label" style="display: none;">
+                            <input type="radio" name="splitMethod" value="unit" class="radio-input" />
+                            <span>Unit Split</span>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="splitMethod" value="area" class="radio-input" />
+                            <span>Total Area Split</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div id="areaTypeSection" style="display: none; margin-bottom: 16px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+                    <label class="field-label" style="margin-bottom: 12px; display: block;">Area Calculation Type</label>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="areaType" value="rentable" checked class="radio-input" />
+                            <span>Total Rentable Area</span>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="areaType" value="occupied" class="radio-input" />
+                            <span>Total Occupied Area</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div id="propertyRentableAreaDisplay" style="display: none; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+                    <label class="field-label">Property Total Rentable Area (sqm)</label>
+                    <input type="text" class="input" id="propertyRentableAreaValue" readonly
+                        style="background: #e5e7eb; cursor: not-allowed;" />
+                </div>
+
+                <div id="propertyOccupiedAreaDisplay" style="display: none; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+                    <label class="field-label">Property Total Occupied Area (sqm)</label>
+                    <input type="text" class="input" id="propertyOccupiedAreaValue" readonly
+                        style="background: #e5e7eb; cursor: not-allowed;" />
+                </div>
+            </div>
+
+            <div class="toggle-section" id="evenSplitSection">
+                <div>
+                    <div class="toggle-label">Even Split</div>
+                    <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">Distribute amount equally among all members</div>
+                </div>
+                <div id="toggleEven" class="toggle">
+                    <div class="toggle-knob"></div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table id="splitTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 25%;"><span id="tableHeaderLabel">Account/Contact</span></th>
+                            <th id="areaColumnHeader" style="width: 15%; display: none;">Total Area (sqm)</th>
+                            <th id="percentageColumnHeader" style="width: 12%; display: none;">Percentage (%)</th>
+                            <!-- CHANGED: column header clarifies Net Amount -->
+                            <th style="width: 20%;">Net Amount</th>
+                            <th id="leaseColumnHeader" style="width: 25%; display: none;">Lease Agreement</th>
+                            <th style="width: 80px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="splitBody"></tbody>
+                </table>
+            </div>
+
+            <div id="alertBox" class="alert-box" style="display: none;">
+                <span class="alert-icon">⚠️</span>
+                <span id="alertMessage"></span>
+            </div>
+
+            <button class="add-btn" id="addRowBtn">+ Add Member</button>
+        </div>
+
+        <div class="footer">
+            <button class="btn-outline" onclick="window.close()">Cancel</button>
+            <button class="btn" id="saveBtn">Re-invoice</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-icon" id="modalIcon">⚠️</div>
+                <div class="modal-title" id="modalTitle">Alert</div>
+            </div>
+            <div class="modal-body" id="modalBody">This is a message.</div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-primary" id="modalOkBtn">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="loader-overlay" id="loaderOverlay">
+        <div class="loader-container">
+            <div class="loader-spinner"></div>
+            <div class="loader-text" id="loaderText">Loading lease agreements...</div>
+        </div>
+    </div>
+
+    <script>
+        let evenMode = false;
+        let totalNetValue = 0;       // ← CHANGED: now holds array_lefttobesettlednet
+        let totalTax = 0;
+        let totalAmount = 0;
+        let supplierName = '';
+        let supplierId = '';
+        let splits = [];
+        let selectedChargeType = null;
+        let selectedInvoiceType = null;
+        let currencySymbol = '';
+        let transactionCurrencyId = '';
+        let purchaseInvoiceId = '';
+        let currentChargeMode = 'invoice';
+        let currentSplitMethod = 'manual';
+        let currentAreaType = 'rentable';
+        let propertyId = '';
+        let propertyTotalRentableArea = 0;
+        let propertyTotalOccupiedArea = 0;
+        let actualRemainingAmount = 0;
+        let splitAmountFlowUrl = null;
+
+        let propertyChargeTypeMap = {};
+
+        // ─── Helpers ─────────────────────────────────────────────────────────
+        function getParentXrm() {
+            if (window.parent && window.parent.Xrm) return window.parent.Xrm;
+            if (window.top   && window.top.Xrm)    return window.top.Xrm;
+            return null;
+        }
+
+        function getFirstDayOfCurrentMonth() {
+            var now = new Date();
+            var y = now.getFullYear();
+            var m = String(now.getMonth() + 1).padStart(2, '0');
+            return y + '-' + m + '-01';
+        }
+
+        function isLeaseColumnMode() {
+            return currentChargeMode === 'invoice' && currentSplitMethod === 'manual';
+        }
+
+        // ─── Lease helpers (unchanged) ────────────────────────────────────────
+        function fetchLeasesForTenant(tenantId) {
+            var parentXrm = getParentXrm();
+            if (!parentXrm || !tenantId) return Promise.resolve([]);
+            return parentXrm.WebApi.retrieveMultipleRecords(
+                'array_leaseagreement',
+                '?$select=array_leaseagreementid,array_leasename,_array_tenant_value' +
+                '&$filter=(_array_tenant_value eq ' + tenantId + ' and statecode eq 0)'
+            ).then(function (results) {
+                if (!results.entities || results.entities.length === 0) return [];
+                return results.entities.map(function (e) {
+                    return { id: e['array_leaseagreementid'] || '', name: e['array_leasename'] || 'Lease Agreement' };
+                });
+            }).catch(function (err) { console.error('fetchLeasesForTenant error:', err); return []; });
+        }
+
+        function renderLeaseCell(splitId, leases) {
+            var cell  = document.getElementById('leaseCell_' + splitId);
+            if (!cell) return;
+            var split = splits.find(function (s) { return s.id === splitId; });
+            if (!split) return;
+            cell.innerHTML = '';
+            if (leases.length === 0) {
+                var noLeaseEl = document.createElement('span');
+                noLeaseEl.className   = 'lease-cell-none';
+                noLeaseEl.textContent = 'No lease agreements';
+                noLeaseEl.title       = 'No lease agreements';
+                cell.appendChild(noLeaseEl);
+                split.leaseAgreementId = ''; split.leaseAgreementName = '';
+            } else if (leases.length === 1) {
+                split.leaseAgreementId = leases[0].id; split.leaseAgreementName = leases[0].name;
+                var badge = document.createElement('span');
+                badge.className   = 'lease-single-badge';
+                badge.title       = leases[0].name;
+                badge.textContent = leases[0].name;
+                cell.appendChild(badge);
+            } else {
+                var select = document.createElement('select');
+                select.className = 'lease-select';
+                leases.forEach(function (lease) {
+                    var opt = document.createElement('option');
+                    opt.value = lease.id; opt.textContent = lease.name;
+                    select.appendChild(opt);
+                });
+                var preselect = leases.find(function (l) { return l.id === split.leaseAgreementId; });
+                var initial   = preselect || leases[0];
+                select.value = initial.id; select.title = initial.name;
+                split.leaseAgreementId = initial.id; split.leaseAgreementName = initial.name;
+                select.addEventListener('change', function () {
+                    var chosen = leases.find(function (l) { return l.id === this.value; }, this);
+                    if (chosen) { split.leaseAgreementId = chosen.id; split.leaseAgreementName = chosen.name; this.title = chosen.name; }
+                    else        { split.leaseAgreementId = ''; split.leaseAgreementName = ''; this.title = ''; }
+                });
+                cell.appendChild(select);
+            }
+        }
+
+        function setLeaseCellLoading(splitId) {
+            var cell = document.getElementById('leaseCell_' + splitId);
+            if (!cell) return;
+            cell.innerHTML = '<div class="lease-cell-loading"><div class="mini-spinner"></div><span>Loading...</span></div>';
+        }
+
+        function clearLeaseCell(splitId) {
+            var cell  = document.getElementById('leaseCell_' + splitId);
+            if (!cell) return;
+            cell.innerHTML = '';
+            var split = splits.find(function (s) { return s.id === splitId; });
+            if (split) { split.leaseAgreementId = ''; split.leaseAgreementName = ''; }
+        }
+
+        function fetchTenantFromLease(leaseAgreementId) {
+            var parentXrm = getParentXrm();
+            if (!parentXrm || !leaseAgreementId) return Promise.resolve({ tenantId: '', tenantName: '', tenantEntityType: '' });
+            return parentXrm.WebApi.retrieveMultipleRecords(
+                'array_leaseagreement',
+                '?$select=array_leaseagreementid,_array_tenant_value&$filter=array_leaseagreementid eq ' + leaseAgreementId
+            ).then(function (results) {
+                if (results.entities && results.entities.length > 0) {
+                    var entity = results.entities[0];
+                    return {
+                        tenantId:         entity['_array_tenant_value']                                           || '',
+                        tenantName:       entity['_array_tenant_value@OData.Community.Display.V1.FormattedValue'] || '',
+                        tenantEntityType: entity['_array_tenant_value@Microsoft.Dynamics.CRM.lookuplogicalname']  || ''
+                    };
+                }
+                return { tenantId: '', tenantName: '', tenantEntityType: '' };
+            }).catch(function (err) { console.error('fetchTenantFromLease error:', err); return { tenantId: '', tenantName: '', tenantEntityType: '' }; });
+        }
+
+        // ─── Date linkage (unchanged) ─────────────────────────────────────────
+        function onInvoiceDateChange() {
+            var invoiceDateEl = document.getElementById('invoiceDate');
+            var dueDateEl     = document.getElementById('dueDate');
+            var hintEl        = document.getElementById('dueDateHint');
+            var invoiceVal    = invoiceDateEl.value;
+            if (invoiceVal) {
+                dueDateEl.min = invoiceVal;
+                if (dueDateEl.value && dueDateEl.value < invoiceVal) {
+                    dueDateEl.value = '';
+                    dueDateEl.classList.add('date-error');
+                    hintEl.textContent = 'Due date was cleared — it must be on or after the invoice date (' + formatDisplayDate(invoiceVal) + ').';
+                    hintEl.className = 'date-hint error'; hintEl.style.display = 'block';
+                } else {
+                    dueDateEl.classList.remove('date-error');
+                    hintEl.textContent = 'Must be on or after ' + formatDisplayDate(invoiceVal) + '.';
+                    hintEl.className = 'date-hint'; hintEl.style.display = 'block';
+                }
+            } else {
+                dueDateEl.min = new Date().toISOString().split('T')[0];
+                dueDateEl.classList.remove('date-error'); hintEl.style.display = 'none';
+            }
+        }
+
+        function onDueDateChange() {
+            var invoiceDateEl = document.getElementById('invoiceDate');
+            var dueDateEl     = document.getElementById('dueDate');
+            var hintEl        = document.getElementById('dueDateHint');
+            var invoiceVal    = invoiceDateEl.value;
+            var dueVal        = dueDateEl.value;
+            if (invoiceVal && dueVal && dueVal < invoiceVal) {
+                dueDateEl.value = '';
+                dueDateEl.classList.add('date-error');
+                hintEl.textContent = 'Due date must be on or after the invoice date (' + formatDisplayDate(invoiceVal) + ').';
+                hintEl.className = 'date-hint error'; hintEl.style.display = 'block';
+            } else {
+                dueDateEl.classList.remove('date-error');
+                if (invoiceVal) { hintEl.textContent = 'Must be on or after ' + formatDisplayDate(invoiceVal) + '.'; hintEl.className = 'date-hint'; hintEl.style.display = 'block'; }
+                else { hintEl.style.display = 'none'; }
+            }
+        }
+
+        function formatDisplayDate(isoStr) {
+            if (!isoStr) return '';
+            var parts = isoStr.split('-');
+            if (parts.length !== 3) return isoStr;
+            var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            return parseInt(parts[2]) + ' ' + months[parseInt(parts[1]) - 1] + ' ' + parts[0];
+        }
+
+        function onFrequencyChange() {
+            var frequencyVal   = document.getElementById('frequencySelect').value;
+            var installmentsEl = document.getElementById('numInstallments');
+            if (frequencyVal === '126330002') {
+                installmentsEl.value = 1; installmentsEl.readOnly = true;
+                installmentsEl.style.background = '#f0f4ff'; installmentsEl.style.cursor = 'not-allowed';
+                installmentsEl.style.borderColor = '#c5d3f5'; installmentsEl.style.color = '#555';
+            } else {
+                installmentsEl.readOnly = false;
+                installmentsEl.style.background = ''; installmentsEl.style.cursor = '';
+                installmentsEl.style.borderColor = ''; installmentsEl.style.color = '';
+                if (installmentsEl.value === '1') installmentsEl.value = '';
+            }
+        }
+
+        // ─── Charge types (unchanged) ─────────────────────────────────────────
+        async function fetchPropertyChargeTypes() {
+            var chargeTypeSelect = document.getElementById('chargeTypeLookupSelect');
+            var parentXrm = getParentXrm();
+            if (!parentXrm) { chargeTypeSelect.innerHTML = '<option value="">Select charge type</option>'; return; }
+            var resolvedPropertyId = propertyId || null;
+            if (!resolvedPropertyId && purchaseInvoiceId) {
+                try {
+                    var invoiceRecord = await parentXrm.WebApi.retrieveRecord('array_purchaseinvoice', purchaseInvoiceId.replace(/[{}]/g,''), '?$select=_array_property_value');
+                    resolvedPropertyId = invoiceRecord['_array_property_value'] || null;
+                } catch (err) { console.error('Could not fetch property from purchase invoice:', err.message); }
+            }
+            if (!resolvedPropertyId) { chargeTypeSelect.innerHTML = '<option value="">No charge types available</option>'; return; }
+            var query = '?$select=array_propertyinvoicetypeconfigurationid,_array_chargetype_value,_array_invoicetype_value,_array_property_value'
+                      + '&$filter=_array_property_value eq ' + resolvedPropertyId.replace(/[{}]/g,'');
+            try {
+                var result = await parentXrm.WebApi.retrieveMultipleRecords('array_propertyinvoicetypeconfiguration', query);
+                propertyChargeTypeMap = {};
+                var addedChargeTypes  = new Set();
+                chargeTypeSelect.innerHTML = '<option value="">Select charge type</option>';
+                if (result.entities && result.entities.length > 0) {
+                    result.entities.forEach(function (entity) {
+                        var ctId = entity['_array_chargetype_value'];
+                        var ctName = entity['_array_chargetype_value@OData.Community.Display.V1.FormattedValue'];
+                        var itId   = entity['_array_invoicetype_value'];
+                        var itName = entity['_array_invoicetype_value@OData.Community.Display.V1.FormattedValue'];
+                        if (ctId && !addedChargeTypes.has(ctId)) {
+                            addedChargeTypes.add(ctId);
+                            propertyChargeTypeMap[ctId] = { chargeTypeName: ctName || '', invoiceTypeId: itId || '', invoiceTypeName: itName || '' };
+                            var option = document.createElement('option');
+                            option.value = ctId; option.textContent = ctName || ctId;
+                            chargeTypeSelect.appendChild(option);
+                        }
+                    });
+                } else { chargeTypeSelect.innerHTML = '<option value="">No charge types available for this property</option>'; }
+            } catch (error) { console.error('fetchPropertyChargeTypes error:', error); chargeTypeSelect.innerHTML = '<option value="">Select charge type</option>'; }
+        }
+
+        function onChargeTypeSelectChange() {
+            var select           = document.getElementById('chargeTypeLookupSelect');
+            var selectedCtId     = select.value;
+            document.getElementById('chargeTypeId').value   = selectedCtId;
+            document.getElementById('chargeTypeName').value = selectedCtId && propertyChargeTypeMap[selectedCtId] ? propertyChargeTypeMap[selectedCtId].chargeTypeName : '';
+            if (selectedCtId && propertyChargeTypeMap[selectedCtId]) {
+                var config = propertyChargeTypeMap[selectedCtId];
+                document.getElementById('chargeInvoiceTypeLookup').value = config.invoiceTypeName;
+                document.getElementById('chargeInvoiceTypeId').value     = config.invoiceTypeId;
+                selectedChargeType = { id: selectedCtId, name: config.chargeTypeName };
+            } else {
+                document.getElementById('chargeInvoiceTypeLookup').value = '';
+                document.getElementById('chargeInvoiceTypeId').value     = '';
+                selectedChargeType = null;
+            }
+        }
+
+        async function getEnvironmentVariables() {
+            try {
+                var parentXrm = getParentXrm();
+                if (!parentXrm) { console.warn('getEnvironmentVariables: no Xrm context'); return; }
+                var query  = '?$select=schemaname&$expand=environmentvariabledefinition_environmentvariablevalue($select=value)'
+                           + "&$filter=schemaname eq 'array_SplitAmountFlowvariable'";
+                var result = await parentXrm.WebApi.retrieveMultipleRecords('environmentvariabledefinition', query);
+                if (!result || !result.entities || result.entities.length === 0) return;
+                var vals = result.entities[0]['environmentvariabledefinition_environmentvariablevalue'];
+                splitAmountFlowUrl = (vals && vals.length > 0) ? vals[0].value : null;
+            } catch (error) { console.error('getEnvironmentVariables error:', error); }
+        }
+
+        function showAlert(message, type, onOk) {
+            type = type || 'error';
+            var overlay = document.getElementById('modalOverlay');
+            var icon    = document.getElementById('modalIcon');
+            var title   = document.getElementById('modalTitle');
+            var body    = document.getElementById('modalBody');
+            var okBtn   = document.getElementById('modalOkBtn');
+            if (type === 'success')      { icon.className = 'modal-icon success'; icon.textContent = '✓';  title.textContent = 'Success'; }
+            else if (type === 'warning') { icon.className = 'modal-icon warning'; icon.textContent = '⚠️'; title.textContent = 'Warning'; }
+            else                         { icon.className = 'modal-icon error';   icon.textContent = '✕';  title.textContent = 'Error';   }
+            body.textContent = message;
+            overlay.classList.add('active');
+            okBtn.onclick = function () { hideAlert(); if (typeof onOk === 'function') onOk(); };
+        }
+
+        function hideAlert() { document.getElementById('modalOverlay').classList.remove('active'); }
+
+        document.getElementById('modalOverlay').addEventListener('click', function (e) { if (e.target === this) hideAlert(); });
+
+        // ─── CHANGED: initFormValues — reads array_lefttobesettlednet, applies threshold = 1 ──
+        function initFormValues() {
+            try {
+                var param = new URLSearchParams(window.location.search).get('data');
+                if (!param && window.location.hash) {
+                    var hashParams = new URLSearchParams(window.location.hash.substring(1));
+                    param = hashParams.get('data');
+                }
+
+                if (param) {
+                    var data = JSON.parse(decodeURIComponent(param));
+
+                    if (data.invoiceTypeId && data.invoiceTypeName) {
+                        selectedInvoiceType = { id: data.invoiceTypeId, name: data.invoiceTypeName };
+                        document.getElementById('invoiceTypeLookup').value = data.invoiceTypeName;
+                    }
+
+                    purchaseInvoiceId     = data.purchaseInvoiceId || '';
+                    supplierName          = data.supplier          || '---';
+                    supplierId            = data.supplierId        || '';
+                    document.getElementById('supplierName').innerText = supplierName;
+
+                    transactionCurrencyId = data.currencyId        || '';
+                    propertyId            = data.propertyId        || '';
+                    totalTax              = parseFloat(data.tax    || 0);
+                    totalAmount           = parseFloat(data.array_totalamount || 0);
+
+                    // ── CHANGED: read array_lefttobesettlednet as the splittable net amount ──
+                    totalNetValue         = parseFloat(data.array_lefttobesettlednet || 0);
+                    actualRemainingAmount = totalNetValue;
+
+                    document.getElementById('currentValue').innerText = totalNetValue.toFixed(2);
+                    document.getElementById('taxValue').innerText      = totalTax.toFixed(2);
+
+                    loadCurrencySymbol();
+
+                    // ── CHANGED: threshold = 1 ──────────────────────────────────────────────
+                    if (totalNetValue <= 0) {
+                        // Net is zero or negative — nothing to split
+                        document.getElementById('zeroAmountMessage').style.display  = 'flex';
+                        document.getElementById('splitSection').style.display       = 'none';
+                        document.getElementById('saveBtn').style.display            = 'none';
+                    } else if (totalNetValue < 1) {
+                        // Net is positive but below the minimum threshold of 1
+                        document.getElementById('insufficientNetText').textContent  =
+                            'The remaining net amount available for split is '
+                            + totalNetValue.toFixed(2)
+                            + '. A minimum of 1.00 is required to proceed with a custom split.';
+                        document.getElementById('insufficientNetMessage').style.display = 'flex';
+                        document.getElementById('splitSection').style.display           = 'none';
+                        document.getElementById('saveBtn').style.display                = 'none';
+                    } else {
+                        updateRemaining();
+                    }
+                }
+            } catch (e) {
+                console.error('Error initializing form:', e);
+            }
+        }
+
+        function loadCurrencySymbol() {
+            var parentXrm = getParentXrm();
+            if (parentXrm && transactionCurrencyId) {
+                parentXrm.WebApi.retrieveRecord('transactioncurrency', transactionCurrencyId, '?$select=currencysymbol').then(function (result) {
+                    currencySymbol = result.currencysymbol || '';
+                    document.getElementById('currencySymbol').innerText          = currencySymbol + ' ';
+                    document.getElementById('taxCurrencySymbol').innerText       = currencySymbol + ' ';
+                    document.getElementById('remainingCurrencySymbol').innerText = currencySymbol + ' ';
+                    updateRemaining();
+                });
+            }
+        }
+
+        function updateRemaining() {
+            var allocated = splits.reduce(function (sum, split) { return sum + (parseFloat(split.amount) || 0); }, 0);
+            var remaining = Math.max(0, actualRemainingAmount - allocated);
+            var remainingValueEl  = document.getElementById('remainingValue');
+            var remainingAmountEl = document.getElementById('remainingAmount');
+            remainingValueEl.innerText = remaining.toFixed(2);
+            if (remaining === 0 && allocated > 0) {
+                remainingAmountEl.classList.remove('negative'); remainingAmountEl.classList.add('remaining');
+            } else if (allocated > actualRemainingAmount) {
+                remainingAmountEl.classList.add('negative'); remainingAmountEl.classList.remove('remaining');
+                remainingValueEl.innerText = 'Over by ' + (allocated - actualRemainingAmount).toFixed(2);
+            } else {
+                remainingAmountEl.classList.add('remaining'); remainingAmountEl.classList.remove('negative');
+            }
+        }
+
+        function redistributeEven() {
+            if (!evenMode || splits.length === 0) return;
+            var amountPerMember  = actualRemainingAmount / splits.length;
+            var totalDistributed = 0;
+            splits.forEach(function (split, index) {
+                if (index === splits.length - 1) {
+                    split.amount = actualRemainingAmount - totalDistributed;
+                } else {
+                    split.amount = Math.round(amountPerMember * 100) / 100;
+                    totalDistributed += split.amount;
+                }
+                var row = document.getElementById('splitBody').children[index];
+                if (row) {
+                    var input = row.querySelector('input[type="number"]');
+                    if (input) { input.value = split.amount.toFixed(2); input.title = currencySymbol + ' ' + split.amount.toFixed(2); }
+                }
+            });
+            updateRemaining();
+        }
+
+        document.getElementById('toggleEven').addEventListener('click', function () {
+            evenMode = !evenMode;
+            document.getElementById('toggleEven').classList.toggle('on', evenMode);
+            var rows = document.getElementById('splitBody').children;
+            for (var i = 0; i < rows.length; i++) {
+                var input = rows[i].querySelector('input[type="number"]');
+                if (input) input.disabled = evenMode;
+            }
+            if (evenMode) redistributeEven();
+        });
+
+        document.getElementById('addRowBtn').addEventListener('click', addRow);
+
+        function addRow() {
+            var tbody   = document.getElementById('splitBody');
+            var tr      = document.createElement('tr');
+            var splitId = Date.now();
+
+            var tdAcc    = document.createElement('td');
+            var accInput = document.createElement('input');
+            accInput.className = 'input account-input';
+            accInput.setAttribute('data-id', splitId);
+            accInput.readOnly = true;
+            accInput.style.cursor = 'pointer';
+
+            if (currentSplitMethod === 'manual') {
+                if (currentChargeMode === 'invoice') {
+                    accInput.placeholder = 'Click to select account/contact';
+                    accInput.onclick = function () { lookupAccountOrContact(this); };
+                } else {
+                    accInput.placeholder = 'Click to select lease agreement';
+                    accInput.onclick = function () { lookupLeaseAgreement(this); };
+                }
+            } else if (currentSplitMethod === 'unit') {
+                accInput.placeholder = 'Click to select unit';
+                accInput.onclick = function () { lookupUnit(this); };
+            } else if (currentSplitMethod === 'area') {
+                accInput.placeholder = 'Click to select lease agreement';
+                accInput.onclick = function () { lookupLeaseAgreement(this); };
+            }
+            tdAcc.appendChild(accInput);
+
+            var tdLease = document.createElement('td');
+            tdLease.id  = 'leaseCell_' + splitId;
+            tdLease.style.display = isLeaseColumnMode() ? 'table-cell' : 'none';
+
+            var tdArea    = document.createElement('td');
+            tdArea.id     = 'areaCell_' + splitId;
+            tdArea.style.display = currentSplitMethod === 'area' ? 'table-cell' : 'none';
+            var areaInput = document.createElement('input');
+            areaInput.className = 'input'; areaInput.type = 'text'; areaInput.readOnly = true;
+            areaInput.style.background = '#e5e7eb'; areaInput.style.cursor = 'not-allowed';
+            tdArea.appendChild(areaInput);
+
+            var tdPercentage = document.createElement('td');
+            tdPercentage.id  = 'percentageCell_' + splitId;
+            tdPercentage.style.display = currentSplitMethod === 'area' ? 'table-cell' : 'none';
+            var percentageInput = document.createElement('input');
+            percentageInput.className = 'input'; percentageInput.type = 'text'; percentageInput.id = 'percentage_' + splitId;
+            percentageInput.readOnly = true; percentageInput.style.background = '#e5e7eb'; percentageInput.style.cursor = 'not-allowed';
+            tdPercentage.appendChild(percentageInput);
+
+            var tdAmt   = document.createElement('td');
+            var amtDiv  = document.createElement('div');
+            amtDiv.className = 'amount-with-currency';
+            var symbol  = document.createElement('span');
+            symbol.className = 'currency-symbol'; symbol.textContent = currencySymbol;
+            var amtInput = document.createElement('input');
+            amtInput.className = 'input'; amtInput.type = 'number';
+            amtInput.setAttribute('data-id', splitId);
+            amtInput.placeholder = '0.00'; amtInput.step = '0.01'; amtInput.min = '0.01';
+            amtInput.max = actualRemainingAmount; amtInput.disabled = evenMode;
+            amtDiv.appendChild(symbol); amtDiv.appendChild(amtInput); tdAmt.appendChild(amtDiv);
+
+            var tdAct     = document.createElement('td');
+            tdAct.style.textAlign = 'center';
+            var btnRemove = document.createElement('button');
+            btnRemove.className = 'remove-btn'; btnRemove.setAttribute('data-id', splitId); btnRemove.textContent = 'Remove';
+            tdAct.appendChild(btnRemove);
+
+            tr.appendChild(tdAcc); tr.appendChild(tdArea); tr.appendChild(tdPercentage);
+            tr.appendChild(tdAmt); tr.appendChild(tdLease); tr.appendChild(tdAct);
+
+            splits.push({ id: splitId, account: '', accountId: '', amount: 0, entityType: '', leaseAgreementId: '', leaseAgreementName: '', unitId: '', unitName: '' });
+
+            btnRemove.addEventListener('click', function () {
+                var id = parseInt(this.getAttribute('data-id'));
+                splits = splits.filter(function (s) { return s.id !== id; });
+                tr.remove();
+                if (evenMode) redistributeEven();
+                updateRemaining();
+            });
+
+            amtInput.addEventListener('input', function () {
+                var id    = parseInt(this.getAttribute('data-id'));
+                var split = splits.find(function (s) { return s.id === id; });
+                if (split) {
+                    var inputValue     = parseFloat(this.value) || 0;
+                    var otherAllocated = splits.reduce(function (sum, s) { return s.id === id ? sum : sum + (parseFloat(s.amount) || 0); }, 0);
+                    var available      = actualRemainingAmount - otherAllocated;
+                    if (inputValue < 0)         { inputValue = 0;                    this.value = '0.00'; }
+                    else if (inputValue > available) { inputValue = Math.max(0, available); this.value = inputValue.toFixed(2); }
+                    split.amount = inputValue; this.title = currencySymbol + ' ' + inputValue.toFixed(2);
+                }
+                updateRemaining();
+            });
+
+            amtInput.addEventListener('blur', function () {
+                if (this.value) { this.value = parseFloat(this.value).toFixed(2); this.title = currencySymbol + ' ' + this.value; }
+            });
+
+            tbody.appendChild(tr);
+            if (evenMode) redistributeEven(); else updateRemaining();
+        }
+
+        // ─── Lookups (unchanged logic) ────────────────────────────────────────
+        function lookupAccountOrContact(ctrl) {
+            var parentXrm = getParentXrm();
+            if (!parentXrm) return;
+            parentXrm.Utility.lookupObjects({
+                    entityTypes: ['account', 'contact'],
+                    allowMultiSelect: false,
+                    filters: [
+                        {
+                            filterXml: "<filter type='and'><condition attribute='statecode' operator='eq' value='0' /></filter>",
+                            entityLogicalName: "account"
+                        },
+                        {
+                            filterXml: "<filter type='and'><condition attribute='statecode' operator='eq' value='0' /></filter>",
+                            entityLogicalName: "contact"
+                        }
+                    ]
+                }).then(function (result) {
+                if (!result || result.length === 0) return;
+                var selectedId = result[0].id.replace(/[{}]/g, '');
+                var id = parseInt(ctrl.getAttribute('data-id'));
+                ctrl.value = result[0].name; ctrl.title = result[0].name;
+                var split = splits.find(function (s) { return s.id === id; });
+                if (split) { split.account = result[0].name; split.accountId = selectedId; split.entityType = result[0].entityType; split.leaseAgreementId = ''; split.leaseAgreementName = ''; split.unitId = ''; split.unitName = ''; }
+                if (isLeaseColumnMode()) { setLeaseCellLoading(id); fetchLeasesForTenant(selectedId).then(function (leases) { renderLeaseCell(id, leases); }); }
+            });
+        }
+
+        function lookupLeaseAgreement(ctrl) {
+            var parentXrm = getParentXrm();
+            if (!parentXrm) return;
+            parentXrm.Utility.lookupObjects({
+                    entityTypes: ['array_leaseagreement'],
+                    allowMultiSelect: false,
+                    filters: [{
+                        filterXml: "<filter type='and'><condition attribute='statecode' operator='eq' value='0' /></filter>",
+                        entityLogicalName: "array_leaseagreement"
+                    }]
+                }).then(function (result) {
+                if (!result || result.length === 0) return;
+                var selectedLeaseId = result[0].id.replace(/[{}]/g, '');
+                var leaseName       = result[0].name;
+                var id              = parseInt(ctrl.getAttribute('data-id'));
+                var existingLease   = splits.find(function (s) { return s.leaseAgreementId === selectedLeaseId && s.id !== id; });
+                if (existingLease) { showAlert('This lease agreement has already been added. Please select a different lease agreement.', 'warning'); return; }
+                ctrl.value = leaseName; ctrl.title = leaseName;
+                var split = splits.find(function (s) { return s.id === id; });
+                if (split) {
+                    split.leaseAgreementName = leaseName; split.leaseAgreementId = selectedLeaseId; split.unitId = ''; split.unitName = '';
+                    fetchTenantFromLease(selectedLeaseId).then(function (tenant) { split.accountId = tenant.tenantId; split.account = tenant.tenantName; split.entityType = tenant.tenantEntityType; });
+                    if (currentSplitMethod === 'area') {
+                        getParentXrm().WebApi.retrieveRecord('array_leaseagreement', selectedLeaseId, '?$select=array_totalareaofunits').then(function (leaseResult) {
+                            var agreementArea = parseFloat(leaseResult.array_totalareaofunits) || 0;
+                            var areaCell = document.getElementById('areaCell_' + id);
+                            if (areaCell) { var ai = areaCell.querySelector('input'); if (ai) { ai.value = agreementArea.toFixed(2); ai.title = agreementArea.toFixed(2) + ' sqm'; } }
+                            calculateAndPopulateLeaseAmount(selectedLeaseId, id);
+                        }).catch(function (error) { console.error('Error fetching lease area:', error); });
+                    }
+                }
+            });
+        }
+
+        function lookupUnit(ctrl) {
+            var parentXrm = getParentXrm();
+            if (!parentXrm) return;
+            parentXrm.Utility.lookupObjects({ entityTypes: ['array_unit'], allowMultiSelect: false }).then(function (result) {
+                if (!result || result.length === 0) return;
+                var selectedUnitId = result[0].id.replace(/[{}]/g, '');
+                var unitName       = result[0].name;
+                var id             = parseInt(ctrl.getAttribute('data-id'));
+                var existingUnit   = splits.find(function (s) { return s.unitId === selectedUnitId && s.id !== id; });
+                if (existingUnit) { showAlert('This unit has already been added. Please select a different unit.', 'warning'); return; }
+                ctrl.value = unitName; ctrl.title = unitName;
+                var split = splits.find(function (s) { return s.id === id; });
+                if (split) {
+                    split.unitName = unitName; split.unitId = selectedUnitId; split.leaseAgreementId = ''; split.leaseAgreementName = '';
+                    parentXrm.WebApi.retrieveRecord('array_unit', selectedUnitId, '?$select=_array_leaseagreement_value').then(function (unitRecord) {
+                        var unitLeaseId = unitRecord['_array_leaseagreement_value'] || '';
+                        if (unitLeaseId) return fetchTenantFromLease(unitLeaseId);
+                        return { tenantId: '', tenantName: '', tenantEntityType: '' };
+                    }).then(function (tenant) { split.accountId = tenant.tenantId; split.account = tenant.tenantName; split.entityType = tenant.tenantEntityType; })
+                    .catch(function (err) { console.error('lookupUnit: error fetching tenant via lease:', err); split.accountId = ''; split.account = ''; split.entityType = ''; });
+                    if (currentSplitMethod === 'unit') calculateAndPopulateUnitAmount(selectedUnitId, id);
+                }
+            });
+        }
+
+        // ─── Area / unit calculations (unchanged) ─────────────────────────────
+        function fetchPropertyAreas(callback) {
+            var parentXrm = getParentXrm();
+            if (!propertyId || !parentXrm) { callback(0, 0); return; }
+            parentXrm.WebApi.retrieveRecord('array_property', propertyId, '?$select=array_totalrentableareasqm,array_occupiedareasqm').then(function (result) {
+                propertyTotalRentableArea = parseFloat(result.array_totalrentableareasqm) || 0;
+                propertyTotalOccupiedArea = parseFloat(result.array_occupiedareasqm)      || 0;
+                callback(propertyTotalRentableArea, propertyTotalOccupiedArea);
+            }).catch(function (error) { console.error('Error fetching property areas:', error); callback(0, 0); });
+        }
+
+        function getCurrentPropertyArea() {
+            return currentAreaType === 'rentable' ? propertyTotalRentableArea : propertyTotalOccupiedArea;
+        }
+
+        function calculateAndPopulateUnitAmount(unitId, splitId) {
+            var parentXrm = getParentXrm();
+            if (!parentXrm || !unitId) return;
+            parentXrm.WebApi.retrieveRecord('array_unit', unitId, '?$select=array_unitareasqm').then(function (unitResult) {
+                var unitArea = parseFloat(unitResult.array_unitareasqm) || 0;
+                if (!unitArea || unitArea <= 0) return;
+                fetchPropertyAreas(function () {
+                    var propertyArea = getCurrentPropertyArea();
+                    if (!propertyArea || propertyArea <= 0 || !totalNetValue || totalNetValue <= 0) return;
+                    var percentage       = (unitArea / propertyArea) * 100;
+                    var calculatedAmount = Math.round((percentage / 100) * totalNetValue * 100) / 100;
+                    var split = splits.find(function (s) { return s.id === splitId; });
+                    if (split) {
+                        split.amount = calculatedAmount;
+                        var rows = document.getElementById('splitBody').children;
+                        for (var i = 0; i < rows.length; i++) {
+                            var amtInput = rows[i].querySelector('input[type="number"]');
+                            if (amtInput && parseInt(amtInput.getAttribute('data-id')) === splitId) { amtInput.value = calculatedAmount.toFixed(2); amtInput.title = currencySymbol + ' ' + calculatedAmount.toFixed(2); break; }
+                        }
+                        updateRemaining();
+                    }
+                });
+            }).catch(function (error) { console.error('Error fetching unit area:', error); });
+        }
+
+        function calculateAndPopulateLeaseAmount(leaseAgreementId, splitId) {
+            var parentXrm = getParentXrm();
+            if (!parentXrm || !leaseAgreementId) return;
+            parentXrm.WebApi.retrieveRecord('array_leaseagreement', leaseAgreementId, '?$select=array_totalareaofunits').then(function (leaseResult) {
+                var agreementArea = parseFloat(leaseResult.array_totalareaofunits) || 0;
+                var areaCell = document.getElementById('areaCell_' + splitId);
+                if (areaCell) { var ai = areaCell.querySelector('input'); if (ai) { ai.value = agreementArea.toFixed(2); ai.title = agreementArea.toFixed(2) + ' sqm'; } }
+                if (!agreementArea || agreementArea <= 0) return;
+                fetchPropertyAreas(function () {
+                    var propertyArea = getCurrentPropertyArea();
+                    if (!propertyArea || propertyArea <= 0 || !totalNetValue || totalNetValue <= 0) return;
+                    var percentage      = (agreementArea / propertyArea) * 100;
+                    var percentageInput = document.getElementById('percentage_' + splitId);
+                    if (percentageInput) { percentageInput.value = percentage.toFixed(2) + '%'; percentageInput.title = percentage.toFixed(2) + '%'; }
+                    var calculatedAmount = Math.round((percentage / 100) * totalNetValue * 100) / 100;
+                    var split = splits.find(function (s) { return s.id === splitId; });
+                    if (split) {
+                        split.amount = calculatedAmount;
+                        var rows = document.getElementById('splitBody').children;
+                        for (var i = 0; i < rows.length; i++) {
+                            var amtInput = rows[i].querySelector('input[type="number"]');
+                            if (amtInput && parseInt(amtInput.getAttribute('data-id')) === splitId) { amtInput.value = calculatedAmount.toFixed(2); amtInput.title = currencySymbol + ' ' + calculatedAmount.toFixed(2); break; }
+                        }
+                        updateRemaining();
+                    }
+                });
+            }).catch(function (error) { console.error('Error fetching lease agreement area:', error); });
+        }
+
+        function autoPopulateLeaseAgreements() {
+            var parentXrm = getParentXrm();
+            if (!propertyId || !parentXrm) return;
+            document.getElementById('addRowBtn').disabled    = true;
+            document.getElementById('addRowBtn').textContent = 'Loading lease agreements...';
+            document.getElementById('loaderOverlay').classList.add('active');
+            document.getElementById('loaderText').textContent = 'Loading lease agreements...';
+            var fetchXml = '<fetch version="1.0" output-format="xml-platform" mapping="logical" distinct="false">'
+                + '<entity name="array_leaseagreement"><attribute name="array_leaseagreementid" /><attribute name="array_leaserecordid" /><attribute name="array_totalareaofunits" />'
+                + '<order attribute="array_leaserecordid" descending="false" />'
+                + '<filter type="and"><condition attribute="array_property" operator="eq" value="' + propertyId + '" /><condition attribute="statecode" operator="eq" value="0" /></filter>'
+                + '</entity></fetch>';
+            parentXrm.WebApi.retrieveMultipleRecords('array_leaseagreement', '?fetchXml=' + encodeURIComponent(fetchXml)).then(function (result) {
+                if (!result.entities || result.entities.length === 0) {
+                    document.getElementById('loaderOverlay').classList.remove('active');
+                    document.getElementById('addRowBtn').disabled    = false;
+                    document.getElementById('addRowBtn').textContent = '+ Add Member';
+                    showAlert('No active lease agreements found for this property. You can add them manually.', 'warning');
+                    return;
+                }
+
+                // Fetch property areas once, then calculate all amounts synchronously
+                // so we can apply last-item rounding correction before rendering
+                fetchPropertyAreas(function () {
+                    var propertyArea = getCurrentPropertyArea();
+                    var entities     = result.entities;
+                    var ROUNDING_TOLERANCE = 0.02;
+
+                    // Pre-calculate all amounts and percentages
+                    var calculated = entities.map(function (lease) {
+                        var leaseArea = parseFloat(lease.array_totalareaofunits) || 0;
+                        var percentage = (propertyArea > 0 && leaseArea > 0)
+                            ? (leaseArea / propertyArea) * 100
+                            : 0;
+                        var amount = (totalNetValue > 0 && propertyArea > 0)
+                            ? Math.round((percentage / 100) * totalNetValue * 100) / 100
+                            : 0;
+                        return { lease: lease, leaseArea: leaseArea, percentage: percentage, amount: amount };
+                    });
+
+                    // Check if total sum is within rounding tolerance of totalNetValue
+                    // If so, adjust the last item to absorb the rounding remainder
+                    var sumAmounts = calculated.reduce(function (s, c) { return s + c.amount; }, 0);
+                    var gap        = Math.round((totalNetValue - sumAmounts) * 100) / 100;
+                    if (Math.abs(gap) > 0 && Math.abs(gap) <= ROUNDING_TOLERANCE) {
+                        calculated[calculated.length - 1].amount =
+                            Math.round((calculated[calculated.length - 1].amount + gap) * 100) / 100;
+                    }
+
+                    clearAllRows();
+                    calculated.forEach(function (item) {
+                        addLeaseAgreementRow(item.lease, item.amount, item.percentage);
+                    });
+
+                    document.getElementById('loaderOverlay').classList.remove('active');
+                    document.getElementById('addRowBtn').disabled    = false;
+                    document.getElementById('addRowBtn').textContent = '+ Add Member';
+                    showAlert('Successfully added ' + entities.length + ' lease agreement(s) with calculated amounts.', 'success');
+                });
+
+            }).catch(function (error) {
+                console.error('Error fetching lease agreements:', error);
+                document.getElementById('loaderOverlay').classList.remove('active');
+                document.getElementById('addRowBtn').disabled    = false;
+                document.getElementById('addRowBtn').textContent = '+ Add Member';
+                showAlert('Error loading lease agreements. Please add them manually.', 'error');
+            });
+        }
+
+        function recalculateAllAmounts() {
+            if (splits.length === 0) return;
+            var eligible = splits.filter(function (s) { return s.leaseAgreementId && currentSplitMethod === 'area'; });
+            if (eligible.length === 0) return;
+
+            document.getElementById('loaderOverlay').classList.add('active');
+            document.getElementById('loaderText').textContent = 'Recalculating amounts...';
+
+            // Step 1: fetch property areas fresh from Dataverse (same as original)
+            fetchPropertyAreas(function () {
+                var propertyArea       = getCurrentPropertyArea();
+                var ROUNDING_TOLERANCE = 0.02;
+                var results            = [];
+                var pending            = eligible.length;
+
+                // Step 2: re-fetch each lease area from Dataverse (same as original calculateAndPopulateLeaseAmount)
+                eligible.forEach(function (split, index) {
+                    var parentXrm = getParentXrm();
+                    parentXrm.WebApi.retrieveRecord(
+                        'array_leaseagreement',
+                        split.leaseAgreementId,
+                        '?$select=array_totalareaofunits'
+                    ).then(function (leaseResult) {
+                        var leaseArea = parseFloat(leaseResult.array_totalareaofunits) || 0;
+
+                        // Update area cell in DOM (same as original)
+                        var areaCell = document.getElementById('areaCell_' + split.id);
+                        if (areaCell) {
+                            var areaInput = areaCell.querySelector('input');
+                            if (areaInput) { areaInput.value = leaseArea.toFixed(2); areaInput.title = leaseArea.toFixed(2) + ' sqm'; }
+                        }
+
+                        var percentage = (propertyArea > 0 && leaseArea > 0)
+                            ? (leaseArea / propertyArea) * 100
+                            : 0;
+                        var amount = (totalNetValue > 0 && propertyArea > 0)
+                            ? Math.round((percentage / 100) * totalNetValue * 100) / 100
+                            : 0;
+
+                        results[index] = { split: split, leaseArea: leaseArea, percentage: percentage, amount: amount };
+                        pending--;
+
+                        // Step 3: once all fetches complete, apply rounding correction and write to DOM
+                        if (pending === 0) {
+                            var sumAmounts = results.reduce(function (s, c) { return s + c.amount; }, 0);
+                            var gap        = Math.round((totalNetValue - sumAmounts) * 100) / 100;
+                            if (Math.abs(gap) > 0 && Math.abs(gap) <= ROUNDING_TOLERANCE) {
+                                results[results.length - 1].amount =
+                                    Math.round((results[results.length - 1].amount + gap) * 100) / 100;
+                            }
+
+                            results.forEach(function (item) {
+                                item.split.amount = item.amount;
+                                var percentageInput = document.getElementById('percentage_' + item.split.id);
+                                if (percentageInput) { percentageInput.value = item.percentage.toFixed(2) + '%'; percentageInput.title = item.percentage.toFixed(2) + '%'; }
+                                var rows = document.getElementById('splitBody').children;
+                                for (var i = 0; i < rows.length; i++) {
+                                    var amtInput = rows[i].querySelector('input[type="number"]');
+                                    if (amtInput && Number(amtInput.getAttribute('data-id')) === item.split.id) {
+                                        amtInput.value = item.amount.toFixed(2);
+                                        amtInput.title = currencySymbol + ' ' + item.amount.toFixed(2);
+                                        break;
+                                    }
+                                }
+                            });
+
+                            updateRemaining();
+                            document.getElementById('loaderOverlay').classList.remove('active');
+                        }
+                    }).catch(function (error) {
+                        console.error('recalculateAllAmounts: error fetching lease area:', error);
+                        pending--;
+                        if (pending === 0) document.getElementById('loaderOverlay').classList.remove('active');
+                    });
+                });
+            });
+        }
+
+        function addLeaseAgreementRow(leaseData, preCalculatedAmount, preCalculatedPercentage) {
+            var tbody   = document.getElementById('splitBody');
+            var tr      = document.createElement('tr');
+            var splitId = Date.now() * 1000 + Math.floor(Math.random() * 1000);
+            var leaseId   = leaseData.array_leaseagreementid;
+            var leaseName = leaseData.array_leaserecordid || 'Lease Agreement';
+            var leaseArea = parseFloat(leaseData.array_totalareaofunits) || 0;
+
+            var tdAcc = document.createElement('td');
+            var accInput = document.createElement('input');
+            accInput.className = 'input account-input'; accInput.setAttribute('data-id', splitId); accInput.readOnly = true; accInput.style.cursor = 'pointer';
+            accInput.placeholder = 'Click to select lease agreement'; accInput.value = leaseName; accInput.title = leaseName;
+            accInput.onclick = function () { lookupLeaseAgreement(this); }; tdAcc.appendChild(accInput);
+
+            var tdLease = document.createElement('td'); tdLease.id = 'leaseCell_' + splitId; tdLease.style.display = 'none';
+
+            var tdArea = document.createElement('td'); tdArea.id = 'areaCell_' + splitId; tdArea.style.display = currentSplitMethod === 'area' ? 'table-cell' : 'none';
+            var areaInput = document.createElement('input'); areaInput.className = 'input'; areaInput.type = 'text'; areaInput.value = leaseArea.toFixed(2); areaInput.title = leaseArea.toFixed(2) + ' sqm';
+            areaInput.readOnly = true; areaInput.style.background = '#e5e7eb'; areaInput.style.cursor = 'not-allowed'; tdArea.appendChild(areaInput);
+
+            var tdPercentage = document.createElement('td'); tdPercentage.id = 'percentageCell_' + splitId; tdPercentage.style.display = currentSplitMethod === 'area' ? 'table-cell' : 'none';
+            var percentageInput = document.createElement('input'); percentageInput.className = 'input'; percentageInput.type = 'text'; percentageInput.id = 'percentage_' + splitId;
+            percentageInput.readOnly = true; percentageInput.style.background = '#e5e7eb'; percentageInput.style.cursor = 'not-allowed'; tdPercentage.appendChild(percentageInput);
+
+            // Use pre-calculated values if provided, otherwise fall back to async calculation
+            var initialAmount     = (preCalculatedAmount     !== undefined) ? preCalculatedAmount     : 0;
+            var initialPercentage = (preCalculatedPercentage !== undefined) ? preCalculatedPercentage : 0;
+
+            if (initialPercentage > 0) {
+                percentageInput.value = initialPercentage.toFixed(2) + '%';
+                percentageInput.title = initialPercentage.toFixed(2) + '%';
+            }
+
+            var tdAmt = document.createElement('td'); var amtDiv = document.createElement('div'); amtDiv.className = 'amount-with-currency';
+            var symbol = document.createElement('span'); symbol.className = 'currency-symbol'; symbol.textContent = currencySymbol;
+            var amtInput = document.createElement('input'); amtInput.className = 'input'; amtInput.type = 'number'; amtInput.setAttribute('data-id', splitId);
+            amtInput.placeholder = '0.00'; amtInput.step = '0.01'; amtInput.min = '0.01'; amtInput.max = actualRemainingAmount; amtInput.disabled = evenMode;
+            if (initialAmount > 0) { amtInput.value = initialAmount.toFixed(2); amtInput.title = currencySymbol + ' ' + initialAmount.toFixed(2); }
+            amtDiv.appendChild(symbol); amtDiv.appendChild(amtInput); tdAmt.appendChild(amtDiv);
+
+            var tdAct = document.createElement('td'); tdAct.style.textAlign = 'center';
+            var btnRemove = document.createElement('button'); btnRemove.className = 'remove-btn'; btnRemove.setAttribute('data-id', splitId); btnRemove.textContent = 'Remove'; tdAct.appendChild(btnRemove);
+
+            tr.appendChild(tdAcc); tr.appendChild(tdArea); tr.appendChild(tdPercentage); tr.appendChild(tdAmt); tr.appendChild(tdLease); tr.appendChild(tdAct);
+
+            var newSplit = { id: splitId, account: '', accountId: '', amount: initialAmount, entityType: '', leaseAgreementId: leaseId, leaseAgreementName: leaseName, unitId: '', unitName: '' };
+            splits.push(newSplit);
+            fetchTenantFromLease(leaseId).then(function (tenant) { newSplit.accountId = tenant.tenantId; newSplit.account = tenant.tenantName; newSplit.entityType = tenant.tenantEntityType; });
+
+            btnRemove.addEventListener('click', function () {
+                var id = Number(this.getAttribute('data-id'));
+                splits = splits.filter(function (s) { return s.id !== id; }); tr.remove();
+                if (evenMode) redistributeEven(); updateRemaining();
+            });
+            amtInput.addEventListener('input', function () {
+                var id = Number(this.getAttribute('data-id')); var split = splits.find(function (s) { return s.id === id; });
+                if (split) {
+                    var inputValue = parseFloat(this.value) || 0;
+                    var otherAllocated = splits.reduce(function (sum, s) { return s.id === id ? sum : sum + (parseFloat(s.amount) || 0); }, 0);
+                    var available = actualRemainingAmount - otherAllocated;
+                    if (inputValue < 0) { inputValue = 0; this.value = '0.00'; } else if (inputValue > available) { inputValue = Math.max(0, available); this.value = inputValue.toFixed(2); }
+                    split.amount = inputValue; this.title = currencySymbol + ' ' + inputValue.toFixed(2);
+                }
+                updateRemaining();
+            });
+            amtInput.addEventListener('blur', function () { if (this.value) { this.value = parseFloat(this.value).toFixed(2); this.title = currencySymbol + ' ' + this.value; } });
+            tbody.appendChild(tr);
+
+            // Only fall back to async calculation if no pre-calculated values were provided
+            if (preCalculatedAmount === undefined) {
+                calculateAmountForLease(leaseId, leaseArea, splitId, amtInput);
+            } else {
+                updateRemaining();
+            }
+        }
+
+        function calculateAmountForLease(leaseId, leaseArea, splitId, amtInput) {
+            if (!leaseArea || leaseArea <= 0) return;
+            fetchPropertyAreas(function () {
+                var propertyArea = getCurrentPropertyArea();
+                if (!propertyArea || propertyArea <= 0 || !totalNetValue || totalNetValue <= 0) return;
+                var percentage      = (leaseArea / propertyArea) * 100;
+                var percentageInput = document.getElementById('percentage_' + splitId);
+                if (percentageInput) { percentageInput.value = percentage.toFixed(2) + '%'; percentageInput.title = percentage.toFixed(2) + '%'; }
+                var calculatedAmount = Math.round((percentage / 100) * totalNetValue * 100) / 100;
+                var split = splits.find(function (s) { return s.id === splitId; });
+                if (split) { split.amount = calculatedAmount; amtInput.value = calculatedAmount.toFixed(2); amtInput.title = currencySymbol + ' ' + calculatedAmount.toFixed(2); updateRemaining(); }
+            });
+        }
+
+        function lookupInvoiceType(ctrl) {
+            var parentXrm = getParentXrm();
+            if (!parentXrm) return;
+            parentXrm.Utility.lookupObjects({ entityTypes: ['array_invoicetype'], allowMultiSelect: false }).then(function (result) {
+                if (result && result.length > 0) { ctrl.value = result[0].name; selectedInvoiceType = { name: result[0].name, id: result[0].id.replace(/[{}]/g, '') }; }
+            });
+        }
+
+        function loadFrequencyOptions() {
+            var frequencySelect = document.getElementById('frequencySelect');
+            frequencySelect.innerHTML = '<option value="">-- Select Frequency --</option>';
+            [{ value: 126330003, text: 'Daily' }, { value: 126330004, text: 'Weekly' }, { value: 126330000, text: 'Monthly' }, { value: 126330005, text: 'Quarterly' }, { value: 126330002, text: 'One Time Charge' }, { value: 126330001, text: 'Annual' }].forEach(function (freq) {
+                var option = document.createElement('option'); option.value = freq.value; option.text = freq.text; frequencySelect.appendChild(option);
+            });
+        }
+
+        function updateTableHeader() {
+            var headerLabel             = document.getElementById('tableHeaderLabel');
+            var leaseColumn             = document.getElementById('leaseColumnHeader');
+            var areaColumn              = document.getElementById('areaColumnHeader');
+            var percentageColumn        = document.getElementById('percentageColumnHeader');
+            var areaTypeSection         = document.getElementById('areaTypeSection');
+            var propertyRentableDisplay = document.getElementById('propertyRentableAreaDisplay');
+            var propertyOccupiedDisplay = document.getElementById('propertyOccupiedAreaDisplay');
+            var showLease = isLeaseColumnMode();
+            if (currentSplitMethod === 'manual') {
+                headerLabel.textContent = currentChargeMode === 'invoice' ? 'Account/Contact' : 'Lease Agreement';
+                leaseColumn.style.display = showLease ? 'table-cell' : 'none'; areaColumn.style.display = 'none'; percentageColumn.style.display = 'none';
+                areaTypeSection.style.display = 'none'; propertyRentableDisplay.style.display = 'none'; propertyOccupiedDisplay.style.display = 'none';
+            } else if (currentSplitMethod === 'unit') {
+                headerLabel.textContent = 'Unit'; leaseColumn.style.display = 'none'; areaColumn.style.display = 'none'; percentageColumn.style.display = 'none';
+                areaTypeSection.style.display = 'none'; propertyRentableDisplay.style.display = 'none'; propertyOccupiedDisplay.style.display = 'none';
+            } else if (currentSplitMethod === 'area') {
+                headerLabel.textContent = 'Lease Agreement'; leaseColumn.style.display = 'none'; areaColumn.style.display = 'table-cell'; percentageColumn.style.display = 'table-cell';
+                areaTypeSection.style.display = 'block';
+                fetchPropertyAreas(function (rentableArea, occupiedArea) {
+                    document.getElementById('propertyRentableAreaValue').value = rentableArea.toFixed(2);
+                    document.getElementById('propertyOccupiedAreaValue').value = occupiedArea.toFixed(2);
+                    if (currentAreaType === 'rentable') { propertyRentableDisplay.style.display = 'block'; propertyOccupiedDisplay.style.display = 'none'; }
+                    else { propertyRentableDisplay.style.display = 'none'; propertyOccupiedDisplay.style.display = 'block'; }
+                });
+            }
+            var tbody = document.getElementById('splitBody');
+            for (var i = 0; i < tbody.children.length; i++) {
+                var cells = tbody.children[i].querySelectorAll('td');
+                if (cells.length >= 5) cells[4].style.display = showLease ? 'table-cell' : 'none';
+            }
+        }
+
+        function clearAllRows() {
+            var tbody = document.getElementById('splitBody');
+            while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+            splits = []; updateRemaining();
+        }
+
+        document.querySelectorAll('input[name="splitMethod"]').forEach(function (radio) {
+            radio.addEventListener('change', function () {
+                currentSplitMethod = this.value;
+                var evenSplitSection = document.getElementById('evenSplitSection');
+                if (currentSplitMethod === 'manual') { evenSplitSection.style.display = 'flex'; }
+                else { evenSplitSection.style.display = 'none'; if (evenMode) { evenMode = false; document.getElementById('toggleEven').classList.remove('on'); } }
+                updateTableHeader(); clearAllRows();
+                if (currentSplitMethod === 'area') setTimeout(autoPopulateLeaseAgreements, 100);
+            });
+        });
+
+        document.querySelectorAll('input[name="areaType"]').forEach(function (radio) {
+            radio.addEventListener('change', function () {
+                currentAreaType = this.value;
+                var propertyRentableDisplay = document.getElementById('propertyRentableAreaDisplay');
+                var propertyOccupiedDisplay = document.getElementById('propertyOccupiedAreaDisplay');
+                if (currentAreaType === 'rentable') { propertyRentableDisplay.style.display = 'block'; propertyOccupiedDisplay.style.display = 'none'; }
+                else { propertyRentableDisplay.style.display = 'none'; propertyOccupiedDisplay.style.display = 'block'; }
+                recalculateAllAmounts();
+            });
+        });
+
+        document.querySelectorAll('input[name="chargeType"]').forEach(function (radio) {
+            radio.addEventListener('change', function () {
+                currentChargeMode = this.value;
+                var recurringFields = document.getElementById('recurringFields');
+                var invoiceFields   = document.getElementById('invoiceFields');
+                if (this.value === 'recurring') { recurringFields.classList.add('visible'); invoiceFields.classList.remove('visible'); loadFrequencyOptions(); fetchPropertyChargeTypes(); }
+                else { recurringFields.classList.remove('visible'); invoiceFields.classList.add('visible'); }
+                currentSplitMethod = 'manual';
+                document.querySelector('input[name="splitMethod"][value="manual"]').checked = true;
+                document.getElementById('evenSplitSection').style.display = 'flex';
+                if (evenMode) { evenMode = false; document.getElementById('toggleEven').classList.remove('on'); }
+                updateTableHeader(); clearAllRows();
+            });
+        });
+
+        // ─── Save / Validate ──────────────────────────────────────────────────
+        document.getElementById('saveBtn').addEventListener('click', function () {
+            var chargeTypeRadio = document.querySelector('input[name="chargeType"]:checked').value;
+            var splitMethod     = document.querySelector('input[name="splitMethod"]:checked').value;
+
+            if (splits.length === 0) { showAlert('Please add at least one member to split the amount.', 'error'); return; }
+            if (chargeTypeRadio === 'invoice' && (!selectedInvoiceType || !selectedInvoiceType.id)) { showAlert('Please select an invoice type.', 'error'); return; }
+
+            if (splitMethod === 'manual') {
+                if (chargeTypeRadio === 'invoice') {
+                    if (splits.some(function (s) { return !s.account || !s.accountId; })) { showAlert('Please select an account/contact for all members.', 'error'); return; }
+                } else {
+                    if (splits.some(function (s) { return !s.leaseAgreementName || !s.leaseAgreementId; })) { showAlert('Please select a lease agreement for all members.', 'error'); return; }
+                }
+            } else if (splitMethod === 'unit') {
+                if (splits.some(function (s) { return !s.unitName || !s.unitId; })) { showAlert('Please select a unit for all members.', 'error'); return; }
+            } else if (splitMethod === 'area') {
+                if (splits.some(function (s) { return !s.leaseAgreementName || !s.leaseAgreementId; })) { showAlert('Please select a lease agreement for all members.', 'error'); return; }
+            }
+
+            if (splits.some(function (s) { return !s.amount || s.amount <= 0; })) { showAlert('All members must have an amount greater than zero.', 'error'); return; }
+
+            if (chargeTypeRadio === 'invoice') {
+                var invoiceDateVal = document.getElementById('invoiceDate').value;
+                var dueDateVal     = document.getElementById('dueDate').value;
+                if (!invoiceDateVal) { showAlert('Please select an invoice date.', 'error'); return; }
+                if (!dueDateVal)     { showAlert('Please select a due date.', 'error'); return; }
+                if (dueDateVal < invoiceDateVal) { showAlert('Due date must be on or after the invoice date.', 'error'); document.getElementById('dueDate').classList.add('date-error'); return; }
+            }
+
+            var totalAllocated = splits.reduce(function (sum, s) { return sum + (parseFloat(s.amount) || 0); }, 0);
+            if (Math.round(totalAllocated * 100) > Math.round(actualRemainingAmount * 100)) {
+                showAlert('Total allocated (' + totalAllocated.toFixed(2) + ') cannot exceed remaining net amount (' + actualRemainingAmount.toFixed(2) + ').', 'error'); return;
+            }
+
+            var recurringDetails = null;
+            if (chargeTypeRadio === 'recurring') {
+                var chargeTypeIdVal   = document.getElementById('chargeTypeId').value;
+                var chargeTypeNameVal = document.getElementById('chargeTypeName').value;
+                if (!chargeTypeIdVal) { showAlert('Please select a charge type for recurring charge.', 'error'); return; }
+                var chargeInvoiceTypeIdVal = document.getElementById('chargeInvoiceTypeId').value;
+                if (!chargeInvoiceTypeIdVal) { showAlert('Invoice type could not be determined. Please re-select the charge type.', 'error'); return; }
+                var frequency       = document.getElementById('frequencySelect').value;
+                var startDate       = document.getElementById('startDate').value;
+                var numInstallments = document.getElementById('numInstallments').value;
+                var chargeGenDate   = document.getElementById('chargeGenDate').value;
+                if (!frequency)       { showAlert('Please select a frequency for recurring charge.', 'error'); return; }
+                if (!startDate)       { showAlert('Please select a start date for recurring charge.', 'error'); return; }
+                if (!numInstallments || numInstallments < 1) { showAlert('Please enter a valid number of installments (minimum 1).', 'error'); return; }
+                if (!chargeGenDate)   { showAlert('Please select an invoice generation date for recurring charge.', 'error'); return; }
+                var dueDateRuleVal = document.getElementById('dueDateRule').value;
+                var dueInDaysVal   = document.getElementById('dueInDays').value;
+                if (!dueDateRuleVal) { showAlert('Please select a due date rule for recurring charge.', 'error'); return; }
+                if (dueInDaysVal === '' || dueInDaysVal === null || dueInDaysVal === undefined) { showAlert('Please enter the number of due-in days for recurring charge.', 'error'); return; }
+                recurringDetails = {
+                    chargeTypeId: chargeTypeIdVal, chargeTypeName: chargeTypeNameVal,
+                    invoiceTypeId: chargeInvoiceTypeIdVal, invoiceTypeName: document.getElementById('chargeInvoiceTypeLookup').value,
+                    frequency: parseInt(frequency), startDate: startDate, numberOfInstallments: parseInt(numInstallments),
+                    invoiceGenerationDate: chargeGenDate, dueDateRule: dueDateRuleVal ? parseInt(dueDateRuleVal) : null, dueInDays: dueInDaysVal ? parseInt(dueInDaysVal) : null
+                };
+            }
+
+            // ── CHANGED: payload now passes totalNetValue (net) as the split basis ──
+            var payload = {
+                purchaseInvoiceId: purchaseInvoiceId,
+                supplierId:        supplierId,
+                supplierName:      supplierName,
+                totalNetValue:     totalNetValue,       // net remaining (array_lefttobesettlednet)
+                totalAmount:       totalAmount,         // gross total (for reference in flow)
+                totalTax:          totalTax,
+                remainingAmount:   actualRemainingAmount - totalAllocated,
+                currencyId:        transactionCurrencyId,
+                currencySymbol:    currencySymbol,
+                chargeMode:        chargeTypeRadio,
+                splitMethod:       splitMethod,
+                invoiceTypeId:     selectedInvoiceType ? selectedInvoiceType.id   : null,
+                invoiceTypeName:   selectedInvoiceType ? selectedInvoiceType.name : null,
+                invoiceDate:       chargeTypeRadio === 'invoice' ? document.getElementById('invoiceDate').value : null,
+                dueDate:           chargeTypeRadio === 'invoice' ? document.getElementById('dueDate').value     : null,
+                recurringChargeDetails: recurringDetails,
+                splits: splits.map(function (split) {
+                    return {
+                        accountId:          split.accountId          || '',
+                        accountName:        split.account            || '',
+                        entityType:         split.entityType         || '',
+                        amount:             split.amount,            // net amount per member
+                        leaseAgreementId:   split.leaseAgreementId   || '',
+                        leaseAgreementName: split.leaseAgreementName || '',
+                        unitId:             split.unitId             || '',
+                        unitName:           split.unitName           || ''
+                    };
+                })
+            };
+
+            if (!splitAmountFlowUrl) { showAlert('Error: Split amount flow URL is not configured. Please check environment variable array_SplitAmountFlowvariable.', 'error'); return; }
+
+            document.getElementById('saveBtn').disabled    = true;
+            document.getElementById('saveBtn').textContent = 'Saving...';
+
+            fetch(splitAmountFlowUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+                .then(function (response) {
+                    if (response.status === 202 || response.status === 200) {
+                        return response.text().then(function (text) { return text ? JSON.parse(text) : { success: true }; }).catch(function () { return { success: true }; });
+                    } else { return response.text().then(function (text) { throw new Error('HTTP ' + response.status + ': ' + (text || response.statusText)); }); }
+                })
+                .then(function () {
+                    document.getElementById('loaderText').textContent = 'Processing, please wait...';
+                    document.getElementById('loaderOverlay').classList.add('active');
+                    setTimeout(function () {
+                        document.getElementById('loaderOverlay').classList.remove('active');
+                        showAlert('The split has been saved. The related records will be created shortly.', 'success', function () {
+                            try {
+                                var parentContext = window.parent;
+                                if (parentContext && parentContext.Xrm && parentContext.Xrm.Page) {
+                                    parentContext.Xrm.Page.data.refresh(false).then(function () { closeDialog(); }, function (error) { console.error(error.message); closeDialog(); });
+                                } else { if (window.opener && window.opener.Xrm) window.opener.Xrm.Page.data.refresh(false); closeDialog(); }
+                            } catch (e) { console.error('Manual refresh failed: ' + e.message); closeDialog(); }
+                        });
+                    }, 4000);
+                })
+                .catch(function (error) {
+                    console.error(error);
+                    showAlert('Error saving split: ' + error.message, 'error');
+                    document.getElementById('saveBtn').disabled    = false;
+                    document.getElementById('saveBtn').textContent = 'Re-invoice';
+                });
+        });
+
+        function closeDialog() { window.close(); }
+
+        function setMinDates() {
+            var today        = new Date().toISOString().split('T')[0];
+            var firstOfMonth = getFirstDayOfCurrentMonth();
+            document.getElementById('invoiceDate').min   = today;
+            document.getElementById('invoiceDate').value = today;
+            onInvoiceDateChange();
+            document.getElementById('dueDate').min       = today;
+            document.getElementById('chargeGenDate').min = today;
+            document.getElementById('startDate').min     = firstOfMonth;
+        }
+
+        // ─── Startup ──────────────────────────────────────────────────────────
+        getEnvironmentVariables().then(function () {
+            initFormValues();
+            fetchDueDateRuleChoices();
+            setMinDates();
+            updateTableHeader();
+            document.getElementById('invoiceDate').addEventListener('change', onInvoiceDateChange);
+            document.getElementById('dueDate').addEventListener('change', onDueDateChange);
+        });
+
+        async function fetchDueDateRuleChoices() {
+            var select = document.getElementById('dueDateRule');
+            try {
+                var parentXrm = getParentXrm();
+                if (!parentXrm) { select.innerHTML = '<option value="">Select due date rule</option>'; return; }
+                var clientUrl = parentXrm.Utility.getGlobalContext().getClientUrl();
+                var url       = clientUrl + "/api/data/v9.2/GlobalOptionSetDefinitions(Name='array_duedaterule')";
+                var data = await new Promise(function (resolve, reject) {
+                    var xhr = new XMLHttpRequest();
+                    xhr.open('GET', url, true);
+                    xhr.setRequestHeader('OData-MaxVersion', '4.0'); xhr.setRequestHeader('OData-Version', '4.0'); xhr.setRequestHeader('Accept', 'application/json'); xhr.withCredentials = true;
+                    xhr.onload = function () {
+                        if (xhr.status >= 200 && xhr.status < 300) { try { resolve(JSON.parse(xhr.responseText)); } catch (e) { reject(new Error('JSON parse error: ' + e.message)); } }
+                        else { reject(new Error('GlobalOptionSet fetch failed: ' + xhr.status + ' ' + xhr.responseText)); }
+                    };
+                    xhr.onerror = function () { reject(new Error('Network error')); }; xhr.send();
+                });
+                var options = data.Options ? data.Options : [];
+                select.innerHTML = '<option value="">Select due date rule</option>';
+                options.sort(function (a, b) { return a.Value - b.Value; }).forEach(function (opt) {
+                    var label = opt.Label && opt.Label.UserLocalizedLabel ? opt.Label.UserLocalizedLabel.Label : 'Option ' + opt.Value;
+                    var el = document.createElement('option'); el.value = opt.Value; el.textContent = label; select.appendChild(el);
+                });
+            } catch (error) { console.error('fetchDueDateRuleChoices error:', error); select.innerHTML = '<option value="">Select due date rule</option>'; }
+        }
+    </script>
+</body>
+</html>
