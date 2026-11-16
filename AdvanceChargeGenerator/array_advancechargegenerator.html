@@ -1,0 +1,589 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Advance Charge Generator</title>
+    <style>
+      :root {
+        --blue: #1c6bd4;
+        --blue-dark: #0d4a9e;
+        --blue-soft: #ebf3ff;
+        --border: #eaecf0;
+        --text: #111827;
+        --muted: #5a6070;
+        --green: #2e7d32;
+        --green-soft: #edf7ee;
+        --amber: #7a4f0a;
+        --amber-soft: #fff8ec;
+        --red: #b91c1c;
+        --red-soft: #fef2f2;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 12px;
+        background: #ffffff;
+        color: var(--text);
+        font-family:
+          "Segoe UI",
+          -apple-system,
+          BlinkMacSystemFont,
+          Roboto,
+          Helvetica,
+          Arial,
+          sans-serif;
+        font-size: 13px;
+      }
+      .acg-card {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 14px;
+      }
+      .acg-card-header {
+        padding: 10px 14px;
+        background: #f9fafb;
+        border-bottom: 1px solid var(--border);
+        border-left: 4px solid var(--blue);
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .acg-card-body {
+        padding: 14px;
+      }
+      /* Inputs on the left, pool groups on the right; stacks on narrow forms */
+      .acg-layout {
+        display: grid;
+        grid-template-columns: minmax(300px, 2fr) minmax(200px, 1fr);
+        gap: 14px;
+        align-items: start;
+      }
+      .acg-layout .acg-card {
+        margin-bottom: 0;
+      }
+      .acg-col {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .acg-layout .acg-grid {
+        grid-template-columns: 1fr;
+      }
+      /* Pool groups stay in view while the inputs scroll; a long list scrolls inside the card */
+      .acg-layout > .acg-card {
+        position: sticky;
+        top: 0;
+        max-height: calc(100vh - 24px);
+        overflow-y: auto;
+      }
+      @media (max-width: 760px) {
+        .acg-layout {
+          grid-template-columns: 1fr;
+        }
+        .acg-layout > .acg-card {
+          position: static;
+          max-height: none;
+        }
+      }
+      .acg-actions {
+        margin-top: 14px;
+      }
+      .acg-pg-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 14px;
+        border-bottom: 1px solid #f1f2f4;
+        cursor: pointer;
+      }
+      .acg-pg-item:hover {
+        background: #f9fafb;
+      }
+      .acg-pg-item.is-current {
+        background: var(--blue-soft);
+      }
+      .acg-pg-all {
+        background: #f1f2f4;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        color: #475569;
+        border-bottom: 2px solid var(--border);
+      }
+      .acg-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 12px 16px;
+      }
+      .acg-field label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 4px;
+      }
+      .acg-field label.required::after {
+        content: " *";
+        color: var(--red);
+      }
+      .acg-field input,
+      .acg-field select {
+        width: 100%;
+        padding: 8px 10px;
+        border: 1.5px solid #cbd5e1;
+        border-radius: 8px;
+        font-size: 13px;
+        background: #fff;
+        color: var(--text);
+      }
+      .acg-field input:focus,
+      .acg-field select:focus {
+        outline: none;
+        border-color: var(--blue);
+        box-shadow: 0 0 0 3px rgba(28, 107, 212, 0.15);
+      }
+      .acg-field input[readonly],
+      .acg-field input:disabled,
+      .acg-field select:disabled {
+        background: #f1f2f4;
+        color: var(--muted);
+      }
+      .acg-pg-item input:disabled + span {
+        color: var(--muted);
+      }
+      .acg-hint {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 3px;
+      }
+      .acg-pill {
+        background: var(--blue-soft);
+        color: var(--blue-dark);
+        border: 1px solid #bbdbff;
+        border-radius: 999px;
+        padding: 2px 10px;
+        font-size: 11px;
+        font-weight: 700;
+      }
+      table.acg-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      table.acg-table th {
+        text-align: left;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        color: #475569;
+        background: #f1f2f4;
+        padding: 8px 10px;
+        border-bottom: 2px solid var(--border);
+      }
+      table.acg-table td {
+        padding: 9px 10px;
+        border-bottom: 1px solid #f1f2f4;
+        vertical-align: middle;
+      }
+      table.acg-table tr.is-current td {
+        background: var(--blue-soft);
+      }
+      .acg-tag {
+        font-size: 10px;
+        font-weight: 700;
+        padding: 1px 7px;
+        border-radius: 5px;
+        margin-left: 6px;
+        background: var(--blue-soft);
+        color: var(--blue-dark);
+      }
+      .acg-empty {
+        text-align: center;
+        color: #9ca3af;
+        padding: 22px;
+      }
+      .acg-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        align-items: center;
+      }
+      .acg-btn {
+        border: none;
+        border-radius: 8px;
+        padding: 9px 20px;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .acg-btn-primary {
+        background: var(--blue);
+        color: #fff;
+      }
+      .acg-btn-primary:hover {
+        background: var(--blue-dark);
+      }
+      .acg-btn-secondary {
+        background: #f1f2f4;
+        color: #374151;
+        border: 1.5px solid #cbd5e1;
+      }
+      .acg-btn:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+      .acg-msg {
+        border-radius: 8px;
+        padding: 10px 12px;
+        margin-bottom: 12px;
+        font-size: 12.5px;
+        line-height: 1.5;
+        display: none;
+      }
+      .acg-msg.info {
+        display: block;
+        background: var(--blue-soft);
+        border: 1px solid #bbdbff;
+        color: var(--blue-dark);
+      }
+      .acg-msg.success {
+        display: block;
+        background: var(--green-soft);
+        border: 1px solid #a8d5ab;
+        color: var(--green);
+      }
+      .acg-msg.warning {
+        display: block;
+        background: var(--amber-soft);
+        border: 1px solid #ffcf7f;
+        color: var(--amber);
+      }
+      .acg-msg.error {
+        display: block;
+        background: var(--red-soft);
+        border: 1px solid #fca5a5;
+        color: var(--red);
+      }
+      .acg-log {
+        max-height: 180px;
+        overflow-y: auto;
+        font-size: 12px;
+        color: #374151;
+        margin: 6px 0 0;
+        padding-left: 18px;
+      }
+      .acg-dialog-body p {
+        margin: 0 0 10px;
+      }
+      .acg-confirm-list {
+        margin: 0 0 12px;
+        padding-left: 18px;
+      }
+      .acg-confirm-list li {
+        margin-bottom: 6px;
+        line-height: 1.45;
+      }
+      .acg-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.45);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      }
+      .acg-overlay.active {
+        display: flex;
+      }
+      .acg-loader {
+        background: #fff;
+        border-radius: 12px;
+        padding: 20px 28px;
+        max-width: min(460px, 92vw);
+        font-size: 13px;
+        font-weight: 600;
+        color: #374151;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+      }
+      .acg-loader-head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      #acg_progress {
+        width: min(400px, 80vw);
+        margin-top: 14px;
+      }
+      .acg-progress-track {
+        height: 8px;
+        background: #f1f2f4;
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      .acg-progress-bar {
+        height: 100%;
+        width: 0;
+        background: var(--blue);
+        border-radius: 999px;
+        transition: width 0.25s ease;
+      }
+      /* Saving the transaction: one request, so the bar runs instead of filling */
+      .acg-progress-bar.is-busy {
+        width: 35% !important;
+        animation: acg-busy 1.2s ease-in-out infinite;
+      }
+      @keyframes acg-busy {
+        from {
+          transform: translateX(-100%);
+        }
+        to {
+          transform: translateX(290%);
+        }
+      }
+      .acg-progress-meta {
+        margin-top: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--muted);
+        text-align: right;
+      }
+      #acg_progressLog {
+        max-height: 140px;
+        font-weight: 400;
+      }
+      .acg-spinner {
+        flex-shrink: 0;
+        width: 22px;
+        height: 22px;
+        border: 3px solid var(--blue-soft);
+        border-top-color: var(--blue);
+        border-radius: 50%;
+        animation: acg-spin 0.8s linear infinite;
+      }
+      @keyframes acg-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .acg-dialog {
+        background: #fff;
+        border-radius: 12px;
+        width: min(460px, 92vw);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+      }
+      .acg-dialog-body {
+        padding: 18px 20px;
+        line-height: 1.6;
+      }
+      .acg-dialog-footer {
+        padding: 12px 20px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        background: #fafafa;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="acg_message" class="acg-msg"></div>
+
+    <div class="acg-layout">
+    <div class="acg-col">
+    <!-- Advance Amount Configuration -->
+    <div class="acg-card">
+      <div class="acg-card-header">Advance Amount Configuration</div>
+      <div class="acg-card-body">
+        <div class="acg-grid">
+          <div class="acg-field">
+            <label class="required" for="acg_advanceAmount"
+              >Advance Amount</label
+            >
+            <input type="text" inputmode="decimal" class="acg-amount" id="acg_advanceAmount" />
+          </div>
+          <div class="acg-field">
+            <label class="required" for="acg_frequency">Frequency</label>
+            <select id="acg_frequency"></select>
+          </div>
+          <div class="acg-field">
+            <label class="required" for="acg_periodicAmount"
+              >Periodic Amount</label
+            >
+            <input type="text" inputmode="decimal" class="acg-amount" id="acg_periodicAmount" />
+            <div class="acg-hint">
+              Calculated from Advance Amount and Frequency. Used as the
+              recurring charge amount.
+            </div>
+          </div>
+          <div class="acg-field">
+            <label for="acg_vatLiable">VAT Liable</label>
+            <select id="acg_vatLiable"></select>
+          </div>
+          <div class="acg-field">
+            <label for="acg_vat">VAT</label>
+            <select id="acg_vat"></select>
+          </div>
+          <div class="acg-field">
+            <label for="acg_vatAmount">VAT Amount</label>
+            <input type="text" inputmode="decimal" class="acg-amount" id="acg_vatAmount" />
+          </div>
+          <div class="acg-field">
+            <label for="acg_totalAmount">Total Amount</label>
+            <input type="text" inputmode="decimal" class="acg-amount" id="acg_totalAmount" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recurring Configuration -->
+    <div class="acg-card">
+      <div class="acg-card-header">Recurring Configuration</div>
+      <div class="acg-card-body">
+        <div class="acg-grid">
+          <div class="acg-field">
+            <label class="required" for="acg_currency">Currency</label>
+            <select id="acg_currency"></select>
+          </div>
+          <div class="acg-field">
+            <label class="required" for="acg_chargeType">Charge Type</label>
+            <select id="acg_chargeType"></select>
+          </div>
+          <div class="acg-field">
+            <label class="required" for="acg_effectiveFrom">Effective From</label>
+            <input type="date" id="acg_effectiveFrom" />
+          </div>
+          <div class="acg-field">
+            <label class="required" for="acg_effectiveTo">Effective To</label>
+            <input type="date" id="acg_effectiveTo" />
+          </div>
+          <div class="acg-field">
+            <label class="required" for="acg_invoiceGenDate"
+              >Invoice Generation Date</label
+            >
+            <input type="date" id="acg_invoiceGenDate" />
+          </div>
+          <div class="acg-field">
+            <label class="required" for="acg_dueDateRule">Due Date Rule</label>
+            <select id="acg_dueDateRule"></select>
+          </div>
+          <div class="acg-field" id="acg_dueInDaysField">
+            <label for="acg_dueInDays" id="acg_dueInDaysLabel">Due in (Days)</label>
+            <input type="number" id="acg_dueInDays" step="1" min="0" />
+          </div>
+          <div class="acg-field" id="acg_useAsInvoiceCurrencyField" style="display: none">
+            <label for="acg_useAsInvoiceCurrency">Use as Invoice Currency</label>
+            <select id="acg_useAsInvoiceCurrency">
+              <option value="false">No</option>
+              <option value="true">Yes</option>
+            </select>
+            <div class="acg-hint">Shown for currencies other than the base currency.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>
+
+    <!-- Pool Groups -->
+    <div class="acg-card">
+      <div class="acg-card-header">
+        <span>Affected Pool Groups</span>
+        <span class="acg-pill" id="acg_poolCount">0 selected</span>
+      </div>
+      <div class="acg-card-body" style="padding: 0">
+        <label class="acg-pg-item acg-pg-all">
+          <input type="checkbox" id="acg_selectAll" />
+          <span>Select all</span>
+        </label>
+        <div id="acg_poolTbody">
+          <div class="acg-empty">Loading pool groups…</div>
+        </div>
+      </div>
+    </div>
+    </div>
+
+    <div class="acg-actions">
+      <span
+        id="acg_summary"
+        style="color: var(--muted); font-size: 12px"
+      ></span>
+      <button
+        type="button"
+        class="acg-btn acg-btn-secondary"
+        id="acg_reloadBtn"
+      >
+        Reload
+      </button>
+      <button
+        type="button"
+        class="acg-btn acg-btn-primary"
+        id="acg_editBtn"
+        style="display: none"
+      >
+        Edit
+      </button>
+      <button type="button" class="acg-btn acg-btn-primary" id="acg_submitBtn">
+        Submit
+      </button>
+    </div>
+
+    <!-- Confirmation dialog -->
+    <div class="acg-overlay" id="acg_confirm">
+      <div class="acg-dialog" role="dialog" aria-modal="true">
+        <div
+          class="acg-card-header"
+          style="border-bottom: 1px solid var(--border)"
+        >
+          Confirm Changes
+        </div>
+        <div class="acg-dialog-body" id="acg_confirmBody"></div>
+        <div class="acg-dialog-footer">
+          <button
+            type="button"
+            class="acg-btn acg-btn-secondary"
+            id="acg_confirmCancel"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="acg-btn acg-btn-primary"
+            id="acg_confirmOk"
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loader: blocks the panel while Submit is running -->
+    <div class="acg-overlay" id="acg_loader" aria-live="polite">
+      <div class="acg-loader" role="status">
+        <div class="acg-loader-head">
+          <div class="acg-spinner"></div>
+          <span id="acg_loaderText">Loading…</span>
+        </div>
+        <!-- Progress: shown only while Submit is making changes -->
+        <div id="acg_progress" style="display: none">
+          <div class="acg-progress-track">
+            <div class="acg-progress-bar" id="acg_progressBar"></div>
+          </div>
+          <div class="acg-progress-meta" id="acg_progressMeta"></div>
+          <ul class="acg-log" id="acg_progressLog"></ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Update the path if the JS web resource is published under a different name -->
+    <script
+      src="array_advancechargegenerator_logic"
+      onerror="var m=document.getElementById('acg_message');m.className='acg-msg error';m.textContent='Could not load the web resource array_advancechargegenerator_logic — check it exists and is published.';document.getElementById('acg_poolTbody').innerHTML='<div class=&quot;acg-empty&quot;>Script not loaded.</div>';"
+    ></script>
+  </body>
+</html>
