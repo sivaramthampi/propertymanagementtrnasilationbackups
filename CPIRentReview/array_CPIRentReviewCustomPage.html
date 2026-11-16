@@ -1,0 +1,3979 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Active CPI Rent Clauses</title>
+    <style>
+            @import url(https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap);
+            @import url(https://use.typekit.net/qnt6ugd.css);
+
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
+
+            :root {
+              --primary: #0b1559;
+              --primary-hover: #2bad76;
+              --primary-active: #005a9e;
+              --success: #2bad76;
+              --success-hover: #2bad76;
+              --danger: #d32831;
+              --warning: #d83b01;
+              --bg-light: #f3f2f1;
+              --bg-white: #ffffff;
+              --text-primary: #323130;
+              --text-secondary: #605e5c;
+              --border: #edebe9;
+              --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+              --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.15);
+            }
+
+            body {
+              font-family: "Segoe UI", "Segoe UI Web (West European)", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif;
+              background: linear-gradient(135deg, #f3f2f1 0%, #e8e7e6 100%);
+              background-attachment: fixed;
+              background-size: 100% 100%;
+              min-height: 100vh;
+              padding: clamp(8px, 1.5vw, 12px);
+              font-size: clamp(12px, 1.2vw, 14px);
+            }
+
+            h2 {
+              text-align: center;
+              color: var(--primary);
+              margin: 30px 0 20px;
+            }
+
+            .container {
+              max-width: 1400px;
+              margin: 0 auto;
+              padding: 0 clamp(8px, 1.5vw, 12px);
+            }
+            /* Loader Overlay */
+      .loader-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .loader-overlay.active {
+        display: flex;
+      }
+
+      .loader-content {
+        background: white;
+        padding: clamp(24px, 3vw, 32px);
+        border-radius: clamp(8px, 1vw, 12px);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        text-align: center;
+        min-width: 200px;
+      }
+
+      .loader-spinner {
+        width: 50px;
+        height: 50px;
+        margin: 0 auto 16px;
+        border: 4px solid #f3f2f1;
+        border-top: 4px solid var(--primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+
+      .loader-text {
+        font-size: clamp(14px, 1.4vw, 16px);
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+      }
+
+      .loader-subtext {
+        font-size: clamp(12px, 1.2vw, 13px);
+        color: var(--text-secondary);
+      }
+
+            /* === Turnover-style header === */
+            .header {
+              background: var(--primary);
+              color: #fff;
+              padding: clamp(16px, 3vw, 32px);
+              border-radius: clamp(8px, 1vw, 12px);
+              margin-bottom: clamp(16px, 2.5vw, 28px);
+              box-shadow: var(--shadow-lg);
+              position: relative;
+              overflow: hidden;
+            }
+
+            .header::before {
+              content: "";
+              position: absolute;
+              top: 0;
+              right: 0;
+              width: clamp(120px, 18vw, 300px);
+              height: clamp(120px, 18vw, 300px);
+              background: rgba(255, 255, 255, 0.10);
+              border-radius: 50%;
+              transform: translate(50%, -50%);
+            }
+
+            .header h1 {
+              font-size: clamp(18px, 2.5vw, 32px);
+              margin-bottom: clamp(4px, 0.8vw, 8px);
+              font-weight: 700;
+              position: relative;
+              z-index: 1;
+            }
+
+            .header p {
+              font-size: clamp(11px, 1.2vw, 14px);
+              opacity: 0.95;
+              position: relative;
+              z-index: 1;
+            }
+
+            /* Filter card */
+            .filter-card {
+              background: #fff;
+              padding: clamp(12px, 1.8vw, 20px) clamp(14px, 2vw, 20px);
+              border-radius: clamp(8px, 1vw, 12px);
+              box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+              margin-bottom: clamp(14px, 2vw, 20px);
+              display: flex;
+              gap: clamp(8px, 1.2vw, 12px);
+              align-items: center;
+              justify-content: flex-start;
+            }
+
+            .filter-card__icon {
+              display: none !important;
+            }
+
+            .filter-card__control {
+              position: relative;
+              flex: 0 1 320px;
+              min-width: 200px;
+              max-width: 320px;
+              width: 100%;
+            }
+
+            .filter-select {
+              width: 100%;
+              padding: clamp(8px, 1.2vw, 10px) clamp(36px, 4vw, 44px) clamp(8px, 1.2vw, 10px) clamp(10px, 1.5vw, 12px);
+              border: 2px solid var(--border);
+              border-radius: clamp(6px, 0.8vw, 8px);
+              font-size: clamp(12px, 1.3vw, 14px);
+              font-weight: 600;
+              color: var(--text-primary);
+              background: #fff;
+              cursor: pointer;
+              appearance: none;
+              -webkit-appearance: none;
+              -moz-appearance: none;
+            }
+
+            .filter-select:focus {
+              border-color: var(--primary);
+              box-shadow: 0 0 0 3px rgba(0,120,212,0.10);
+              outline: none;
+            }
+            .fact-box.warning {
+        background-color: #fff3cd;
+        border-color: #ffc107;
+      }
+
+      .fact-box.info {
+        background-color: #d1ecf1;
+        border-color: #0dcaf0;
+      }
+
+            .filter-select__chevron {
+              position: absolute;
+              right: clamp(8px, 1.2vw, 10px);
+              top: 50%;
+              transform: translateY(-50%);
+              pointer-events: none;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              width: clamp(18px, 2.2vw, 22px);
+              height: clamp(18px, 2.2vw, 22px);
+              background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+              border-radius: clamp(4px, 0.6vw, 6px);
+              box-shadow: 0 2px 4px rgba(0,120,212,0.3);
+              z-index: 2;
+            }
+
+            .filter-select__chevron::after {
+              content: '▼';
+              color: #fff;
+              font-size: clamp(8px, 1vw, 10px);
+              display: block;
+            } /* New Button */
+            .btn-new {
+              background: linear-gradient(135deg, #2bad76, #0b1559);
+              color: white;
+              border: none;
+              padding: clamp(8px, 1.2vw, 10px) clamp(16px, 2vw, 20px);
+              border-radius: clamp(6px, 0.8vw, 8px);
+              cursor: pointer;
+              font-size: clamp(12px, 1.3vw, 14px);
+              font-weight: 600;
+              transition: all 0.3s ease;
+              box-shadow: 0 2px 8px rgba(43, 173, 118, 0.3);
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+              gap: clamp(6px, 0.8vw, 8px);
+              white-space: nowrap;
+              flex-shrink: 0;
+              margin-left: auto;
+            }
+            .btn-new:hover {
+              background: linear-gradient(135deg, #0b1559, #2bad76);
+              box-shadow: 0 4px 12px rgba(43, 173, 118, 0.4);
+              transform: translateY(-2px);
+            }
+            .btn-new:active {
+              transform: translateY(0);
+              box-shadow: 0 2px 6px rgba(43, 173, 118, 0.3);
+            }
+            .btn-new-icon {
+              font-size: clamp(14px, 1.5vw, 16px);
+              font-weight: bold;
+            }
+
+            /* Button Container */
+            .btn-container {
+              display: flex;
+              gap: clamp(4px, 0.6vw, 6px);
+              align-items: center;
+              justify-content: center;
+            }
+
+            /* Button Styling - smaller sizes */
+            .btn-view,
+            .btn-cancel {
+              background: linear-gradient(135deg, #0b1559, #2bad76);
+              color: white;
+              border: none;
+              padding: clamp(4px, 0.5vw, 5px) clamp(6px, 0.8vw, 8px);
+              border-radius: clamp(3px, 0.4vw, 4px);
+              cursor: pointer;
+              font-size: clamp(8px, 0.85vw, 9px);
+              font-weight: 600;
+              transition: all 0.3s ease;
+              box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+              gap: clamp(2px, 0.4vw, 3px);
+              white-space: nowrap;
+              min-width: clamp(28px, 3.5vw, 36px);
+              height: clamp(24px, 2.8vw, 28px);
+            }
+
+            .btn-cancel {
+              background: linear-gradient(135deg, #e74c3c, #c0392b);
+            }
+
+            .btn-view:hover {
+              background: linear-gradient(135deg, #2bad76, #0b1559);
+              box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+              transform: translateY(-2px);
+            }
+
+            .btn-cancel:hover {
+              background: linear-gradient(135deg, #c0392b, #a93226);
+              box-shadow: 0 4px 8px rgba(231, 76, 60, 0.4);
+              transform: translateY(-2px);
+            }
+
+            .btn-view:active,
+            .btn-cancel:active {
+              transform: translateY(0);
+              box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+            }
+
+            .btn-view .arrow {
+              display: inline-block;
+              transition: transform 0.3s ease;
+              font-size: clamp(6px, 0.7vw, 8px);
+            }
+
+            .btn-view.expanded .arrow {
+              transform: rotate(180deg);
+            }
+
+            /* Responsive table wrapper - with horizontal scroll */
+            .table-wrapper {
+              background: white;
+              border-radius: clamp(8px, 1vw, 12px);
+              box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+              overflow-x: auto;
+              overflow-y: visible;
+              margin-bottom: clamp(8px, 1.2vw, 10px);
+            }
+
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              font-size: clamp(9.5px, 0.95vw, 11px);
+              table-layout: fixed;
+            }
+
+            .table-header {
+              background: linear-gradient(135deg, #0b1559, #2bad76);
+            }
+
+            th,
+            td {
+              padding: clamp(5px, 0.75vw, 8px) clamp(3px, 0.5vw, 6px);
+              border: 1px solid #ddd;
+              text-align: left;
+              word-wrap: break-word;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              hyphens: auto;
+            }
+
+            /* Column widths - optimized distribution */
+          th:nth-child(1), td:nth-child(1) { width: 10.5%; }   /* Effective Date */
+      th:nth-child(2), td:nth-child(2) { width: 10.5%; }   /* Expiry Date */
+      th:nth-child(3), td:nth-child(3) { width: 9%; }  /* Frequency */
+      th:nth-child(4), td:nth-child(4) { width: 11%; }  /* Last Adjustment Date */
+      th:nth-child(5), td:nth-child(5) { width: 9%; }  /* Charge Type */
+      th:nth-child(6), td:nth-child(6) { width: 8%; }   /* Trigger Value */
+      th:nth-child(7), td:nth-child(7) { width: 9%; }  /* Increase Type */
+      th:nth-child(8), td:nth-child(8) { width: 9.5%; }  /* Max Increase */
+      th:nth-child(9), td:nth-child(9) { width: 9.5%; }  /* Min Increase */
+      th:nth-child(10), td:nth-child(10) { width: 12%; }/* Action Button - REDUCED */
+
+            th:last-child,
+            td:last-child {
+              text-align: center;
+            }
+
+            th {
+              color: white;
+              font-size: clamp(9px, 0.9vw, 10.5px);
+              font-weight: 600;
+              line-height: 1.3;
+            }
+
+            .no-records-container {
+              background: #fff;
+              border-radius: clamp(8px, 1.2vw, 12px);
+              box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+              padding: clamp(20px, 4vw, 32px) clamp(16px, 3vw, 24px);
+              width: 100%;
+              margin: 5vh auto;
+              text-align: center;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              transition: all 0.3s ease;
+              box-sizing: border-box;
+            }
+
+            .no-records-icon {
+              font-size: clamp(28px, 4.5vw, 48px);
+              color: #d1d5db;
+              margin-bottom: 1rem;
+            }
+
+            .no-records-title {
+              font-size: clamp(16px, 1.8vw, 20px);
+              font-weight: 600;
+              color: #333;
+              margin-bottom: 0.4rem;
+            }
+
+            .no-records-message {
+              font-size: clamp(13px, 1.4vw, 15px);
+              color: #6b7280;
+              line-height: 1.5;
+              max-width: 90%;
+            }
+
+            .hidden {
+              display: none !important;
+            }
+
+            .no-records {
+              text-align: center;
+              color: #777;
+              margin-top: 20px;
+              font-size: clamp(12px, 1.3vw, 14px);
+            }
+
+            /* History section */
+            .history-section {
+              background: #f9f9f9;
+              padding: clamp(12px, 1.5vw, 16px);
+              border-radius: clamp(6px, 0.8vw, 8px);
+            }
+
+          .history-details {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: clamp(12px, 1.5vw, 16px);
+        margin-bottom: 0;
+        flex: 1;
+      }
+
+            .detail-item {
+              background: white;
+              padding: clamp(5px, 0.85vw, 8px) clamp(3px, 0.6vw, 6px);
+              border-radius: clamp(4px, 0.5vw, 6px);
+              border: 1px solid #ddd;
+            }
+
+            .detail-label {
+              font-size: clamp(8.5px, 0.95vw, 10.5px);
+              color: var(--text-secondary);
+              font-weight: 600;
+              text-transform: uppercase;
+              margin-bottom: 2px;
+            }
+
+            .detail-value {
+              font-size: clamp(8.5px, 0.95vw, 10.5px);
+              color: var(--text-primary);
+              font-weight: 500;
+            }
+
+      /* History table - also responsive, NO SCROLL */
+      .history-table {
+        width: 100%;
+        margin: clamp(4px, 0.8vw, 5px) 0 clamp(12px, 1.8vw, 15px) 0;
+        border: 1px solid #ccc;
+        border-radius: clamp(6px, 0.9vw, 8px);
+        background: #fafafa;
+        overflow: visible;
+        border-collapse: separate;
+        border-spacing: 0;
+      }
+
+      .history-header {
+        background: linear-gradient(135deg, #2bad76, #0b1559);
+        font-weight: bold;
+        color: white;
+      }
+
+      /* Header cells - NO borders */
+      .history-table thead th {
+        padding: clamp(5px, 0.85vw, 8px) clamp(3px, 0.6vw, 6px);
+        font-size: clamp(8.5px, 0.95vw, 10.5px);
+        white-space: nowrap;
+        border: none; /* Remove all borders from headers */
+      }
+
+      .history-table thead th:first-child {
+        border-top-left-radius: clamp(6px, 0.9vw, 8px);
+      }
+
+      .history-table thead th:last-child {
+        border-top-right-radius: clamp(6px, 0.9vw, 8px);
+      }
+
+      /* Data cells - WITH borders */
+      .history-table tbody td {
+        padding: clamp(5px, 0.85vw, 8px) clamp(3px, 0.6vw, 6px);
+        font-size: clamp(8.5px, 0.95vw, 10.5px);
+        border-right: 1px solid #ddd;
+        border-bottom: 1px solid #ddd;
+        white-space: nowrap;
+      }
+
+      .history-table tbody td:first-child {
+        border-left: 1px solid #ddd;
+      }
+
+      /* First row of data - add top border */
+      .history-table tbody tr:first-child td {
+        border-top: 1px solid #ddd;
+      }
+
+      /* Bottom corners */
+      .history-table tbody tr:last-child td:first-child {
+        border-bottom-left-radius: clamp(6px, 0.9vw, 8px);
+      }
+
+      .history-table tbody tr:last-child td:last-child {
+        border-bottom-right-radius: clamp(6px, 0.9vw, 8px);
+      }
+
+            .modal-overlay {
+              display: none;
+              position: fixed;
+              top: 0;
+              left: 0;
+              right: 0;
+              bottom: 0;
+              background: rgba(0, 0, 0, 0.5);
+              z-index: 1000;
+              align-items: center;
+              justify-content: center;
+            }
+
+            .modal-overlay.active {
+              display: flex;
+            }
+
+            .modal-content {
+              background: white;
+              padding: clamp(20px, 3vw, 30px);
+              border-radius: clamp(8px, 1vw, 12px);
+              max-width: 400px;
+              width: 90%;
+              box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+              text-align: center;
+            }
+
+            .modal-title {
+              font-size: clamp(16px, 1.8vw, 18px);
+              font-weight: 600;
+              color: var(--text-primary);
+              margin-bottom: 12px;
+            }
+
+            .modal-message {
+              font-size: clamp(13px, 1.2vw, 14px);
+              color: var(--text-secondary);
+              margin-bottom: 24px;
+              line-height: 1.5;
+            }
+
+            .modal-actions {
+              display: flex;
+              gap: 12px;
+              justify-content: center;
+            }
+
+            .modal-btn {
+              padding: clamp(8px, 1vw, 10px) clamp(16px, 2vw, 20px);
+              border: none;
+              border-radius: clamp(4px, 0.5vw, 6px);
+              cursor: pointer;
+              font-size: clamp(12px, 1.1vw, 13px);
+              font-weight: 600;
+              transition: all 0.3s ease;
+            }
+
+            .modal-btn-confirm {
+              background: var(--danger);
+              color: white;
+            }
+
+            .modal-btn-confirm:hover {
+              background: #8b2025;
+              transform: translateY(-2px);
+              box-shadow: 0 4px 8px rgba(164, 38, 44, 0.3);
+            }
+
+            .modal-btn-cancel {
+              background: #e0e0e0;
+              color: var(--text-primary);
+            }
+
+            .modal-btn-cancel:hover {
+              background: #d0d0d0;
+              transform: translateY(-2px);
+            }
+            /* Create Clause Modal Styles */
+      .create-modal-content {
+        background: white;
+        padding: clamp(24px, 3vw, 32px);
+        border-radius: clamp(8px, 1vw, 12px);
+        max-width: 600px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      }
+
+      .create-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+        border-bottom: 2px solid var(--border);
+      }
+
+      .create-modal-header h2 {
+        margin: 0;
+        color: var(--primary);
+        font-size: clamp(18px, 2vw, 22px);
+      }
+
+      .close-btn {
+        background: none;
+        border: none;
+        font-size: 24px;
+        color: var(--text-secondary);
+        cursor: pointer;
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+      }
+
+      .close-btn:hover {
+        background: #f0f0f0;
+        color: var(--text-primary);
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      .form-label {
+        display: block;
+        font-size: clamp(13px, 1.3vw, 14px);
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 6px;
+      }
+
+      .form-label.required::after {
+        content: ' *';
+        color: var(--danger);
+      }
+
+      .form-input,
+      .form-select {
+        width: 100%;
+        padding: clamp(8px, 1vw, 10px) clamp(10px, 1.2vw, 12px);
+        border: 2px solid var(--border);
+        border-radius: clamp(4px, 0.5vw, 6px);
+        font-size: clamp(12px, 1.2vw, 14px);
+        color: var(--text-primary);
+        background: white;
+        transition: all 0.2s ease;
+      }
+
+      .form-input:focus,
+      .form-select:focus {
+        border-color: var(--primary);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(11, 21, 89, 0.1);
+      }
+
+      .form-input.field-error,
+      .form-select.field-error {
+        border-color: var(--danger) !important;
+        box-shadow: 0 0 0 3px rgba(164, 38, 44, 0.15) !important;
+      }
+
+      .field-error-msg {
+        display: none;
+        color: var(--danger);
+        font-size: clamp(11px, 1.1vw, 12px);
+        margin-top: 4px;
+        font-weight: 500;
+      }
+
+      .field-error-msg.visible {
+        display: block;
+      }
+
+      .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+
+      .form-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+        margin-top: 24px;
+        padding-top: 20px;
+        border-top: 2px solid var(--border);
+      }
+
+      .btn-save {
+        background: linear-gradient(135deg, #2bad76, #0b1559);
+        color: white;
+        border: none;
+        padding: clamp(10px, 1.2vw, 12px) clamp(20px, 2.5vw, 24px);
+        border-radius: clamp(4px, 0.5vw, 6px);
+        cursor: pointer;
+        font-size: clamp(13px, 1.3vw, 14px);
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(43, 173, 118, 0.3);
+      }
+
+      .btn-save:hover {
+        background: linear-gradient(135deg, #0b1559, #2bad76);
+        box-shadow: 0 4px 12px rgba(43, 173, 118, 0.4);
+        transform: translateY(-2px);
+      }
+
+      .btn-cancel-form {
+        background: #e0e0e0;
+        color: var(--text-primary);
+        border: none;
+        padding: clamp(10px, 1.2vw, 12px) clamp(20px, 2.5vw, 24px);
+        border-radius: clamp(4px, 0.5vw, 6px);
+        cursor: pointer;
+        font-size: clamp(13px, 1.3vw, 14px);
+        font-weight: 600;
+        transition: all 0.2s ease;
+      }
+
+      .btn-cancel-form:hover {
+        background: #d0d0d0;
+        transform: translateY(-2px);
+      }
+
+      @media (max-width: 768px) {
+        .form-row {
+          grid-template-columns: 1fr;
+        }
+      }
+      .fact-box {
+        padding: 16px 18px;
+        border-radius: 8px;
+        background-color: #fffbeb;
+        border: 1px solid #fbbf24;
+        height: 100%;
+        text-align: left;
+        overflow: hidden;
+        word-wrap: break-word;
+        box-sizing: border-box;
+      }
+
+      .fact-box-label {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #92400e;
+        margin-bottom: 6px;
+        font-weight: 600;
+      }
+
+      .fact-box-body {
+        font-size: 10.5px;
+        color: #92400e;
+        line-height: 1.5;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        white-space: normal;
+      }
+
+
+      .history-layout {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 16px;
+        align-items: stretch;
+      }
+
+      .history-left {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .history-right {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      @media (max-width: 900px) {
+        .history-layout {
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+        }
+
+        .history-details {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .fact-box {
+          padding: 12px 14px;
+          text-align: left;
+        }
+
+        .fact-box-label {
+          font-size: 10px;
+        }
+
+        .fact-box-body {
+          font-size: 11px;
+        }
+      }
+      .details-box {
+        padding: 16px 18px;
+        border-radius: 8px;
+        background-color: #dbeafe;
+        border: 1px solid #3b82f6;
+        height: 100%;
+        text-align: left;
+        overflow: hidden;
+        word-wrap: break-word;
+        box-sizing: border-box;
+      }
+
+      .details-box-label {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #1e40af;
+        margin-bottom: 6px;
+        font-weight: 600;
+        word-wrap: break-word;
+      }
+
+      .details-box-body {
+        font-size: 10.5px;
+        color: #1e3a8a;
+        line-height: 1.5;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        white-space: normal;
+      }
+
+      .details-box-body strong {
+        font-weight: 600;
+        font-size: 10.5px;
+      }
+
+      .two-column {
+        display: grid;
+        grid-template-columns: 180px auto;
+        row-gap: 6px;
+        column-gap: 10px;
+      }
+
+      /* ── New CPI Clause form: toggles, info notes, schedule cycles card
+         (mirrors the Lease Creation CPI form) ── */
+      .toggle-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 4px;
+      }
+
+      .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 40px;
+        height: 22px;
+        margin: 0;
+        flex-shrink: 0;
+      }
+
+      .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      .toggle-switch .slider {
+        position: absolute;
+        inset: 0;
+        cursor: pointer;
+        background: #d1d5db;
+        border-radius: 22px;
+        transition: background 0.2s ease;
+      }
+
+      .toggle-switch .slider::before {
+        content: "";
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        left: 3px;
+        bottom: 3px;
+        background: #fff;
+        border-radius: 50%;
+        transition: transform 0.2s ease;
+      }
+
+      .toggle-switch input:checked + .slider {
+        background: #2bad76;
+      }
+
+      .toggle-switch input:checked + .slider::before {
+        transform: translateX(18px);
+      }
+
+      .toggle-switch input:focus-visible + .slider {
+        box-shadow: 0 0 0 3px rgba(11, 21, 89, 0.15);
+      }
+
+      .toggle-text {
+        font-size: 13px;
+        color: var(--text-primary);
+      }
+
+      .cpi-info-note {
+        margin-top: 6px;
+        font-size: 12px;
+        line-height: 1.4;
+        color: #1e40af;
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        border-radius: 6px;
+        padding: 6px 8px;
+      }
+
+      .cpi-cycles-card {
+        margin-bottom: 20px;
+        font-size: 12px;
+        line-height: 1.5;
+        color: #374151;
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        border-left: 3px solid #2563eb;
+        border-radius: 6px;
+        padding: 8px 10px;
+      }
+
+      .cpi-cycles-card ul {
+        margin: 0;
+        padding-left: 18px;
+      }
+
+      .cpi-cycles-card .hi {
+        color: #2563eb;
+      }
+
+      .cpi-cycles-card .tag {
+        color: #6b7280;
+      }
+    </style>
+
+    <script>
+      let Xrm;
+      try {
+        Xrm = window.parent?.Xrm || window.opener?.Xrm || window.top?.Xrm;
+        if (!Xrm && window.parent && window.parent.parent) {
+          Xrm = window.parent.parent.Xrm;
+        }
+      } catch (e) {}
+      let leaseId = null;
+      let clauseData = {};
+     let currentRentAmount = null;
+      let currencySymbol = "EUR";
+      let currentChargeVatName = null;
+
+      // Store the existing clause ID and form data for override
+      let existingClauseToOverride = null;
+      let pendingFormData = null;
+
+      const RECURRING_CHARGE_CONFIG = {
+        entityName: "array_recurringcharge",
+        leaseAgreementField: "array_leaseagreement",
+        amountField: "array_amount",
+        chargeTypeField: "array_chargetype",
+        statusField: "statecode",
+        currencyField: "transactioncurrencyid",
+      };
+      async function fetchCurrentRentAmount(leaseAgreementId, chargeTypeId) {
+        if (!leaseAgreementId) {
+          return null;
+        }
+
+        try {
+          const cleanLeaseId = leaseAgreementId.replace(/[{}]/g, "");
+
+          if (!chargeTypeId) {
+            return null;
+          }
+
+          const cleanChargeTypeId = chargeTypeId.replace(/[{}]/g, "");
+
+          const fetchXml = `
+      <fetch>
+        <entity name="${RECURRING_CHARGE_CONFIG.entityName}">
+          <attribute name="${RECURRING_CHARGE_CONFIG.amountField}" />
+          <attribute name="${RECURRING_CHARGE_CONFIG.currencyField}" />
+          <attribute name="array_vat" />
+          <filter type="and">
+            <condition attribute="${RECURRING_CHARGE_CONFIG.leaseAgreementField}" operator="eq" value="${cleanLeaseId}" />
+            <condition attribute="${RECURRING_CHARGE_CONFIG.statusField}" operator="eq" value="0" />
+            <condition attribute="${RECURRING_CHARGE_CONFIG.chargeTypeField}" operator="eq" value="${cleanChargeTypeId}" />
+          </filter>
+          <order attribute="createdon" descending="true" />
+        </entity>
+      </fetch>
+    `;
+
+          const result = await Xrm.WebApi.retrieveMultipleRecords(
+            RECURRING_CHARGE_CONFIG.entityName,
+            "?fetchXml=" + encodeURIComponent(fetchXml),
+          );
+
+          if (result && result.entities && result.entities.length > 0) {
+            let totalAmount = 0;
+            let currencyId = null;
+
+            result.entities.forEach((entity) => {
+              const amount = entity[RECURRING_CHARGE_CONFIG.amountField];
+              if (amount !== null && amount !== undefined) {
+                totalAmount += amount;
+              }
+
+              if (
+                !currencyId &&
+                entity[`_${RECURRING_CHARGE_CONFIG.currencyField}_value`]
+              ) {
+                currencyId =
+                  entity[`_${RECURRING_CHARGE_CONFIG.currencyField}_value`];
+              }
+            });
+            if (currencyId) {
+              await fetchCurrencySymbol(currencyId);
+            }
+
+            const firstRec = result.entities[0];
+            currentChargeVatName =
+              firstRec["_array_vat_value@OData.Community.Display.V1.FormattedValue"] || null;
+
+            return totalAmount;
+          } else {
+            return null;
+          }
+        } catch (error) {
+          return null;
+        }
+      }
+      async function fetchCurrencySymbol(currencyId) {
+        if (!currencyId) {
+          return;
+        }
+
+        try {
+          const cleanId = currencyId.replace(/[{}]/g, "");
+
+          const currency = await Xrm.WebApi.retrieveRecord(
+            "transactioncurrency",
+            cleanId,
+            "?$select=isocurrencycode,currencysymbol",
+          );
+
+          if (currency) {
+            currencySymbol =
+              currency.currencysymbol || currency.isocurrencycode || "EUR";
+          }
+        } catch (error) {
+          currencySymbol = "EUR";
+        }
+      }
+      async function refreshLeaseClauseSubgrid() {
+        try {
+          let parentFormContext = null;
+
+          if (window.parent && window.parent.Xrm && window.parent.Xrm.Page) {
+            parentFormContext = window.parent.Xrm.Page;
+          } else if (window.top && window.top.Xrm && window.top.Xrm.Page) {
+            parentFormContext = window.top.Xrm.Page;
+          }
+
+          if (!parentFormContext) {
+            return;
+          }
+
+          const subgridNames = [
+            "Subgrid_new_4",
+            "Subgrid_new_7",
+            "Subgrid_new_16",
+          ];
+
+          let refreshedCount = 0;
+
+          subgridNames.forEach((subgridName) => {
+            const subgridControl = parentFormContext.getControl(subgridName);
+
+            if (subgridControl) {
+              subgridControl.refresh();
+              refreshedCount++;
+            }
+          });
+        } catch (error) {}
+      }
+      async function checkExistingChargeType(chargeTypeId) {
+        if (!chargeTypeId || !leaseId) return null;
+
+        try {
+          const cleanLeaseId = leaseId.replace(/[{}]/g, "");
+          const cleanChargeTypeId = chargeTypeId.replace(/[{}]/g, "");
+
+          const fetchXml = `
+      <fetch top="1">
+        <entity name="array_leaseclause">
+          <attribute name="array_leaseclauseid" />
+          <attribute name="array_effectivedate" />
+          <attribute name="array_clausetitle" />
+          <filter type="and">
+            <condition attribute="array_leaseagreement" operator="eq" value="${cleanLeaseId}" />
+            <condition attribute="array_chargetypecpi" operator="eq" value="${cleanChargeTypeId}" />
+            <condition attribute="statecode" operator="eq" value="0" />
+            <condition attribute="statuscode" operator="eq" value="1" />
+          </filter>
+          <link-entity name="array_clausetype" from="array_clausetypeid" to="array_clausetype" alias="ct">
+            <filter>
+              <condition attribute="array_clausetypename" operator="eq" value="Value Protection (CPI)" />
+            </filter>
+          </link-entity>
+          <order attribute="createdon" descending="true" />
+        </entity>
+      </fetch>
+    `;
+
+          const result = await Xrm.WebApi.retrieveMultipleRecords(
+            "array_leaseclause",
+            "?fetchXml=" + encodeURIComponent(fetchXml),
+          );
+
+          if (result && result.entities && result.entities.length > 0) {
+            return result.entities[0];
+          }
+
+          return null;
+        } catch (error) {
+          return null;
+        }
+      }
+
+      function formatCurrency(amount) {
+        if (amount === null || amount === undefined) return "Not Set";
+        try {
+          return new Intl.NumberFormat("en-US", {
+            style: "currency",
+            currency: currencySymbol,
+          }).format(amount);
+        } catch (error) {
+          return `${currencySymbol}${amount.toLocaleString("en-US", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}`;
+        }
+      }
+
+      function calculateCPIRentRange(
+        currentAmount,
+        increaseType,
+        minAmount,
+        maxAmount,
+        minPercent,
+        maxPercent,
+      ) {
+        if (currentAmount === null || currentAmount === undefined)
+          return { min: null, max: null };
+
+        let minRent = null;
+        let maxRent = null;
+
+        if (increaseType === "Flat") {
+          if (minAmount !== null && minAmount !== undefined) {
+            minRent = currentAmount + minAmount;
+          }
+          if (maxAmount !== null && maxAmount !== undefined) {
+            maxRent = currentAmount + maxAmount;
+          }
+        } else if (increaseType === "Percentage") {
+          if (minPercent !== null && minPercent !== undefined) {
+            minRent = currentAmount + (currentAmount * minPercent) / 100;
+          }
+          if (maxPercent !== null && maxPercent !== undefined) {
+            maxRent = currentAmount + (currentAmount * maxPercent) / 100;
+          }
+        }
+
+        return { min: minRent, max: maxRent };
+      }
+      async function loadCPIRents(mode = "active") {
+        const tbody = document.getElementById("cpiRentBody");
+        tbody.innerHTML = `<tr><td colspan="9" class="no-records">Loading...</td></tr>`;
+
+        if (!leaseId) {
+          tbody.innerHTML = `<tr><td colspan="9" class="no-records">Lease ID not provided.</td></tr>`;
+          return;
+        }
+
+        try {
+          let statusFilter = "";
+          if (mode === "active") statusFilter = " and statuscode eq 1";
+          else if (mode === "inactive") statusFilter = " and statuscode ne 1";
+
+          const query = `?$select=array_leaseclauseid,array_clausetitle,_array_clausetype_value,_array_chargetypecpi_value,array_effectivedate,array_expirydate,array_lastadjustmentdate,array_cpirentfrequency,_array_chargetypecpi_value,array_increasetypecpirentprocess,array_triggervalue,array_lastadjustmentdatecpi,array_flatamountcpi,array_minimumincreaseflatamountcpi,array_maximumincreasepercentagecpi,array_minimumincreasepercentagecpi,_transactioncurrencyid_value,statuscode,_array_cpitype_value,array_currentindex,array_initialwaitingperiodmonths,array_cpicyclestartdate,array_cpischedulestartdate,array_minimumtimeintervalmonths
+              &$expand=transactioncurrencyid($select=currencysymbol)
+              &$filter=_array_leaseagreement_value eq ${leaseId}${statusFilter}
+              &$orderby=array_effectivedate desc`;
+
+          const result = await Xrm.WebApi.retrieveMultipleRecords(
+            "array_leaseclause",
+            query,
+          );
+
+          const cpirent = result.entities.filter(
+            (record) =>
+              record[
+                "_array_clausetype_value@OData.Community.Display.V1.FormattedValue"
+              ] === "Value Protection (CPI)",
+          );
+
+          tbody.innerHTML = "";
+
+          if (cpirent.length === 0) {
+            document.querySelector(".table-wrapper").classList.add("hidden");
+            document
+              .getElementById("noRecordsContainer")
+              .classList.remove("hidden");
+            updateEmptyStateMessage(mode);
+            return;
+          } else {
+            document.querySelector(".table-wrapper").classList.remove("hidden");
+            document
+              .getElementById("noRecordsContainer")
+              .classList.add("hidden");
+          }
+
+          cpirent.forEach((clause) => {
+            clauseData[clause.array_leaseclauseid] = clause;
+            const row = document.createElement("tr");
+
+            const clausefrequency =
+              clause[
+                "array_cpirentfrequency@OData.Community.Display.V1.FormattedValue"
+              ] ?? "—";
+            const ClauseIncreaseType =
+              clause[
+                "array_increasetypecpirentprocess@OData.Community.Display.V1.FormattedValue"
+              ] ?? "—";
+            const Triggervalue = clause[
+              "array_triggervalue@OData.Community.Display.V1.FormattedValue"
+            ]
+              ? `${clause["array_triggervalue@OData.Community.Display.V1.FormattedValue"]} %`
+              : clause.array_triggervalue != null
+                ? `${clause.array_triggervalue} %`
+                : "—";
+            const chargetype =
+              clause[
+                "_array_chargetypecpi_value@OData.Community.Display.V1.FormattedValue"
+              ] ?? "—";
+
+            let maxIncrease = "—";
+            let minIncrease = "—";
+
+            const increaseTypeRaw = clause.array_increasetypecpirentprocess;
+
+            if (increaseTypeRaw === 126330000) {
+              const flatAmount = clause.array_flatamountcpi;
+              const minAmount = clause.array_minimumincreaseflatamountcpi;
+
+              maxIncrease =
+                flatAmount != null
+                  ? flatAmount.toLocaleString("en-US", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })
+                  : "—";
+              minIncrease =
+                minAmount != null
+                  ? minAmount.toLocaleString("en-US", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })
+                  : "—";
+            } else if (increaseTypeRaw === 126330001) {
+              const maxPercent = clause.array_maximumincreasepercentagecpi;
+              const minPercent = clause.array_minimumincreasepercentagecpi;
+              maxIncrease =
+                maxPercent != null ? `${maxPercent.toFixed(2)} %` : "—";
+              minIncrease =
+                minPercent != null ? `${minPercent.toFixed(2)} %` : "—";
+            }
+
+            const clauseIdForHandlers = clause.array_leaseclauseid;
+            row.innerHTML = `
+  <td>${formatDate(clause.array_effectivedate)}</td>
+  <td>${formatDate(clause.array_expirydate)}</td>
+  <td>${clausefrequency}</td>
+  <td>${formatDate(clause.array_lastadjustmentdatecpi)}</td>
+  <td>${chargetype}</td>
+  <td>${Triggervalue}</td>
+  <td>${ClauseIncreaseType}</td>
+  <td>${maxIncrease}</td>
+  <td>${minIncrease}</td>
+  <td>
+    <div class="btn-container">
+      <button type="button" class="btn-view" data-clause-id="${clauseIdForHandlers}">
+        <span class="arrow">▼</span>
+      </button>
+      <button type="button" class="btn-cancel" data-clause-id="${clauseIdForHandlers}">
+        ✕
+      </button>
+    </div>
+  </td>
+`;
+
+            const viewBtn = row.querySelector(".btn-view");
+            const cancelBtn = row.querySelector(".btn-cancel");
+
+            viewBtn.addEventListener("click", function (e) {
+              e.stopPropagation();
+              toggleHistory(clauseIdForHandlers, this);
+            });
+
+            cancelBtn.addEventListener("click", function (e) {
+              e.stopPropagation();
+              showCancelConfirmation(clauseIdForHandlers);
+            });
+
+            const historyRow = document.createElement("tr");
+            historyRow.classList.add("hidden");
+            historyRow.id = `history-row-${clause.array_leaseclauseid}`;
+            historyRow.innerHTML = `
+  <td colspan="10" id="history-${clause.array_leaseclauseid}">
+    <div class="no-records">Click to load history...</div>
+  </td>`;
+
+            tbody.appendChild(row);
+            tbody.appendChild(historyRow);
+          });
+        } catch (error) {
+          tbody.innerHTML = `<tr><td colspan="9" class="no-records">Error loading clauses.</td></tr>`;
+        }
+      }
+
+      function updateHeaderTitleByFilter(mode) {
+        const h1 = document.querySelector(".header h1");
+        if (!h1) return;
+
+        const hasIcon = h1.querySelector("i");
+        let titleText = "All CPI Rent Clauses";
+
+        if (mode === "inactive") {
+          titleText = "Inactive CPI Rent Clauses";
+        } else if (mode === "active") {
+          titleText = "Active CPI Rent Clauses";
+        }
+
+        if (hasIcon) {
+          h1.innerHTML = `${hasIcon.outerHTML} ${titleText}`;
+        } else {
+          h1.textContent = titleText;
+        }
+      }
+
+      function updateEmptyStateMessage(mode) {
+        const titleElement = document.querySelector(".no-records-title");
+        const messageElement = document.querySelector(".no-records-message");
+
+        if (mode === "inactive") {
+          titleElement.textContent = "No Inactive CPI Rent";
+          messageElement.textContent =
+            "There are no inactive CPI rent clauses available for this lease agreement at the moment.";
+        } else if (mode === "active") {
+          titleElement.textContent = "No Active CPI Rent";
+          messageElement.textContent =
+            "There are no active CPI rent clauses available for this lease agreement at the moment.";
+        } else {
+          titleElement.textContent = "No CPI Rent Clauses";
+          messageElement.textContent =
+            "There are no CPI rent clauses available for this lease agreement at the moment.";
+        }
+      }
+
+      function reloadCPIRentsByFilter() {
+        const ddl = document.getElementById("clauseStatusFilter");
+        const mode = ddl ? ddl.value : "active";
+        updateHeaderTitleByFilter(mode);
+        loadCPIRents(mode);
+      }
+
+      window.addEventListener("load", () => {
+        const ddl = document.getElementById("clauseStatusFilter");
+        const initialMode = ddl ? ddl.value : "active";
+        updateHeaderTitleByFilter(initialMode);
+      });
+
+      function showCancelConfirmation(clauseId) {
+        const modal = document.getElementById("confirmationModal");
+        modal.classList.add("active");
+
+        const confirmBtn = modal.querySelector(".modal-btn-confirm");
+        confirmBtn.onclick = () => {
+          cancelClause(clauseId);
+          modal.classList.remove("active");
+        };
+
+        const cancelBtn = modal.querySelector(".modal-btn-cancel");
+        cancelBtn.onclick = () => {
+          modal.classList.remove("active");
+        };
+      }
+
+      async function cancelClause(clauseId) {
+        try {
+          const updateData = {
+            statecode: 1,
+            statuscode: 2,
+          };
+
+          await Xrm.WebApi.updateRecord(
+            "array_leaseclause",
+            clauseId,
+            updateData,
+          );
+
+          reloadCPIRentsByFilter();
+          await refreshLeaseClauseSubgrid();
+        } catch (error) {
+          alert("Error deactivating clause. Please try again.");
+        }
+      }
+
+      async function toggleHistory(clauseId, button) {
+        const historyRow = document.getElementById(`history-row-${clauseId}`);
+
+        if (!historyRow) {
+          return;
+        }
+
+        const currentlyVisible = !historyRow.classList.contains("hidden");
+
+        if (currentlyVisible) {
+          historyRow.classList.add("hidden");
+          button.classList.remove("expanded");
+          return;
+        }
+
+        historyRow.classList.remove("hidden");
+        button.classList.add("expanded");
+
+        const container = document.getElementById(`history-${clauseId}`);
+        container.innerHTML = `<div class="no-records">Loading history...</div>`;
+
+        try {
+          const clauseInfo = clauseData[clauseId];
+
+          if (!clauseInfo) {
+            container.innerHTML = `<div class="no-records">Error: Clause information not found</div>`;
+            return;
+          }
+
+          const chargeTypeId = clauseInfo._array_chargetypecpi_value;
+          currentRentAmount = await fetchCurrentRentAmount(
+            leaseId,
+            chargeTypeId,
+          );
+
+          const result = await Xrm.WebApi.retrieveMultipleRecords(
+            "array_cpiadjustmenthistory",
+            `?$select=array_adjustmentid,array_adjustmenteffectivefrom,array_cpiadjustmenthistoryid,_array_recurringcharge_value,array_indexchangepercentage,array_newrent,array_previousrent,_array_leaseagreement_value,_transactioncurrencyid_value&$expand=array_RecurringCharge($select=array_chargename)&$filter=_array_leaseclause_value eq ${clauseId}&$orderby=array_adjustmenteffectivefrom desc`,
+          );
+
+          let html = `<div class="history-section">`;
+          html += `<div class="history-layout">`;
+          html += `<div class="history-left">`;
+
+          if (clauseInfo) {
+            const cpiType =
+              clauseInfo[
+                "_array_cpitype_value@OData.Community.Display.V1.FormattedValue"
+              ] ?? "—";
+            const currentIndex =
+              clauseInfo[
+                "array_currentindex@OData.Community.Display.V1.FormattedValue"
+              ] ??
+              clauseInfo.array_currentindex ??
+              "—";
+            const initialWaitingPeriod =
+              clauseInfo[
+                "array_initialwaitingperiodmonths@OData.Community.Display.V1.FormattedValue"
+              ] ??
+              clauseInfo.array_initialwaitingperiodmonths ??
+              "—";
+            const cpiScheduleStartDate = formatDate(
+              clauseInfo.array_cpischedulestartdate,
+            );
+            const minimumTimeInterval =
+              clauseInfo[
+                "array_minimumtimeintervalmonths@OData.Community.Display.V1.FormattedValue"
+              ] ??
+              clauseInfo.array_minimumtimeintervalmonths ??
+              "—";
+
+            html += `
+      <div class="details-box">
+        <div class="details-box-label" style="font-weight: bold;">CPI Details</div>
+        <div class="details-box-body two-column">
+          <div>CPI Type:</div><div><strong>${cpiType}</strong></div>
+          <div>Current Index:</div><div><strong>${currentIndex}</strong></div>
+          <div>Initial Waiting Period:</div><div><strong>${initialWaitingPeriod}</strong></div>
+          <div>CPI Schedule Start Date:</div><div><strong>${cpiScheduleStartDate}</strong></div>
+          <div>Minimum Time Interval:</div><div><strong>${minimumTimeInterval}</strong></div>
+        </div>
+      </div>
+      `;
+          }
+
+          html += `</div>`;
+          html += `<div class="history-right">`;
+
+          const frequency =
+            clauseInfo[
+              "array_cpirentfrequency@OData.Community.Display.V1.FormattedValue"
+            ] ?? "—";
+          const increaseType =
+            clauseInfo[
+              "array_increasetypecpirentprocess@OData.Community.Display.V1.FormattedValue"
+            ];
+          const triggerValue = clauseInfo.array_triggervalue
+            ? `${clauseInfo.array_triggervalue}%`
+            : "—";
+
+          let increaseValue = "—";
+          const increaseTypeRaw = clauseInfo.array_increasetypecpirentprocess;
+
+          if (increaseTypeRaw === 126330000) {
+            const flatAmount = clauseInfo.array_flatamountcpi;
+            const minAmount = clauseInfo.array_minimumincreaseflatamountcpi;
+
+            const formattedFlat =
+              flatAmount != null
+                ? flatAmount.toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })
+                : null;
+            const formattedMin =
+              minAmount != null
+                ? minAmount.toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })
+                : null;
+
+            if (formattedFlat && formattedMin) {
+              increaseValue = `${formattedMin} to ${formattedFlat}`;
+            } else if (formattedFlat) {
+              increaseValue = `flat ${formattedFlat}`;
+            } else if (formattedMin) {
+              increaseValue = `minimum ${formattedMin}`;
+            }
+          } else if (increaseTypeRaw === 126330001) {
+            const maxPercent = clauseInfo.array_maximumincreasepercentagecpi;
+            const minPercent = clauseInfo.array_minimumincreasepercentagecpi;
+            if (maxPercent != null && minPercent != null) {
+              increaseValue = `${minPercent.toFixed(
+                2,
+              )}% to ${maxPercent.toFixed(2)}%`;
+            } else if (maxPercent != null) {
+              increaseValue = `up to ${maxPercent.toFixed(2)}%`;
+            } else if (minPercent != null) {
+              increaseValue = `minimum ${minPercent.toFixed(2)}%`;
+            }
+          }
+          const rentRange = calculateCPIRentRange(
+            currentRentAmount,
+            increaseType,
+            clauseInfo.array_minimumincreaseflatamountcpi,
+            clauseInfo.array_flatamountcpi,
+            clauseInfo.array_minimumincreasepercentagecpi,
+            clauseInfo.array_maximumincreasepercentagecpi,
+          );
+          let rentText = "";
+
+          let FirstLine = "";
+
+          if (currentRentAmount !== null) {
+            if (triggerValue !== "—") {
+              FirstLine = `CPI adjustment applies to charge type (<strong>${clauseInfo["_array_chargetypecpi_value@OData.Community.Display.V1.FormattedValue"]}</strong>) occurring <strong>${frequency}</strong>, when CPI change exceeds <strong>${triggerValue}</strong>  . `;
+            } else {
+              FirstLine = `CPI adjustment applies to charge type (<strong>${clauseInfo["_array_chargetypecpi_value@OData.Community.Display.V1.FormattedValue"]}</strong>) occurring <strong>${frequency}</strong>.`;
+            }
+          }
+
+          if (currentRentAmount !== null) {
+            rentText = `The total current rent of <strong>${formatCurrency(
+              currentRentAmount,
+            )}</strong> (from all recurring charges with this charge type)`;
+
+            if (rentRange.min !== null && rentRange.max !== null) {
+              rentText += ` will adjust to range between <strong>${formatCurrency(
+                rentRange.min,
+              )}</strong> and <strong>${formatCurrency(
+                rentRange.max,
+              )}</strong>`;
+            } else if (rentRange.min !== null) {
+              rentText += ` will adjust to minimum <strong>${formatCurrency(
+                rentRange.min,
+              )}</strong>`;
+            } else if (rentRange.max !== null) {
+              rentText += ` will adjust to maximum <strong>${formatCurrency(
+                rentRange.max,
+              )}</strong>`;
+            }
+
+            rentText += ` when the CPI change exceeds <strong>${triggerValue}</strong>`;
+          } else {
+            rentText = `The current rent amount is not established for this charge type. CPI adjustments will be triggered when CPI change exceeds <strong>${triggerValue}</strong>`;
+          }
+
+          let SecondLine = "";
+
+          const vatRate = currentChargeVatName ? parseFloat(currentChargeVatName) : null;
+          const hasVat = vatRate !== null && !isNaN(vatRate);
+
+          const currentVat = hasVat ? currentRentAmount * (vatRate / 100) : null;
+          const currentAmtDisplay = hasVat
+            ? `${formatCurrency(currentRentAmount)} + ${formatCurrency(currentVat)} VAT`
+            : formatCurrency(currentRentAmount);
+
+          const minVat = hasVat && rentRange.min !== null ? rentRange.min * (vatRate / 100) : null;
+          const maxVat = hasVat && rentRange.max !== null ? rentRange.max * (vatRate / 100) : null;
+
+          const minDisplay = rentRange.min !== null
+            ? (hasVat ? `${formatCurrency(rentRange.min)} + ${formatCurrency(minVat)} VAT` : formatCurrency(rentRange.min))
+            : null;
+          const maxDisplay = rentRange.max !== null
+            ? (hasVat ? `${formatCurrency(rentRange.max)} + ${formatCurrency(maxVat)} VAT` : formatCurrency(rentRange.max))
+            : null;
+
+          if (minDisplay !== null && maxDisplay !== null) {
+            SecondLine = `Current Amount: <strong>${currentAmtDisplay}</strong> | 
+    Minimum projected increase: <strong>${minDisplay}</strong> | 
+    Maximum projected increase: <strong>${maxDisplay}</strong>`;
+          } else if (minDisplay !== null) {
+            SecondLine = `Current Amount: <strong>${currentAmtDisplay}</strong> | 
+    Minimum projected increase: <strong>${minDisplay}</strong>`;
+          } else if (maxDisplay !== null) {
+            SecondLine = `Current Amount: <strong>${currentAmtDisplay}</strong> | 
+    Maximum projected increase: <strong>${maxDisplay}</strong>`;
+          } else {
+            SecondLine = `Current Amount: <strong>${currentAmtDisplay}</strong>`;
+          }
+
+          let LastLine = `Effective: ${formatDate(
+            clauseInfo.array_effectivedate,
+          )} → ${formatDate(clauseInfo.array_expirydate)}`;
+
+          let finalText = `
+${FirstLine} <br>
+${SecondLine} <br>
+${LastLine}
+`;
+          html += `
+      <div class="fact-box">
+        <div class="fact-box-label" style="font-weight: bold;">Note:</div>
+        <div class="fact-box-body">
+          ${finalText}
+        </div>
+      </div>
+    `;
+
+          html += `</div>`;
+          html += `</div>`;
+
+          if (result.entities.length === 0) {
+            html += `<div class="no-records">No history records found for this clause.</div>`;
+          } else {
+            html += `
+        <table class="history-table">
+          <thead>
+            <tr class="history-header">
+              <th>Effective From Date</th>
+              <th>Applied Amount</th>
+              <th>Previous Amount</th>
+              <th>Index Change Percentage</th>
+              <th>Recurring Charge</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+            result.entities.forEach((h) => {
+              const RecurringChargeName =
+                h.array_RecurringCharge?.array_chargename ??
+                h[
+                  "_array_recurringcharge_value@OData.Community.Display.V1.FormattedValue"
+                ] ??
+                "—";
+              const RecurringChargeId = h._array_recurringcharge_value;
+              const AdjustmentID =
+                h.array_indexchangepercentage != null
+                  ? `${h.array_indexchangepercentage} %`
+                  : "—";
+              const PreviousAmount =
+                h[
+                  "array_previousrent@OData.Community.Display.V1.FormattedValue"
+                ] ?? "—";
+              const AppliedAmount =
+                h["array_newrent@OData.Community.Display.V1.FormattedValue"] ??
+                "—";
+
+              let RecurringChargeDisplay = RecurringChargeName;
+              if (RecurringChargeId) {
+                RecurringChargeDisplay = `<a href="#" onclick="openRecurringChargeRecord('${RecurringChargeId}'); return false;" style="color: #0b1559; text-decoration: underline; cursor: pointer;">${RecurringChargeName}</a>`;
+              }
+
+              html += `
+    <tr>
+      <td>${formatDate(h.array_adjustmenteffectivefrom)}</td>
+      <td>${AppliedAmount}</td>
+      <td>${PreviousAmount}</td>
+      <td>${AdjustmentID}</td>
+      <td>${RecurringChargeDisplay}</td>
+    </tr>`;
+            });
+
+            html += `</tbody></table>`;
+          }
+
+          html += `</div>`;
+          container.innerHTML = html;
+        } catch (error) {
+          container.innerHTML = `<div class="no-records">Error loading history data.</div>`;
+        }
+      }
+
+      function formatDate(dateStr) {
+        if (!dateStr) return "—";
+        const d = new Date(dateStr);
+        const day = String(d.getDate()).padStart(2, "0");
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        const year = d.getFullYear();
+        return `${day}/${month}/${year}`;
+      }
+
+      function openRecurringChargeRecord(recurringChargeId) {
+        if (!recurringChargeId) {
+          return;
+        }
+
+        try {
+          const cleanId = recurringChargeId.replace(/[{}]/g, "");
+
+          Xrm.Navigation.openForm({
+            entityName: "array_recurringcharge",
+            entityId: cleanId,
+            openInNewWindow: true,
+          }).then(
+            function success() {},
+            function error(err) {},
+          );
+        } catch (error) {
+          alert("An error occurred while trying to open the record.");
+        }
+      }
+
+      function refreshParentSubgrid() {
+        try {
+          const parentXrm =
+            window.parent?.opener?.Xrm ||
+            window.opener?.Xrm ||
+            window.parent?.parent?.Xrm;
+          const parentWindow =
+            window.parent?.opener || window.opener || window.parent?.parent;
+
+          if (!parentXrm || !parentWindow) {
+            return false;
+          }
+
+          try {
+            const parentPage = parentXrm.Page;
+
+            const subgridNames = [
+              "Subgrid_new_4",
+              "subgrid_new_4",
+              "Subgrid_new_7",
+              "subgrid_new_7",
+              "Subgrid_new_16",
+              "subgrid_new_16",
+            ];
+            let refreshedCount = 0;
+
+            for (const name of subgridNames) {
+              try {
+                const subgrid = parentPage.getControl(name);
+                if (subgrid && typeof subgrid.refresh === "function") {
+                  subgrid.refresh();
+                  refreshedCount++;
+                }
+              } catch (err) {}
+            }
+
+            if (refreshedCount > 0) {
+              return true;
+            }
+          } catch (err) {}
+
+          try {
+            const parentDoc = parentWindow.document;
+
+            if (parentDoc) {
+              const overflowButton = parentDoc.querySelector(
+                '[data-id="OverflowButton"][data-lp-id*="array_leaseclause"]',
+              );
+
+              if (overflowButton) {
+                overflowButton.click();
+
+                setTimeout(() => {
+                  try {
+                    const refreshButtons = parentDoc.querySelectorAll(
+                      'button[data-id*="refresh" i], button[aria-label*="Refresh" i], [role="menuitem"][aria-label*="Refresh" i]',
+                    );
+
+                    if (refreshButtons.length > 0) {
+                      refreshButtons[0].click();
+                      return true;
+                    }
+                  } catch (menuErr) {}
+                }, 300);
+
+                return true;
+              }
+            }
+          } catch (domErr) {}
+
+          try {
+            const parentPage = parentXrm.Page;
+            const controls = parentPage.ui.controls.get();
+            let refreshed = false;
+
+            controls.forEach((control) => {
+              try {
+                if (
+                  control.getControlType &&
+                  (control.getControlType() === "subgrid" ||
+                    control.getControlType() === 6)
+                ) {
+                  control.refresh();
+                  refreshed = true;
+                }
+              } catch (err) {}
+            });
+
+            if (refreshed) {
+              return true;
+            }
+          } catch (err) {}
+
+          parentXrm.Page.data.refresh(false);
+          return true;
+        } catch (error) {
+          return false;
+        }
+      }
+
+      function refreshTimelineWebResource() {
+        try {
+          const parentXrm =
+            window.parent?.opener?.Xrm ||
+            window.opener?.Xrm ||
+            window.parent?.parent?.Xrm;
+          const parentWindow =
+            window.parent?.opener || window.opener || window.parent?.parent;
+
+          if (!parentXrm || !parentWindow) {
+            return false;
+          }
+
+          try {
+            const parentPage = parentXrm.Page;
+            const timelineWebResourceName = "WebResource_new_1";
+            const webResourceControl = parentPage.getControl(
+              timelineWebResourceName,
+            );
+
+            if (webResourceControl) {
+              const iframeElement = webResourceControl.getObject();
+
+              if (iframeElement && iframeElement.contentWindow) {
+                iframeElement.contentWindow.location.reload();
+                return true;
+              }
+            }
+          } catch (err) {}
+
+          try {
+            const parentDoc = parentWindow.document;
+            if (parentDoc) {
+              const iframe = parentDoc.getElementById("WebResource_new_1");
+              if (iframe && iframe.contentWindow) {
+                iframe.contentWindow.location.reload();
+                return true;
+              }
+            }
+          } catch (domErr) {}
+
+          return false;
+        } catch (error) {
+          return false;
+        }
+      }
+
+      window.onload = async function () {
+        try {
+          if (!Xrm) {
+            try {
+              Xrm = window.parent?.Xrm || window.opener?.Xrm || window.top?.Xrm;
+              if (!Xrm && window.parent && window.parent.parent) {
+                Xrm = window.parent.parent.Xrm;
+              }
+            } catch (e) {}
+          }
+          if (!Xrm || !Xrm.WebApi) {
+            throw new Error(
+              "Xrm object or Xrm.WebApi is not available. This web resource must be opened within Dynamics 365.",
+            );
+          }
+
+          const params = new URLSearchParams(window.location.search);
+          const dataParam = params.get("data");
+          if (!dataParam) {
+            throw new Error("No data passed to Web Resource");
+          }
+
+          const parsedData = JSON.parse(dataParam);
+          leaseId = parsedData.leaseId;
+
+          if (!leaseId) {
+            throw new Error("Lease ID is null or undefined in parsed data");
+          }
+
+          leaseId = leaseId.replace(/[{}]/g, "");
+          await loadChargeTypes();
+          await loadCPITypes();
+          await loadFrequencyOptions();
+          await loadIncreaseTypeOptions();
+          await loadCpiMonthOptions();
+          await getLeaseEndDate(leaseId);
+          await loadCPIRents("active");
+          hidePageLoader();
+
+          const filterSelect = document.getElementById("clauseStatusFilter");
+          if (filterSelect) {
+            filterSelect.addEventListener("change", reloadCPIRentsByFilter);
+          }
+
+          const newButton = document.getElementById("btnNewCPIRent");
+          if (newButton) {
+            newButton.addEventListener("click", function (e) {
+              e.preventDefault();
+              openQuickCreate();
+            });
+          }
+
+          window.addEventListener("beforeunload", function (e) {
+            try {
+              refreshParentSubgrid();
+              refreshTimelineWebResource();
+            } catch (error) {}
+          });
+
+          window.addEventListener("unload", function (e) {
+            try {
+              refreshParentSubgrid();
+              refreshTimelineWebResource();
+            } catch (error) {}
+          });
+        } catch (e) {
+          hidePageLoader();
+          const tbody = document.getElementById("cpiRentBody");
+          if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="10" class="no-records">Error: ${e.message}<br>Check browser console (F12) for details.</td></tr>`;
+          }
+        }
+      };
+
+      async function loadCPIRents(mode = "active") {
+        const tbody = document.getElementById("cpiRentBody");
+
+        if (!tbody) {
+          return;
+        }
+
+        tbody.innerHTML = `<tr><td colspan="10" class="no-records">Loading...</td></tr>`;
+
+        if (!leaseId) {
+          tbody.innerHTML = `<tr><td colspan="10" class="no-records">Lease ID not provided.</td></tr>`;
+          return;
+        }
+
+        try {
+          let statusFilter = "";
+          if (mode === "active") statusFilter = " and statuscode eq 1";
+          else if (mode === "inactive") statusFilter = " and statuscode ne 1";
+
+          const query = `?$select=array_leaseclauseid,array_clausetitle,_array_clausetype_value,_array_chargetypecpi_value,array_effectivedate,array_expirydate,array_lastadjustmentdate,array_cpirentfrequency,array_increasetypecpirentprocess,array_triggervalue,array_lastadjustmentdatecpi,array_flatamountcpi,array_minimumincreaseflatamountcpi,array_maximumincreasepercentagecpi,array_minimumincreasepercentagecpi,_transactioncurrencyid_value,statuscode,_array_cpitype_value,array_currentindex,array_initialwaitingperiodmonths,array_cpicyclestartdate,array_cpischedulestartdate,array_minimumtimeintervalmonths&$expand=transactioncurrencyid($select=currencysymbol,isocurrencycode)&$filter=_array_leaseagreement_value eq ${leaseId}${statusFilter}&$orderby=array_effectivedate desc`;
+
+          const result = await Xrm.WebApi.retrieveMultipleRecords(
+            "array_leaseclause",
+            query,
+          );
+
+          const cpirent = result.entities.filter(
+            (record) =>
+              record[
+                "_array_clausetype_value@OData.Community.Display.V1.FormattedValue"
+              ] === "Value Protection (CPI)",
+          );
+
+          tbody.innerHTML = "";
+
+          if (cpirent.length === 0) {
+            document.querySelector(".table-wrapper").classList.add("hidden");
+            document
+              .getElementById("noRecordsContainer")
+              .classList.remove("hidden");
+            updateEmptyStateMessage(mode);
+            return;
+          } else {
+            document.querySelector(".table-wrapper").classList.remove("hidden");
+            document
+              .getElementById("noRecordsContainer")
+              .classList.add("hidden");
+          }
+
+          cpirent.forEach((clause, index) => {
+            clauseData[clause.array_leaseclauseid] = clause;
+
+            const row = document.createElement("tr");
+
+            const clausefrequency =
+              clause[
+                "array_cpirentfrequency@OData.Community.Display.V1.FormattedValue"
+              ] ?? "—";
+            const ClauseIncreaseType =
+              clause[
+                "array_increasetypecpirentprocess@OData.Community.Display.V1.FormattedValue"
+              ] ?? "—";
+            const Triggervalue = clause[
+              "array_triggervalue@OData.Community.Display.V1.FormattedValue"
+            ]
+              ? `${clause["array_triggervalue@OData.Community.Display.V1.FormattedValue"]} %`
+              : clause.array_triggervalue != null
+                ? `${clause.array_triggervalue} %`
+                : "—";
+            const chargetype =
+              clause[
+                "_array_chargetypecpi_value@OData.Community.Display.V1.FormattedValue"
+              ] ?? "—";
+
+            let maxIncrease = "—";
+            let minIncrease = "—";
+
+            const increaseTypeRaw = clause.array_increasetypecpirentprocess;
+
+            if (increaseTypeRaw === 126330000) {
+              const flatAmount = clause.array_flatamountcpi;
+              const minAmount = clause.array_minimumincreaseflatamountcpi;
+
+              maxIncrease =
+                flatAmount != null
+                  ? flatAmount.toLocaleString("en-US", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })
+                  : "—";
+              minIncrease =
+                minAmount != null
+                  ? minAmount.toLocaleString("en-US", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })
+                  : "—";
+            } else if (increaseTypeRaw === 126330001) {
+              const maxPercent = clause.array_maximumincreasepercentagecpi;
+              const minPercent = clause.array_minimumincreasepercentagecpi;
+              maxIncrease =
+                maxPercent != null ? `${maxPercent.toFixed(2)} %` : "—";
+              minIncrease =
+                minPercent != null ? `${minPercent.toFixed(2)} %` : "—";
+            }
+
+            const clauseIdForHandlers = clause.array_leaseclauseid;
+
+            row.innerHTML = `
+        <td>${formatDate(clause.array_effectivedate)}</td>
+        <td>${formatDate(clause.array_expirydate)}</td>
+        <td>${clausefrequency}</td>
+        <td>${formatDate(clause.array_lastadjustmentdatecpi)}</td>
+        <td>${chargetype}</td>
+        <td>${Triggervalue}</td>
+        <td>${ClauseIncreaseType}</td>
+        <td>${maxIncrease}</td>
+        <td>${minIncrease}</td>
+        <td>
+          <div class="btn-container">
+            <button type="button" class="btn-view" data-clause-id="${clauseIdForHandlers}">
+              <span class="arrow">▼</span>
+            </button>
+            <button type="button" class="btn-cancel" data-clause-id="${clauseIdForHandlers}">
+              ✕
+            </button>
+          </div>
+        </td>
+      `;
+
+            const viewBtn = row.querySelector(".btn-view");
+            const cancelBtn = row.querySelector(".btn-cancel");
+
+            viewBtn.addEventListener("click", function (e) {
+              e.stopPropagation();
+              toggleHistory(clauseIdForHandlers, this);
+            });
+
+            cancelBtn.addEventListener("click", function (e) {
+              e.stopPropagation();
+              showCancelConfirmation(clauseIdForHandlers);
+            });
+
+            const historyRow = document.createElement("tr");
+            historyRow.classList.add("hidden");
+            historyRow.id = `history-row-${clause.array_leaseclauseid}`;
+            historyRow.innerHTML = `
+        <td colspan="10" id="history-${clause.array_leaseclauseid}">
+          <div class="no-records">Click to load history...</div>
+        </td>`;
+
+            tbody.appendChild(row);
+            tbody.appendChild(historyRow);
+          });
+        } catch (error) {
+          tbody.innerHTML = `<tr><td colspan="10" class="no-records">Error: ${error.message}<br>Check browser console (F12) for details.</td></tr>`;
+        }
+      }
+
+      async function openQuickCreate() {
+        if (!leaseId) {
+          alert("Lease ID is not available.");
+          return;
+        }
+
+        existingClauseToOverride = null;
+        pendingFormData = null;
+
+        const successModal = document.getElementById("successModal");
+        if (successModal && successModal.classList.contains("active")) {
+          successModal.classList.remove("active");
+        }
+
+        const modal = document.getElementById("createClauseModal");
+        modal.classList.add("active");
+
+        document.getElementById("createClauseForm").reset();
+        document.getElementById("flatIncreaseFields").style.display = "none";
+        document.getElementById("percentageIncreaseFields").style.display = "none";
+        document.getElementById("customScheduleField").style.display = "block";
+        document.getElementById("cpiCycleDateField").style.display = "none";
+        resetCpiFormExtras();
+
+        try {
+          const generatedTitle = await generateLeaseClauseName(
+            leaseId,
+            "Value Protection (CPI)",
+            null,
+          );
+
+          if (generatedTitle) {
+            document.getElementById("clauseTitle").value = generatedTitle;
+          }
+        } catch (error) {
+          console.error("Error auto-populating clause title:", error);
+        }
+
+        setTimeout(() => {
+          autopopulateCpiScheduleStartDate();
+          autopopulateCpiScheduleEndDate();
+        }, 100);
+      }
+
+      function closeCreateModal() {
+        const modal = document.getElementById("createClauseModal");
+        modal.classList.remove("active");
+
+        const form = document.getElementById("createClauseForm");
+        form.reset();
+
+        document.getElementById("flatIncreaseFields").style.display = "none";
+        document.getElementById("percentageIncreaseFields").style.display = "none";
+        document.getElementById("customScheduleField").style.display = "block";
+        document.getElementById("cpiCycleDateField").style.display = "none";
+        resetCpiFormExtras();
+
+        modal.classList.remove("active");
+
+        const cpiCycleStartDateInput = document.getElementById("cpiCycleStartDate");
+        if (cpiCycleStartDateInput) {
+          cpiCycleStartDateInput.removeAttribute("required");
+          cpiCycleStartDateInput.setCustomValidity("");
+        }
+
+        const cpiCycleDateLabel = document.getElementById("cpiCycleDateLabel");
+        if (cpiCycleDateLabel) {
+          cpiCycleDateLabel.classList.remove("required");
+        }
+      }
+
+      function showSuccessModal(message) {
+        const modal = document.getElementById("successModal");
+        const messageDiv = document.getElementById("successMessage");
+        messageDiv.textContent = message;
+        modal.classList.add("active");
+      }
+
+      function closeSuccessModal() {
+        const modal = document.getElementById("successModal");
+        if (modal) {
+          modal.classList.remove("active");
+        }
+
+        const createModal = document.getElementById("createClauseModal");
+        if (createModal && createModal.classList.contains("active")) {
+          const form = document.getElementById("createClauseForm");
+          form.reset();
+
+          document.getElementById("flatIncreaseFields").style.display = "none";
+          document.getElementById("percentageIncreaseFields").style.display = "none";
+          document.getElementById("customScheduleField").style.display = "block";
+          document.getElementById("cpiCycleDateField").style.display = "none";
+          resetCpiFormExtras();
+
+          createModal.classList.remove("active");
+        }
+      }
+
+      function showOverrideModal(existingClause, formData) {
+        existingClauseToOverride = existingClause;
+        pendingFormData = formData;
+
+        const modal = document.getElementById("overrideClauseModal");
+        const messageDiv = document.getElementById("overrideMessage");
+
+        const effectiveDate = existingClause.array_effectivedate
+          ? formatDate(existingClause.array_effectivedate)
+          : "Unknown";
+
+        const clauseTitle =
+          existingClause.array_clausetitle || "Untitled Clause";
+
+        messageDiv.innerHTML = `
+    An active CPI rent clause already exists for this charge type: <strong>${clauseTitle}</strong> (Effective: ${effectiveDate}). 
+    Overriding will deactivate the existing clause and set its expiry date to today. Do you want to proceed?
+  `;
+
+        modal.classList.add("active");
+      }
+
+      function closeOverrideModal() {
+        const modal = document.getElementById("overrideClauseModal");
+        modal.classList.remove("active");
+        existingClauseToOverride = null;
+        pendingFormData = null;
+      }
+
+      async function confirmOverride() {
+        if (!existingClauseToOverride || !pendingFormData) {
+          alert("Error: Missing required data for override operation.");
+          closeOverrideModal();
+          return;
+        }
+
+        showLoader(
+          "Overriding Clause...",
+          "Deactivating existing clause and creating new one",
+        );
+
+        try {
+          const today = new Date().toISOString().split("T")[0];
+
+          const updateData = {
+            statecode: 1,
+            statuscode: 2,
+            array_expirydate: today,
+          };
+
+          await Xrm.WebApi.updateRecord(
+            "array_leaseclause",
+            existingClauseToOverride.array_leaseclauseid,
+            updateData,
+          );
+
+          await createNewClause(pendingFormData);
+
+          hideLoader();
+
+          closeOverrideModal();
+          showSuccessModal(
+            "Existing clause overridden and new CPI rent clause created successfully!",
+          );
+        } catch (error) {
+          hideLoader();
+          alert("Error overriding existing clause: " + error.message);
+          closeOverrideModal();
+        }
+      }
+
+      function showLoader(message = "Saving...", subtext = "Please wait") {
+        const loader = document.getElementById("loaderOverlay");
+        const loaderText = loader.querySelector(".loader-text");
+        const loaderSubtext = loader.querySelector(".loader-subtext");
+
+        if (loaderText) loaderText.textContent = message;
+        if (loaderSubtext) loaderSubtext.textContent = subtext;
+
+        loader.classList.add("active");
+      }
+
+      function hideLoader() {
+        const loader = document.getElementById("loaderOverlay");
+        loader.classList.remove("active");
+      }
+
+      function hidePageLoader() {
+        const pageLoader = document.getElementById("pageLoader");
+        const mainContent = document.getElementById("mainContent");
+
+        if (pageLoader) {
+          pageLoader.classList.remove("active");
+        }
+        if (mainContent) {
+          mainContent.style.display = "block";
+        }
+      }
+
+      async function createNewClause(newClause) {
+        try {
+          if (!newClause.array_effectivedate) {
+            throw new Error("Effective date is required");
+          }
+          if (!newClause.array_cpirentfrequency) {
+            throw new Error("Frequency is required");
+          }
+          if (!newClause.array_increasetypecpirentprocess) {
+            throw new Error("Increase type is required");
+          }
+          if (!newClause["array_ClauseType@odata.bind"]) {
+            throw new Error("Clause type binding is required");
+          }
+          if (!newClause["array_LeaseAgreement@odata.bind"]) {
+            throw new Error("Lease agreement binding is required");
+          }
+
+          const result = await Xrm.WebApi.createRecord(
+            "array_leaseclause",
+            newClause,
+          );
+
+          const form = document.getElementById("createClauseForm");
+          if (form) {
+            form.reset();
+            resetCpiFormExtras();
+          }
+
+          reloadCPIRentsByFilter();
+        } catch (error) {
+          throw error;
+        }
+      }
+
+      function safeParseDecimal(value, decimals = 2) {
+        if (!value || value === "") return null;
+        const parsed = parseFloat(value);
+        if (isNaN(parsed)) return null;
+        return parseFloat(parsed.toFixed(decimals));
+      }
+
+      function prepareClauseData(formData, today, leaseEndDate, clauseTypeGuid) {
+        const getValue = (key) => {
+          if (formData instanceof FormData) {
+            return formData.get(key);
+          }
+          return formData[key];
+        };
+
+        const newClause = {
+          array_leaseclausename: getValue("clauseTitle"),
+          array_clausesummary: getValue("clauseSummary") || null,
+          array_effectivedate: getValue("cpiScheduleStartDate") || today,
+          array_cpirentfrequency: parseInt(getValue("frequency")),
+          array_increasetypecpirentprocess: parseInt(getValue("increaseType")),
+          array_indexationyn: true,
+          ["array_ClauseType@odata.bind"]: `/array_clausetypes(${clauseTypeGuid})`,
+          ["array_LeaseAgreement@odata.bind"]: `/array_leaseagreements(${leaseId})`,
+        };
+
+        const cpiScheduleEndDate = getValue("cpiScheduleEndDate");
+        if (cpiScheduleEndDate) {
+          newClause.array_cpischeduleenddate = cpiScheduleEndDate;
+        }
+
+        const expiryDate = getValue("cpiScheduleEndDate");
+        if (expiryDate) {
+          newClause.array_expirydate = expiryDate;
+        } else if (leaseEndDate) {
+          newClause.array_expirydate = leaseEndDate;
+        }
+
+        const cpiCycleEndDate = getValue("cpiCycleEndDate");
+        if (cpiCycleEndDate) {
+          newClause.array_cpischeduleenddate = cpiCycleEndDate;
+        }
+
+        const customScheduleValue = getValue("customSchedule");
+        newClause.array_enablecustomcpischedule = customScheduleValue === "yes" ? true : false;
+
+        const chargeTypeId = getValue("chargeType");
+        if (chargeTypeId) {
+          newClause["array_ChargeTypeCPI@odata.bind"] =
+            `/array_chargetypes(${chargeTypeId})`;
+        }
+
+        const cpiTypeValue = getValue("cpiType");
+        if (cpiTypeValue) {
+          newClause["array_CPIType@odata.bind"] =
+            `/array_cpitypes(${cpiTypeValue})`;
+        }
+
+        const triggerValue = safeParseDecimal(getValue("triggerValue"));
+        if (triggerValue !== null) {
+          newClause.array_triggervalue = triggerValue;
+        }
+
+        const increaseTypeValue = parseInt(getValue("increaseType"));
+        if (increaseTypeValue === 126330000) {
+          const flatAmount = safeParseDecimal(getValue("flatAmountCpi"));
+          const minAmount = safeParseDecimal(getValue("minIncreaseAmount"));
+          if (flatAmount !== null) newClause.array_flatamountcpi = flatAmount;
+          if (minAmount !== null)
+            newClause.array_minimumincreaseflatamountcpi = minAmount;
+        } else if (increaseTypeValue === 126330001) {
+          const maxPercent = safeParseDecimal(getValue("maxIncreasePercentage"));
+          const minPercent = safeParseDecimal(getValue("minIncreasePercentage"));
+          if (maxPercent !== null)
+            newClause.array_maximumincreasepercentagecpi = maxPercent;
+          if (minPercent !== null)
+            newClause.array_minimumincreasepercentagecpi = minPercent;
+        }
+
+        const currentIndex = safeParseDecimal(getValue("currentIndex"));
+        if (currentIndex !== null) {
+          newClause.array_currentindex = currentIndex;
+        }
+
+        const initialWaitingPeriod = getValue("initialWaitingPeriod");
+        if (initialWaitingPeriod)
+          newClause.array_initialwaitingperiodmonths = parseInt(initialWaitingPeriod);
+
+        const minimumTimeInterval = getValue("minimumTimeInterval");
+        if (minimumTimeInterval)
+          newClause.array_minimumtimeintervalmonths = parseInt(minimumTimeInterval);
+
+        const cpiCycleStartDate = getValue("cpiCycleStartDate");
+        if (cpiCycleStartDate)
+          newClause.array_cpicyclestartdate = cpiCycleStartDate;
+
+        // CPI Reference Month (+ Custom Month only when Reference Month = Custom Month)
+        const referenceMonth = parseInt(getValue("cpiReferenceMonth"), 10);
+        if (!isNaN(referenceMonth)) {
+          newClause.array_cpireferencemonth = referenceMonth;
+          if (referenceMonth === CPI_REF.CUSTOM) {
+            const customMonth = parseInt(getValue("cpiCustomMonth"), 10);
+            if (!isNaN(customMonth)) newClause.array_cpicustommonth = customMonth;
+          }
+        }
+
+        // Skip First CPI Schedule - defaults to No (unchecked toggle is absent from FormData)
+        newClause.array_skipfirstcpischedule = getValue("skipFirstCpiSchedule") === "yes";
+
+        return newClause;
+      }
+
+      async function generateLeaseClauseName(leaseId, clauseTypeName, chargeTypeId) {
+        try {
+          const leaseAgreement = await Xrm.WebApi.retrieveRecord(
+            "array_leaseagreement",
+            leaseId.replace(/[{}]/g, ""),
+            "?$select=array_leasename,array_leaserecordid",
+          );
+
+          const leaseName =
+            leaseAgreement.array_leasename ||
+            leaseAgreement.array_leaserecordid ||
+            "Unknown Lease";
+
+          let clauseName = leaseName + " - " + clauseTypeName;
+
+          if (chargeTypeId) {
+            const chargeType = await Xrm.WebApi.retrieveRecord(
+              "array_chargetype",
+              chargeTypeId.replace(/[{}]/g, ""),
+              "?$select=array_name",
+            );
+
+            if (chargeType && chargeType.array_name) {
+              clauseName += " - " + chargeType.array_name;
+            }
+          }
+
+          return clauseName;
+        } catch (error) {
+          console.error("Error generating lease clause name:", error);
+          return null;
+        }
+      }
+
+      // ============================================================================
+      // ── CHANGED: Reset CPI Cycle Start Date and CPI Schedule End Date
+      // Called when Frequency, Effective Date, or Expiry Date changes
+      // ============================================================================
+      function resetCpiCycleFields() {
+        const cpiCycleStartDateInput = document.getElementById("cpiCycleStartDate");
+        const cpiCycleEndDateInput = document.getElementById("cpiCycleEndDate");
+        if (cpiCycleStartDateInput) {
+          cpiCycleStartDateInput.value = "";
+          cpiCycleStartDateInput.setCustomValidity("");
+        }
+        if (cpiCycleEndDateInput) cpiCycleEndDateInput.value = "";
+
+        // Keep the date-picker limits and the cycles card in sync with the new dates
+        applyCpiCycleStartConstraints();
+        updateCpiCyclesCard();
+      }
+
+      // ============================================================================
+      // ── toggleCustomSchedule — CPI Rent Frequency changed:
+      //    reset CPI 2nd Schedule dates + apply the Reference Month rules
+      // ============================================================================
+      function toggleCustomSchedule() {
+        // Always show Enable Custom CPI Schedule regardless of frequency
+        const customScheduleField = document.getElementById("customScheduleField");
+        customScheduleField.style.display = "block";
+
+        // Reset CPI cycle fields when frequency changes
+        resetCpiCycleFields();
+
+        // Reference Month options / Custom Month visibility depend on the frequency
+        applyCpiReferenceMonthRules();
+      }
+
+      // ============================================================================
+      // ── toggleCpiCycleDate — Enable Custom CPI Schedule toggle
+      // ============================================================================
+      function toggleCpiCycleDate() {
+        const customScheduleOn = document.getElementById("customSchedule").checked;
+        const cpiCycleDateField = document.getElementById("cpiCycleDateField");
+        const cpiCycleStartDateInput = document.getElementById("cpiCycleStartDate");
+        const cpiCycleEndDateInput = document.getElementById("cpiCycleEndDate");
+
+        if (customScheduleOn) {
+          cpiCycleDateField.style.display = "block";
+          cpiCycleStartDateInput.setAttribute("required", "required");
+          applyCpiCycleStartConstraints();
+        } else {
+          cpiCycleDateField.style.display = "none";
+          cpiCycleStartDateInput.removeAttribute("required");
+          cpiCycleStartDateInput.value = "";
+          cpiCycleStartDateInput.setCustomValidity("");
+          clearFieldError(cpiCycleStartDateInput);
+          if (cpiCycleEndDateInput) cpiCycleEndDateInput.value = "";
+        }
+
+        updateCpiCyclesCard();
+      }
+
+      // ============================================================================
+      // ── CPI 2nd Schedule Start Date picker limits
+      //    min = day after Effective Date, max = Expiry Date
+      //    (the waiting-period rule is enforced by validateCpiCycleStartDate)
+      // ============================================================================
+      function applyCpiCycleStartConstraints() {
+        const startInput = document.getElementById("cpiCycleStartDate");
+        if (!startInput) return;
+
+        const effectiveValue = document.getElementById("cpiScheduleStartDate")?.value || "";
+        const expiryValue = document.getElementById("cpiScheduleEndDate")?.value || "";
+
+        if (effectiveValue) {
+          const p = effectiveValue.split("-").map(Number);
+          const dayAfter = new Date(p[0], p[1] - 1, p[2] + 1);
+          startInput.min =
+            dayAfter.getFullYear() + "-" +
+            String(dayAfter.getMonth() + 1).padStart(2, "0") + "-" +
+            String(dayAfter.getDate()).padStart(2, "0");
+        } else {
+          startInput.removeAttribute("min");
+        }
+
+        if (expiryValue) startInput.max = expiryValue;
+        else startInput.removeAttribute("max");
+      }
+
+      // ============================================================================
+      // ── CPI Reference Month + CPI Custom Month rules
+      //    (mirrors the Lease Creation CPI form / Lease Clause form). By CPI Rent Frequency:
+      //      no frequency           -> Reference Month hidden
+      //      Monthly                -> Start / Last / Latest Published (defaults to Start Month)
+      //      Quarterly, Half-Yearly -> Start / Last / Latest Published
+      //      Yearly                 -> all options; "Custom Month" reveals CPI Custom Month
+      // ============================================================================
+      const CPI_FREQ = {
+        MONTHLY: 126330000,
+        QUARTERLY: 126330001,
+        HALF_YEARLY: 126330002,
+        YEARLY: 126330003,
+      };
+      const CPI_REF = { START: 1, LAST: 2, CUSTOM: 3, LATEST: 4 };
+
+      // [{ value, label }] for array_cpireferencemonth - filled by loadCpiMonthOptions()
+      let cpiReferenceMonthOptions = [];
+
+      function applyCpiReferenceMonthRules() {
+        const fs = document.getElementById("frequency");
+        const refWrap = document.getElementById("cpiReferenceMonthField");
+        const refSel = document.getElementById("cpiReferenceMonth");
+        const custWrap = document.getElementById("cpiCustomMonthField");
+        const custSel = document.getElementById("cpiCustomMonth");
+        if (!fs || !refWrap || !refSel) return;
+
+        const hideCustomMonth = () => {
+          if (custWrap) custWrap.style.display = "none";
+          if (custSel) {
+            custSel.value = "";
+            clearFieldError(custSel);
+          }
+        };
+
+        // No frequency selected -> hide both fields
+        const freq = fs.value === "" ? NaN : parseInt(fs.value, 10);
+        if (isNaN(freq)) {
+          refWrap.style.display = "none";
+          refSel.value = "";
+          clearFieldError(refSel);
+          hideCustomMonth();
+          return;
+        }
+
+        // Option value first; label as a fallback in case values differ per environment
+        const freqLabel = (fs.options[fs.selectedIndex]?.text || "").trim().toLowerCase();
+        const isYearly =
+          freq === CPI_FREQ.YEARLY ||
+          (/year|annual/.test(freqLabel) && !/half/.test(freqLabel));
+        const isMonthly = freq === CPI_FREQ.MONTHLY || freqLabel === "monthly";
+
+        const allowed = isYearly
+          ? [CPI_REF.START, CPI_REF.LAST, CPI_REF.CUSTOM, CPI_REF.LATEST]
+          : [CPI_REF.START, CPI_REF.LAST, CPI_REF.LATEST];
+
+        // Rebuild the options only when the allowed set changes
+        const current = refSel.value === "" ? NaN : parseInt(refSel.value, 10);
+        const allowedKey = allowed.join(",");
+        if (refSel.dataset.allowed !== allowedKey) {
+          refSel.innerHTML = '<option value="">Select reference month</option>';
+          cpiReferenceMonthOptions
+            .filter((o) => allowed.includes(Number(o.value)))
+            .forEach((o) => {
+              const opt = document.createElement("option");
+              opt.value = o.value;
+              opt.textContent = o.label;
+              refSel.appendChild(opt);
+            });
+          refSel.dataset.allowed = allowedKey;
+        }
+
+        // Keep a still-allowed selection; Monthly defaults to Start Month;
+        // otherwise clear a value that is no longer offered (e.g. Custom Month)
+        if (!isNaN(current) && allowed.includes(current)) {
+          refSel.value = String(current);
+        } else if (isMonthly) {
+          refSel.value = String(CPI_REF.START);
+        } else {
+          refSel.value = "";
+        }
+        refWrap.style.display = "block";
+        if (refSel.value) clearFieldError(refSel);
+
+        // Custom Month only for Yearly + Reference Month = Custom Month
+        if (isYearly && refSel.value === String(CPI_REF.CUSTOM)) {
+          if (custWrap) custWrap.style.display = "block";
+        } else {
+          hideCustomMonth();
+        }
+      }
+
+      // ── Skip First CPI Schedule — show / hide its info note
+      function syncSkipFirstCpiNote() {
+        const tog = document.getElementById("skipFirstCpiSchedule");
+        const note = document.getElementById("skipFirstCpiInfo");
+        if (note) note.style.display = tog?.checked ? "block" : "none";
+      }
+
+      // ============================================================================
+      // ── CPI Schedule Cycles card (shown when Enable Custom CPI Schedule is on):
+      //      1st Cycle: Effective Date -> day before the 2nd Schedule Start Date
+      //      2nd Cycle: 2nd Schedule Start Date -> 2nd Schedule End Date
+      // ============================================================================
+      function updateCpiCyclesCard() {
+        const card = document.getElementById("cpiScheduleCyclesInfo");
+        if (!card) return;
+
+        const tog = document.getElementById("customSchedule");
+        if (!tog?.checked) {
+          card.style.display = "none";
+          card.innerHTML = "";
+          return;
+        }
+
+        // yyyy-mm-dd -> dd/mm/yyyy
+        const fmtIso = (iso) => {
+          const p = String(iso || "").split("-");
+          return p.length === 3 && p[0].length === 4 ? `${p[2]}/${p[1]}/${p[0]}` : "";
+        };
+        // yyyy-mm-dd minus one day -> dd/mm/yyyy
+        const dayBefore = (iso) => {
+          const p = String(iso).split("-").map(Number);
+          const d = new Date(p[0], p[1] - 1, p[2]);
+          d.setDate(d.getDate() - 1);
+          return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+        };
+
+        const effectiveDate = document.getElementById("cpiScheduleStartDate")?.value || "";
+        const startIso = document.getElementById("cpiCycleStartDate")?.value || "";
+        const endIso = document.getElementById("cpiCycleEndDate")?.value || "";
+
+        let body;
+        if (!startIso) {
+          body = `<div class="tag">Select the CPI 2nd Schedule Start Date to see the cycles.</div>`;
+        } else {
+          const lines = [];
+          // 1st cycle only when there is a gap between Effective Date and 2nd start
+          if (effectiveDate && effectiveDate < startIso) {
+            lines.push(
+              `<li><strong>1st Cycle:</strong> <span class="hi">${fmtIso(effectiveDate)}</span> to <span class="hi">${dayBefore(startIso)}</span> <span class="tag">(Effective Date)</span></li>`,
+            );
+          }
+          lines.push(
+            `<li><strong>2nd Cycle:</strong> <span class="hi">${fmtIso(startIso)}</span> to <span class="hi">${fmtIso(endIso) || "-"}</span> <span class="tag">(Custom Schedule)</span></li>`,
+          );
+          body = `<ul>${lines.join("")}</ul>`;
+        }
+
+        card.innerHTML = `<div style="font-weight:600;margin-bottom:4px;">&#9432; CPI Schedule Cycles</div>${body}`;
+        card.style.display = "block";
+      }
+
+      // ── Reset the new CPI fields' visibility after a form.reset()
+      //    (open / close / after save). Toggles are already unchecked by reset().
+      function resetCpiFormExtras() {
+        const refSel = document.getElementById("cpiReferenceMonth");
+        if (refSel) refSel.value = "";
+        applyCpiReferenceMonthRules(); // frequency is empty -> hides Reference + Custom Month
+        syncSkipFirstCpiNote();
+        updateCpiCyclesCard();
+
+        const startInput = document.getElementById("cpiCycleStartDate");
+        if (startInput) {
+          startInput.removeAttribute("min");
+          startInput.removeAttribute("max");
+        }
+
+        const currentIndexInput = document.getElementById("currentIndex");
+        if (currentIndexInput) currentIndexInput.placeholder = "Enter index";
+
+        document
+          .querySelectorAll("#createClauseForm .field-error")
+          .forEach((el) => clearFieldError(el));
+      }
+
+      // ── Load CPI Reference Month / Custom Month choices (array_leaseclause metadata),
+      //    falling back to the known global-choice values if metadata can't be read
+      async function getPicklistOptions(entityName, fieldName) {
+        try {
+          const clientUrl = Xrm.Utility.getGlobalContext().getClientUrl();
+          const apiUrl = `${clientUrl}/api/data/v9.2/EntityDefinitions(LogicalName='${entityName}')/Attributes(LogicalName='${fieldName}')/Microsoft.Dynamics.CRM.PicklistAttributeMetadata?$select=LogicalName&$expand=OptionSet($select=Options)`;
+
+          const response = await fetch(apiUrl, {
+            method: "GET",
+            headers: {
+              "OData-MaxVersion": "4.0",
+              "OData-Version": "4.0",
+              Accept: "application/json",
+              "Content-Type": "application/json; charset=utf-8",
+            },
+            credentials: "same-origin",
+          });
+          if (!response.ok) return null;
+
+          const data = await response.json();
+          const options = data?.OptionSet?.Options;
+          if (!Array.isArray(options) || options.length === 0) return null;
+
+          return options
+            .sort((a, b) => a.Value - b.Value)
+            .map((o) => ({
+              value: o.Value,
+              label:
+                o.Label?.UserLocalizedLabel?.Label ||
+                o.Label?.LocalizedLabels?.[0]?.Label ||
+                String(o.Value),
+            }));
+        } catch (error) {
+          return null;
+        }
+      }
+
+      async function loadCpiMonthOptions() {
+        const fallbackReference = [
+          { value: 1, label: "Start Month" },
+          { value: 2, label: "Last Month" },
+          { value: 3, label: "Custom Month" },
+          { value: 4, label: "Latest Published Index Value" },
+        ];
+        const fallbackCustom = [
+          "January", "February", "March", "April", "May", "June",
+          "July", "August", "September", "October", "November", "December",
+        ].map((label, i) => ({ value: i + 1, label }));
+
+        cpiReferenceMonthOptions =
+          (await getPicklistOptions("array_leaseclause", "array_cpireferencemonth")) ||
+          fallbackReference;
+
+        const customOptions =
+          (await getPicklistOptions("array_leaseclause", "array_cpicustommonth")) ||
+          fallbackCustom;
+
+        const custSel = document.getElementById("cpiCustomMonth");
+        if (custSel) {
+          custSel.innerHTML = '<option value="">Select month</option>';
+          customOptions.forEach((o) => {
+            const opt = document.createElement("option");
+            opt.value = o.value;
+            opt.textContent = o.label;
+            custSel.appendChild(opt);
+          });
+        }
+      }
+
+      // ============================================================================
+      // ── CHANGED: DOMContentLoaded — attach change listener on CPI Cycle Start Date
+      // ============================================================================
+      document.addEventListener("DOMContentLoaded", function () {
+        const startDateInput = document.getElementById("cpiCycleStartDate");
+        if (startDateInput) {
+          startDateInput.addEventListener("change", function () {
+            clearFieldError(this);
+            const valid = validateCpiCycleStartDate();
+            if (valid) {
+              calculateEndDateFromFrequency();
+            } else {
+              const endInput = document.getElementById("cpiCycleEndDate");
+              if (endInput) endInput.value = "";
+            }
+            updateCpiCyclesCard();
+          });
+        }
+
+        // Clear inline errors as soon as the user fixes a field
+        const fieldsToWatch = [
+          "clauseTitle", "cpiType", "chargeType", "currentIndex",
+          "cpiScheduleStartDate", "cpiScheduleEndDate",
+          "frequency", "cpiReferenceMonth", "cpiCustomMonth", "increaseType"
+        ];
+        fieldsToWatch.forEach(function(id) {
+          const el = document.getElementById(id);
+          if (el) {
+            el.addEventListener("input", function() { clearFieldError(this); });
+            el.addEventListener("change", function() { clearFieldError(this); });
+          }
+        });
+      });
+
+      // ============================================================================
+      // ── Helper: show / clear inline field error messages
+      // ============================================================================
+      function showFieldError(inputEl, message) {
+        if (!inputEl) return;
+        inputEl.classList.add("field-error");
+        let errEl = inputEl.parentElement.querySelector(".field-error-msg");
+        if (!errEl) {
+          errEl = document.createElement("span");
+          errEl.className = "field-error-msg";
+          inputEl.parentElement.appendChild(errEl);
+        }
+        errEl.textContent = message;
+        errEl.classList.add("visible");
+        // Scroll the field into view inside the modal
+        inputEl.scrollIntoView({ behavior: "smooth", block: "center" });
+        inputEl.focus();
+      }
+
+      function clearFieldError(inputEl) {
+        if (!inputEl) return;
+        inputEl.classList.remove("field-error");
+        const errEl = inputEl.parentElement.querySelector(".field-error-msg");
+        if (errEl) errEl.classList.remove("visible");
+      }
+
+      // ============================================================================
+      // ── validateCpiCycleStartDate
+      // CPI 2nd Schedule Start Date must be strictly greater than:
+      //   - Effective Date + Initial Waiting Period months (if waiting period has a value)
+      //   - Effective Date (if no waiting period)
+      // and cannot be after the Expiry Date.
+      // ============================================================================
+      function validateCpiCycleStartDate() {
+        const cpiCycleStartDateInput = document.getElementById("cpiCycleStartDate");
+        const effectiveDateInput = document.getElementById("cpiScheduleStartDate");
+        const waitingPeriodInput = document.getElementById("initialWaitingPeriod");
+
+        if (!cpiCycleStartDateInput || !effectiveDateInput) return true;
+
+        const cycleStartValue = cpiCycleStartDateInput.value;
+        const effectiveDateValue = effectiveDateInput.value;
+
+        if (!cycleStartValue || !effectiveDateValue) return true;
+
+        const cycleStartDate = new Date(cycleStartValue);
+        const effectiveDate = new Date(effectiveDateValue);
+
+        const waitingMonths = waitingPeriodInput && waitingPeriodInput.value
+          ? parseInt(waitingPeriodInput.value)
+          : 0;
+
+        // Minimum allowed date = effective date + waiting period months
+        const minDate = new Date(effectiveDate);
+        if (waitingMonths > 0) {
+          minDate.setMonth(minDate.getMonth() + waitingMonths);
+        }
+
+        // CPI Cycle Start Date must be strictly after minDate
+        if (cycleStartDate <= minDate) {
+          const formattedMin =
+            String(minDate.getDate()).padStart(2, "0") + "/" +
+            String(minDate.getMonth() + 1).padStart(2, "0") + "/" +
+            minDate.getFullYear();
+
+          const msg = waitingMonths > 0
+            ? `CPI 2nd Schedule Start Date must be after ${formattedMin} (Effective Date + ${waitingMonths} month(s) waiting period).`
+            : `CPI 2nd Schedule Start Date must be after the Effective Date (${formattedMin}).`;
+
+          showFieldError(cpiCycleStartDateInput, msg);
+          cpiCycleStartDateInput.value = "";
+          return false;
+        }
+
+        // CPI 2nd Schedule Start Date cannot be after the Expiry Date
+        const expiryDateValue = document.getElementById("cpiScheduleEndDate")?.value || "";
+        if (expiryDateValue) {
+          const expiryDate = new Date(expiryDateValue);
+          if (cycleStartDate > expiryDate) {
+            const p = expiryDateValue.split("-");
+            showFieldError(
+              cpiCycleStartDateInput,
+              `CPI 2nd Schedule Start Date cannot be after the Expiry Date (${p[2]}/${p[1]}/${p[0]}).`,
+            );
+            cpiCycleStartDateInput.value = "";
+            return false;
+          }
+        }
+
+        clearFieldError(cpiCycleStartDateInput);
+        return true;
+      }
+
+      // ============================================================================
+      // ── CHANGED: calculateEndDateFromFrequency
+      // CPI Schedule End Date = min(Cycle Start + frequency months - 1 day, Expiry Date)
+      // Frequency option value → months map (adjust values to match your option set)
+      // ============================================================================
+      function calculateEndDateFromFrequency() {
+        const startDateInput = document.getElementById("cpiCycleStartDate");
+        const cycleEndDateInput = document.getElementById("cpiCycleEndDate");
+        const frequencySelect = document.getElementById("frequency");
+        const expiryDateInput = document.getElementById("cpiScheduleEndDate");
+
+        if (!startDateInput || !cycleEndDateInput || !frequencySelect) return;
+
+        const startDateValue = startDateInput.value;
+        const frequencyValue = parseInt(frequencySelect.value);
+
+        if (!startDateValue || isNaN(frequencyValue)) return;
+
+        const startDate = new Date(startDateValue);
+
+        // Map frequency option values to months
+        // Standard D365 array_periodiccycle values — adjust if yours differ
+        const FREQUENCY_MONTHS_MAP = {
+          126330000: 1,   // Monthly
+          126330001: 3,   // Quarterly
+          126330002: 6,   // Half-Yearly
+          126330003: 12,  // Yearly
+        };
+
+        const months = FREQUENCY_MONTHS_MAP[frequencyValue] || 12;
+
+        // Calculated end = start + N months - 1 day
+        const calculatedEnd = new Date(startDate);
+        calculatedEnd.setMonth(calculatedEnd.getMonth() + months);
+        calculatedEnd.setDate(calculatedEnd.getDate() - 1);
+
+        // Compare with expiry date — take whichever is earlier
+        let finalEnd = calculatedEnd;
+        if (expiryDateInput && expiryDateInput.value) {
+          const expiryDate = new Date(expiryDateInput.value);
+          if (expiryDate < calculatedEnd) {
+            finalEnd = expiryDate;
+          }
+        }
+
+        cycleEndDateInput.value = finalEnd.toISOString().split("T")[0];
+      }
+
+      async function toggleIncreaseFields() {
+        const increaseType = document.getElementById("increaseType").value;
+        const flatFields = document.getElementById("flatIncreaseFields");
+        const percentageFields = document.getElementById("percentageIncreaseFields");
+        const currencyInfoBox = document.getElementById("currencyInfoBox");
+
+        if (increaseType === "126330000") {
+          flatFields.style.display = "grid";
+          percentageFields.style.display = "none";
+          await showCurrencyInfo();
+        } else if (increaseType === "126330001") {
+          flatFields.style.display = "none";
+          percentageFields.style.display = "grid";
+          currencyInfoBox.style.display = "none";
+        } else {
+          flatFields.style.display = "none";
+          percentageFields.style.display = "none";
+          currencyInfoBox.style.display = "none";
+
+          const minAmountField = document.getElementById("minIncreaseAmount");
+          const minPercentField = document.getElementById("minIncreasePercentage");
+
+          if (minAmountField) {
+            minAmountField.removeAttribute("required");
+            const label = minAmountField.parentElement.querySelector(".form-label");
+            if (label) label.classList.remove("required");
+          }
+          if (minPercentField) {
+            minPercentField.removeAttribute("required");
+            const label = minPercentField.parentElement.querySelector(".form-label");
+            if (label) label.classList.remove("required");
+          }
+        }
+      }
+
+      async function showCurrencyInfo() {
+        const currencyInfoBox = document.getElementById("currencyInfoBox");
+        const currencyInfoText = document.getElementById("currencyInfoText");
+
+        const chargeTypeId = document.getElementById("chargeType").value;
+
+        currencyInfoBox.style.display = "none";
+
+        if (!leaseId || !chargeTypeId) {
+          return;
+        }
+
+        try {
+          const cleanLeaseId = leaseId.replace(/[{}]/g, "");
+          const cleanChargeTypeId = chargeTypeId.replace(/[{}]/g, "");
+
+          const query = `?$select=transactioncurrencyid,_transactioncurrencyid_value,_array_chargetype_value&$filter=_array_leaseagreement_value eq ${cleanLeaseId} and _array_chargetype_value eq ${cleanChargeTypeId} and statecode eq 0`;
+
+          const result = await Xrm.WebApi.retrieveMultipleRecords(
+            "array_recurringcharge",
+            query,
+          );
+
+          if (result.entities.length === 0) {
+            return;
+          }
+
+          const distinctCurrencies = new Set();
+          let currencyName = null;
+          let chargeName = null;
+
+          result.entities.forEach(function (entity) {
+            const currencyId = entity["_transactioncurrencyid_value"];
+            if (currencyId) {
+              distinctCurrencies.add(currencyId);
+            }
+
+            if (
+              !currencyName &&
+              entity["_transactioncurrencyid_value@OData.Community.Display.V1.FormattedValue"]
+            ) {
+              currencyName =
+                entity["_transactioncurrencyid_value@OData.Community.Display.V1.FormattedValue"];
+            }
+            if (
+              !chargeName &&
+              entity["_array_chargetype_value@OData.Community.Display.V1.FormattedValue"]
+            ) {
+              chargeName =
+                entity["_array_chargetype_value@OData.Community.Display.V1.FormattedValue"];
+            }
+          });
+
+          if (distinctCurrencies.size === 0) {
+            return;
+          }
+
+          currencyInfoBox.style.display = "block";
+
+          if (distinctCurrencies.size > 1) {
+            currencyInfoText.innerHTML = `⚠️ This charge type <strong>${
+              chargeName || "selected"
+            }</strong> is used with <strong>multiple currencies</strong>. To ensure accurate calculations across currencies, it is recommended to use <strong>Percentage</strong> as the Increase Type.`;
+          } else {
+            currencyInfoText.innerHTML = `ℹ️ The currency used for this charge is <strong>${currencyName}</strong>. Any flat amount increase will be applied in the same currency as the recurring charge.`;
+          }
+        } catch (error) {
+          currencyInfoBox.style.display = "none";
+        }
+      }
+
+      async function handleChargeTypeChange() {
+        const increaseType = document.getElementById("increaseType").value;
+        if (increaseType === "126330000") {
+          await showCurrencyInfo();
+        }
+      }
+
+      async function updateClauseTitleOnChargeTypeChange() {
+        const chargeTypeId = document.getElementById("chargeType").value;
+
+        if (chargeTypeId && leaseId) {
+          try {
+            const generatedTitle = await generateLeaseClauseName(
+              leaseId,
+              "Value Protection (CPI)",
+              chargeTypeId,
+            );
+
+            if (generatedTitle) {
+              document.getElementById("clauseTitle").value = generatedTitle;
+            }
+          } catch (error) {
+            console.error("Error updating clause title:", error);
+          }
+        }
+
+        await handleChargeTypeChange();
+      }
+
+      async function saveNewClause(event) {
+        event.preventDefault();
+
+        const form = document.getElementById("createClauseForm");
+
+        // Clear all previous field errors before re-validating
+        form.querySelectorAll(".field-error").forEach(el => clearFieldError(el));
+
+        const customScheduleOn = document.getElementById("customSchedule").checked;
+        const cpiCycleStartDateInput = document.getElementById("cpiCycleStartDate");
+        const cpiCycleStartDate = cpiCycleStartDateInput.value;
+
+        // Validate CPI 2nd Schedule Start Date when custom schedule is enabled
+        if (customScheduleOn && !cpiCycleStartDate) {
+          showFieldError(cpiCycleStartDateInput, "CPI 2nd Schedule Start Date is required when Custom CPI Schedule is enabled.");
+          return;
+        }
+
+        // Re-run date range validation before save
+        if (customScheduleOn && cpiCycleStartDate) {
+          const valid = validateCpiCycleStartDate();
+          if (!valid) {
+            updateCpiCyclesCard();
+            return;
+          }
+        }
+
+        // Validate all required fields with inline errors (in form order).
+        // Fields with a "wrapper" are only required while that wrapper is visible.
+        let firstErrorEl = null;
+        const requiredFields = [
+          { id: "clauseTitle",           label: "Financial Clause Name" },
+          { id: "cpiScheduleStartDate",  label: "Effective Date" },
+          { id: "cpiScheduleEndDate",    label: "Expiry Date" },
+          { id: "cpiType",               label: "CPI Type" },
+          { id: "chargeType",            label: "Charge Type (CPI)" },
+          { id: "currentIndex",          label: "Current Index" },
+          { id: "frequency",             label: "CPI Rent Frequency" },
+          { id: "cpiReferenceMonth",     label: "CPI Reference Month", wrapper: "cpiReferenceMonthField" },
+          { id: "cpiCustomMonth",        label: "CPI Custom Month",    wrapper: "cpiCustomMonthField" },
+          { id: "increaseType",          label: "Increase Type (CPI Rent Process)" },
+        ];
+
+        requiredFields.forEach(function(f) {
+          if (f.wrapper) {
+            const wrap = document.getElementById(f.wrapper);
+            if (!wrap || wrap.style.display === "none") return;
+          }
+          const el = document.getElementById(f.id);
+          if (el && !el.value.trim()) {
+            showFieldError(el, f.label + " is required.");
+            if (!firstErrorEl) firstErrorEl = el;
+          }
+        });
+
+        if (firstErrorEl) {
+          firstErrorEl.scrollIntoView({ behavior: "smooth", block: "center" });
+          firstErrorEl.focus();
+          return;
+        }
+
+        const clauseTitle = document.getElementById("clauseTitle").value.trim();
+        const frequency = document.getElementById("frequency").value;
+        const chargeType = document.getElementById("chargeType").value;
+        const cpiType = document.getElementById("cpiType").value;
+        const increaseType = document.getElementById("increaseType").value;
+        const cpiScheduleEndDate = document.getElementById("cpiScheduleEndDate").value;
+        const formData = new FormData(form);
+
+        showLoader("Saving CPI Clause...", "Please wait while we process your request");
+
+        try {
+          const today = new Date().toISOString().split("T")[0];
+          const leaseEndDate = await getLeaseEndDate(leaseId);
+          const clauseTypeGuid = await getClauseTypeByName("Value Protection (CPI)");
+
+          if (!clauseTypeGuid) {
+            hideLoader();
+            alert("Error: Could not find Clause Type 'Value Protection (CPI)'");
+            return;
+          }
+
+          const chargeTypeId = formData.get("chargeType");
+
+          if (chargeTypeId) {
+            const existingClause = await checkExistingChargeType(chargeTypeId);
+
+            if (existingClause) {
+              hideLoader();
+
+              // Build the override payload from the full form (same as a normal save),
+              // so Expiry Date, Custom CPI Schedule, 2nd Schedule End Date, Reference /
+              // Custom Month and Skip First CPI Schedule are all carried over.
+              const newClause = prepareClauseData(
+                formData,
+                today,
+                leaseEndDate,
+                clauseTypeGuid,
+              );
+
+              showOverrideModal(existingClause, newClause);
+              return;
+            }
+          }
+
+          const newClause = prepareClauseData(formData, today, leaseEndDate, clauseTypeGuid);
+          await createNewClause(newClause);
+
+          hideLoader();
+          showSuccessModal("CPI rent clause created successfully!");
+        } catch (error) {
+          hideLoader();
+          alert("Error creating clause: " + error.message);
+        }
+      }
+
+      async function loadChargeTypes() {
+        try {
+          const result = await Xrm.WebApi.retrieveMultipleRecords(
+            "array_chargetype",
+            "?$select=array_chargetypeid,array_name&$filter=statecode eq 0&$orderby=array_name asc",
+          );
+
+          const chargeTypeSelect = document.getElementById("chargeType");
+          chargeTypeSelect.innerHTML = '<option value="">Select Charge Type</option>';
+
+          result.entities.forEach((type) => {
+            const option = document.createElement("option");
+            option.value = type.array_chargetypeid;
+            option.textContent = type.array_name;
+            chargeTypeSelect.appendChild(option);
+          });
+        } catch (error) {}
+      }
+
+      async function loadCPITypes() {
+        const cpiTypeSelect = document.getElementById("cpiType");
+
+        if (!cpiTypeSelect) {
+          return;
+        }
+
+        try {
+          const result = await Xrm.WebApi.retrieveMultipleRecords(
+            "array_cpitype",
+            "?$select=array_cpitypeid,array_name&$filter=statecode eq 0&$orderby=array_name asc",
+          );
+
+          cpiTypeSelect.innerHTML = '<option value="">Select CPI Type</option>';
+
+          result.entities.forEach((type) => {
+            const option = document.createElement("option");
+            option.value = type.array_cpitypeid;
+            option.textContent = type.array_name;
+            cpiTypeSelect.appendChild(option);
+          });
+        } catch (error) {
+          cpiTypeSelect.innerHTML = '<option value="">Error loading CPI types</option>';
+        }
+      }
+
+      async function loadFrequencyOptions() {
+        const frequencySelect = document.getElementById("frequency");
+
+        if (!frequencySelect) {
+          return;
+        }
+
+        try {
+          const clientUrl = Xrm.Utility.getGlobalContext().getClientUrl();
+          const globalOptionSetName = "array_periodiccycle";
+          const apiUrl = `${clientUrl}/api/data/v9.2/GlobalOptionSetDefinitions(Name='${globalOptionSetName}')/Microsoft.Dynamics.CRM.OptionSetMetadata`;
+
+          const response = await fetch(apiUrl, {
+            method: "GET",
+            headers: {
+              "OData-MaxVersion": "4.0",
+              "OData-Version": "4.0",
+              Accept: "application/json",
+              "Content-Type": "application/json; charset=utf-8",
+              Prefer: 'odata.include-annotations="*"',
+            },
+            credentials: "same-origin",
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(
+              `HTTP error ${response.status}: ${errorData.error?.message || response.statusText}`,
+            );
+          }
+
+          const data = await response.json();
+
+          if (data && data.Options && Array.isArray(data.Options) && data.Options.length > 0) {
+            frequencySelect.innerHTML = '<option value="">Select Frequency</option>';
+
+            const sortedOptions = data.Options.sort((a, b) => a.Value - b.Value);
+
+            sortedOptions.forEach((option) => {
+              const optionElement = document.createElement("option");
+              optionElement.value = option.Value;
+
+              let label = "Unknown";
+              if (option.Label) {
+                if (option.Label.UserLocalizedLabel && option.Label.UserLocalizedLabel.Label) {
+                  label = option.Label.UserLocalizedLabel.Label;
+                } else if (option.Label.LocalizedLabels && option.Label.LocalizedLabels.length > 0) {
+                  label = option.Label.LocalizedLabels[0].Label;
+                }
+              }
+
+              optionElement.textContent = label;
+              frequencySelect.appendChild(optionElement);
+            });
+          } else {
+            frequencySelect.innerHTML = '<option value="">No frequency options available</option>';
+          }
+        } catch (error) {
+          frequencySelect.innerHTML = '<option value="">Error loading frequency options</option>';
+        }
+      }
+
+      async function loadIncreaseTypeOptions() {
+        const increaseTypeSelect = document.getElementById("increaseType");
+
+        if (!increaseTypeSelect) {
+          return;
+        }
+
+        try {
+          const clientUrl = Xrm.Utility.getGlobalContext().getClientUrl();
+          const globalOptionSetName = "array_increasetype";
+          const apiUrl = `${clientUrl}/api/data/v9.2/GlobalOptionSetDefinitions(Name='${globalOptionSetName}')/Microsoft.Dynamics.CRM.OptionSetMetadata`;
+
+          const response = await fetch(apiUrl, {
+            method: "GET",
+            headers: {
+              "OData-MaxVersion": "4.0",
+              "OData-Version": "4.0",
+              Accept: "application/json",
+              "Content-Type": "application/json; charset=utf-8",
+              Prefer: 'odata.include-annotations="*"',
+            },
+            credentials: "same-origin",
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(
+              `HTTP error ${response.status}: ${errorData.error?.message || response.statusText}`,
+            );
+          }
+
+          const data = await response.json();
+
+          if (data && data.Options && Array.isArray(data.Options) && data.Options.length > 0) {
+            increaseTypeSelect.innerHTML = '<option value="">Select Increase Type</option>';
+
+            const sortedOptions = data.Options.sort((a, b) => a.Value - b.Value);
+
+            sortedOptions.forEach((option) => {
+              const optionElement = document.createElement("option");
+              optionElement.value = option.Value;
+
+              let label = "Unknown";
+              if (option.Label) {
+                if (option.Label.UserLocalizedLabel && option.Label.UserLocalizedLabel.Label) {
+                  label = option.Label.UserLocalizedLabel.Label;
+                } else if (option.Label.LocalizedLabels && option.Label.LocalizedLabels.length > 0) {
+                  label = option.Label.LocalizedLabels[0].Label;
+                }
+              }
+
+              optionElement.textContent = label;
+              increaseTypeSelect.appendChild(optionElement);
+            });
+          } else {
+            increaseTypeSelect.innerHTML = '<option value="">No increase type options available</option>';
+          }
+        } catch (error) {
+          increaseTypeSelect.innerHTML = '<option value="">Error loading increase type options</option>';
+        }
+      }
+
+      async function getClauseTypeByName(clauseTypeName) {
+        try {
+          const result = await Xrm.WebApi.retrieveMultipleRecords(
+            "array_clausetype",
+            `?$select=array_clausetypeid&$filter=array_clausetypename eq '${clauseTypeName}'`,
+          );
+
+          if (result.entities.length > 0) {
+            return result.entities[0].array_clausetypeid;
+          } else {
+            return null;
+          }
+        } catch (error) {
+          return null;
+        }
+      }
+
+      function autopopulateCpiScheduleStartDate() {
+        const today = new Date().toISOString().split("T")[0];
+        const cpiScheduleField = document.getElementById("cpiScheduleStartDate");
+        if (cpiScheduleField && !cpiScheduleField.value) {
+          cpiScheduleField.value = today;
+        }
+      }
+
+      async function autopopulateCpiScheduleEndDate() {
+        const cpiScheduleEndDateField = document.getElementById("cpiScheduleEndDate");
+
+        if (!cpiScheduleEndDateField || cpiScheduleEndDateField.value) {
+          return;
+        }
+
+        if (!leaseId) {
+          return;
+        }
+
+        try {
+          const leaseEndDate = await getLeaseEndDate(leaseId);
+
+          if (leaseEndDate) {
+            const formattedDate = new Date(leaseEndDate).toISOString().split("T")[0];
+            cpiScheduleEndDateField.value = formattedDate;
+          }
+        } catch (error) {
+          console.error("Error auto-populating CPI Schedule End Date:", error);
+        }
+      }
+
+      // ── UNCHANGED: updateCpiScheduleStartDateByWaitingPeriod kept but no longer triggered from UI
+      function updateCpiScheduleStartDateByWaitingPeriod() {
+        const waitingPeriodInput = document.getElementById("initialWaitingPeriod");
+        const cpiScheduleStartDateInput = document.getElementById("cpiScheduleStartDate");
+
+        if (!cpiScheduleStartDateInput) {
+          return;
+        }
+
+        const waitingPeriodMonths = waitingPeriodInput.value
+          ? parseInt(waitingPeriodInput.value)
+          : 0;
+
+        const baseDate = new Date();
+
+        if (waitingPeriodMonths && waitingPeriodMonths > 0) {
+          const newDate = new Date(baseDate);
+          newDate.setMonth(newDate.getMonth() + waitingPeriodMonths);
+          const formattedDate = newDate.toISOString().split("T")[0];
+          cpiScheduleStartDateInput.value = formattedDate;
+        } else {
+          const todayFormatted = baseDate.toISOString().split("T")[0];
+          cpiScheduleStartDateInput.value = todayFormatted;
+        }
+      }
+
+      async function onCpiTypeChange() {
+        const cpiTypeSelect = document.getElementById("cpiType");
+        const cpiTypeId = cpiTypeSelect.value;
+        const currentIndexField = document.getElementById("currentIndex");
+
+        if (!cpiTypeId) {
+          currentIndexField.value = "";
+          currentIndexField.placeholder = "Enter index";
+          return;
+        }
+
+        currentIndexField.placeholder = "Checking...";
+
+        const cleanCpiTypeId = cpiTypeId.replace(/[{}]/g, "");
+
+        const currentDate = new Date();
+        const currentYear = currentDate.getFullYear();
+        const currentMonth = currentDate.getMonth();
+
+        const startOfMonth = new Date(currentYear, currentMonth, 1);
+        const endOfMonth = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59);
+
+        const startDate = startOfMonth.toISOString().split("T")[0];
+        const endDate = endOfMonth.toISOString().split("T")[0];
+
+        const fetchXml = `
+      <fetch top='1'>
+        <entity name='array_cpiindex'>
+          <attribute name='array_indexvalue' />
+          <attribute name='array_perioddate' />
+          <filter type='and'>
+            <condition attribute='array_cpitype' operator='eq' value='${cleanCpiTypeId}' />
+            <condition attribute='array_perioddate' operator='on-or-after' value='${startDate}' />
+            <condition attribute='array_perioddate' operator='on-or-before' value='${endDate}' />
+          </filter>
+          <order attribute='array_perioddate' descending='true' />
+        </entity>
+      </fetch>
+    `;
+
+        try {
+          const result = await Xrm.WebApi.retrieveMultipleRecords(
+            "array_cpiindex",
+            "?fetchXml=" + encodeURIComponent(fetchXml),
+          );
+
+          if (result.entities.length > 0) {
+            const indexValue = result.entities[0].array_indexvalue;
+            currentIndexField.value = indexValue;
+            currentIndexField.placeholder = "Enter index";
+            clearFieldError(currentIndexField);
+          } else {
+            currentIndexField.value = "";
+            currentIndexField.placeholder = "Enter index manually";
+          }
+        } catch (error) {
+          currentIndexField.placeholder = "Enter index manually";
+        }
+      }
+
+      async function getLeaseEndDate(leaseId) {
+        try {
+          const result = await Xrm.WebApi.retrieveRecord(
+            "array_leaseagreement",
+            leaseId,
+            "?$select=array_leaseenddate",
+          );
+          return result.array_leaseenddate;
+        } catch (error) {
+          return null;
+        }
+      }
+    </script>
+  </head>
+
+  <body>
+    <!-- Initial Page Loader -->
+    <div id="pageLoader" class="loader-overlay active">
+      <div class="loader-content">
+        <div class="loader-spinner"></div>
+        <div class="loader-text">Loading CPI Rent Clauses...</div>
+        <div class="loader-subtext">Please wait while we fetch your data</div>
+      </div>
+    </div>
+
+    <div class="container" id="mainContent" style="display: none">
+      <div class="header">
+        <h1><i class="fas fa-arrow-trend-up"></i> Active CPI Rent Clauses</h1>
+        <p>Manage CPI Rent and review history</p>
+      </div>
+
+      <!-- Filter card (Active / Inactive / All) -->
+      <div class="filter-card">
+        <div class="filter-card__left">
+          <div class="filter-card__icon">
+            <i class="fas fa-filter"></i>
+          </div>
+        </div>
+
+        <div class="filter-card__control">
+          <select
+            id="clauseStatusFilter"
+            class="filter-select"
+            aria-label="Filter cpi rent clauses"
+          >
+            <option value="active" selected>Active</option>
+            <option value="inactive">Inactive</option>
+            <option value="all">All</option>
+          </select>
+          <div class="filter-select__chevron" aria-hidden="true"></div>
+        </div>
+        <button type="button" id="btnNewCPIRent" class="btn-new">
+          <span class="btn-new-icon">+</span>
+          <span>New</span>
+        </button>
+      </div>
+
+      <!-- No records container -->
+      <div id="noRecordsContainer" class="no-records-container hidden">
+        <div class="no-records-icon">📄</div>
+        <div class="no-records-title">No Active CPI Rent</div>
+        <div class="no-records-message">
+          There are no active CPI rent clauses available for this lease
+          agreement at the moment.
+        </div>
+      </div>
+
+      <!-- Main table wrapper -->
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr class="table-header">
+              <th>Effective Date</th>
+              <th>Expiry Date</th>
+              <th>Frequency</th>
+              <th>Last Adjustment Date</th>
+              <th>Charge Type</th>
+              <th>Trigger Value %</th>
+              <th>Increase Type</th>
+              <th>Max Increase</th>
+              <th>Min Increase</th>
+              <th></th>
+            </tr>
+          </thead>
+
+          <tbody id="cpiRentBody">
+            <tr>
+              <td colspan="10" class="no-records">Loading...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmationModal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-title">Deactivate Clause</div>
+        <div class="modal-message">
+          Are you sure you want to deactivate this CPI rent clause? This action
+          will mark it as inactive.
+        </div>
+        <div class="modal-actions">
+          <button class="modal-btn modal-btn-cancel">Cancel</button>
+          <button class="modal-btn modal-btn-confirm">Deactivate</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Create Clause Modal -->
+    <div id="createClauseModal" class="modal-overlay">
+      <div class="create-modal-content">
+        <div class="create-modal-header">
+          <h2>Create New CPI Rent Clause</h2>
+          <button type="button" class="close-btn" onclick="closeCreateModal()">
+            ×
+          </button>
+        </div>
+
+        <form id="createClauseForm" onsubmit="saveNewClause(event)">
+          <!-- Clause Title -->
+          <div class="form-group">
+            <label class="form-label required" for="clauseTitle">Financial Clause Name</label>
+            <input type="text" id="clauseTitle" name="clauseTitle" class="form-input" />
+          </div>
+
+          <!-- Field order below mirrors the Lease Creation CPI form:
+               dates & schedule first, then indexation details -->
+
+          <!-- Initial Waiting Period -->
+          <div class="form-group">
+            <label class="form-label" for="initialWaitingPeriod">Initial Waiting Period (Months)</label>
+            <input
+              type="number"
+              id="initialWaitingPeriod"
+              name="initialWaitingPeriod"
+              class="form-input"
+              min="0"
+              placeholder="Enter months"
+            />
+          </div>
+
+          <!-- Effective Date — resets the CPI 2nd Schedule dates on change -->
+          <div class="form-group">
+            <label class="form-label required" for="cpiScheduleStartDate">Effective Date</label>
+            <input
+              type="date"
+              id="cpiScheduleStartDate"
+              name="cpiScheduleStartDate"
+              class="form-input"
+              onchange="resetCpiCycleFields()"
+            />
+          </div>
+
+          <!-- Expiry Date — auto-populated with the lease end date; resets the CPI 2nd Schedule dates on change -->
+          <div class="form-group">
+            <label class="form-label required" for="cpiScheduleEndDate">Expiry Date</label>
+            <input
+              type="date"
+              id="cpiScheduleEndDate"
+              name="cpiScheduleEndDate"
+              class="form-input"
+              onchange="resetCpiCycleFields()"
+            />
+          </div>
+
+          <!-- Enable Custom CPI Schedule (toggle; checked => FormData value "yes") -->
+          <div class="form-group" id="customScheduleField">
+            <label class="form-label" for="customSchedule">Enable Custom CPI Schedule</label>
+            <div class="toggle-row">
+              <label class="toggle-switch">
+                <input type="checkbox" id="customSchedule" name="customSchedule" value="yes" onchange="toggleCpiCycleDate()" />
+                <span class="slider"></span>
+              </label>
+              <span class="toggle-text">Yes</span>
+            </div>
+          </div>
+
+          <!-- CPI 2nd Schedule Start Date + auto End Date (shown only when Custom CPI Schedule is on) -->
+          <div id="cpiCycleDateField" style="display: none">
+            <div class="form-group">
+              <label class="form-label required" for="cpiCycleStartDate" id="cpiCycleDateLabel">
+                CPI 2nd Schedule Start Date
+              </label>
+              <input
+                type="date"
+                id="cpiCycleStartDate"
+                name="cpiCycleStartDate"
+                class="form-input"
+              />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="cpiCycleEndDate">CPI 2nd Schedule End Date</label>
+              <input
+                type="date"
+                id="cpiCycleEndDate"
+                name="cpiCycleEndDate"
+                class="form-input"
+                readonly
+                style="background: #f3f2f1; cursor: not-allowed; color: #605e5c;"
+              />
+            </div>
+          </div>
+
+          <!-- Skip First CPI Schedule (toggle, defaults to No) -->
+          <div class="form-group" id="skipFirstCpiField">
+            <label class="form-label" for="skipFirstCpiSchedule">Skip First CPI Schedule</label>
+            <div class="toggle-row">
+              <label class="toggle-switch">
+                <input type="checkbox" id="skipFirstCpiSchedule" name="skipFirstCpiSchedule" value="yes" onchange="syncSkipFirstCpiNote()" />
+                <span class="slider"></span>
+              </label>
+              <span class="toggle-text">Yes</span>
+            </div>
+            <div id="skipFirstCpiInfo" class="cpi-info-note" style="display: none">
+              The first CPI schedule will not be generated; indexation applies from the next cycle.
+            </div>
+          </div>
+
+          <!-- CPI Schedule Cycles card (shown only when Custom CPI Schedule is on) -->
+          <div id="cpiScheduleCyclesInfo" class="cpi-cycles-card" style="display: none"></div>
+
+          <!-- CPI Type -->
+          <div class="form-group">
+            <label class="form-label required" for="cpiType">CPI Type</label>
+            <select id="cpiType" name="cpiType" class="form-select" onchange="onCpiTypeChange()">
+              <option value="">Select CPI Type</option>
+            </select>
+          </div>
+
+          <!-- Charge Type (CPI) -->
+          <div class="form-group">
+            <label class="form-label required" for="chargeType">Charge Type (CPI)</label>
+            <select id="chargeType" name="chargeType" class="form-select" onchange="updateClauseTitleOnChargeTypeChange()">
+              <option value="">Select Charge Type</option>
+            </select>
+          </div>
+
+          <!-- Current Index (required) -->
+          <div class="form-group">
+            <label class="form-label required" for="currentIndex">Current Index</label>
+            <input type="number" id="currentIndex" name="currentIndex" class="form-input" step="0.01" min="0" placeholder="Enter index" />
+          </div>
+
+          <!-- CPI Rent Frequency — resets the 2nd Schedule dates and applies the Reference Month rules -->
+          <div class="form-group">
+            <label class="form-label required" for="frequency">CPI Rent Frequency</label>
+            <select id="frequency" name="frequency" class="form-select" onchange="toggleCustomSchedule()">
+              <option value="">Select Frequency</option>
+            </select>
+          </div>
+
+          <!-- CPI Reference Month (shown once a frequency is selected; options depend on the frequency) -->
+          <div class="form-group" id="cpiReferenceMonthField" style="display: none">
+            <label class="form-label required" for="cpiReferenceMonth">CPI Reference Month</label>
+            <select id="cpiReferenceMonth" name="cpiReferenceMonth" class="form-select" onchange="applyCpiReferenceMonthRules()">
+              <option value="">Select reference month</option>
+            </select>
+          </div>
+
+          <!-- CPI Custom Month (Yearly + Reference Month = Custom Month only) -->
+          <div class="form-group" id="cpiCustomMonthField" style="display: none">
+            <label class="form-label required" for="cpiCustomMonth">CPI Custom Month</label>
+            <select id="cpiCustomMonth" name="cpiCustomMonth" class="form-select">
+              <option value="">Select month</option>
+            </select>
+            <div class="cpi-info-note">
+              Each yearly CPI adjustment will use the index value published for the selected month.
+            </div>
+          </div>
+
+          <!-- Minimum Time Interval -->
+          <div class="form-group">
+            <label class="form-label" for="minimumTimeInterval">Minimum Time Interval (Months)</label>
+            <input type="number" id="minimumTimeInterval" name="minimumTimeInterval" class="form-input" min="0" placeholder="Enter months" />
+          </div>
+
+          <!-- Trigger Value -->
+          <div class="form-group" id="triggerValueField">
+            <label class="form-label" for="triggerValue">Trigger Value (%)</label>
+            <input type="number" id="triggerValue" name="triggerValue" class="form-input" step="0.01" min="0" max="100" placeholder="Enter percentage" />
+          </div>
+
+          <!-- Increase Type (CPI Rent Process) -->
+          <div class="form-group">
+            <label class="form-label required" for="increaseType">Increase Type (CPI Rent Process)</label>
+            <select id="increaseType" name="increaseType" class="form-select" onchange="toggleIncreaseFields()">
+              <option value="">Select Increase Type</option>
+            </select>
+          </div>
+
+          <!-- Currency Info Fact Box -->
+          <div id="currencyInfoBox" class="fact-box" style="display: none; margin-bottom: 20px">
+            <div class="fact-box-label">Currency Information</div>
+            <div class="fact-box-body" id="currencyInfoText"></div>
+          </div>
+
+          <!-- Flat Increase Fields -->
+          <div class="form-row" id="flatIncreaseFields" style="display: none">
+            <div class="form-group">
+              <label class="form-label" for="flatAmountCpi">Flat Amount (CPI)</label>
+              <input type="number" id="flatAmountCpi" name="flatAmountCpi" class="form-input" step="0.01" min="0" placeholder="Enter amount" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="minIncreaseAmount">Minimum Increase Flat Amount (CPI)</label>
+              <input type="number" id="minIncreaseAmount" name="minIncreaseAmount" class="form-input" step="0.01" min="0" placeholder="Enter amount" />
+            </div>
+          </div>
+
+          <!-- Percentage Increase Fields -->
+          <div class="form-row" id="percentageIncreaseFields" style="display: none">
+            <div class="form-group">
+              <label class="form-label" for="minIncreasePercentage">Minimum Increase Percentage (CPI)</label>
+              <input type="number" id="minIncreasePercentage" name="minIncreasePercentage" class="form-input" step="0.01" min="0" max="100" placeholder="Enter percentage" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="maxIncreasePercentage">Maximum Increase Percentage (CPI)</label>
+              <input type="number" id="maxIncreasePercentage" name="maxIncreasePercentage" class="form-input" step="0.01" min="0" max="100" placeholder="Enter percentage" />
+            </div>
+          </div>
+
+          <!-- Clause Summary -->
+          <div class="form-group">
+            <label class="form-label" for="clauseSummary">Clause Summary</label>
+            <textarea id="clauseSummary" name="clauseSummary" class="form-input" rows="3" placeholder="Enter a summary for this clause" style="resize: vertical; font-family: inherit"></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn-cancel-form" onclick="closeCreateModal()">Cancel</button>
+            <button type="submit" class="btn-save">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-title" style="color: #2bad76">✓ Success</div>
+        <div class="modal-message" id="successMessage">
+          CPI rent clause created successfully!
+        </div>
+        <div class="modal-actions">
+          <button class="modal-btn" style="background: #2bad76; color: white" onclick="closeSuccessModal()">
+            OK
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Override Clause Modal -->
+    <div id="overrideClauseModal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-title">Existing Clause Found</div>
+        <div class="modal-message" id="overrideMessage"></div>
+        <div class="modal-actions">
+          <button class="modal-btn modal-btn-cancel" onclick="closeOverrideModal()">Cancel</button>
+          <button class="modal-btn modal-btn-confirm" onclick="confirmOverride()">Override</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loader Overlay -->
+    <div id="loaderOverlay" class="loader-overlay">
+      <div class="loader-content">
+        <div class="loader-spinner"></div>
+        <div class="loader-text">Saving...</div>
+        <div class="loader-subtext">Please wait</div>
+      </div>
+    </div>
+  </body>
+</html>

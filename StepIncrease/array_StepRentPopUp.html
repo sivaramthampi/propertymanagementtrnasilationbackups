@@ -1,0 +1,3107 @@
+  <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Active Step Increase Clauses</title>
+        <style>
+          @import url(https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap);
+          @import url(https://use.typekit.net/qnt6ugd.css);
+          
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
+
+          :root {
+            --primary: #0b1559;
+            --primary-hover: #2bad76;
+            --primary-active: #005a9e;
+            --success: #2bad76;
+            --success-hover: #2bad76;
+            --danger: #a4262c;
+            --warning: #d83b01;
+            --bg-light: #f3f2f1;
+            --bg-white: #ffffff;
+            --text-primary: #323130;
+            --text-secondary: #605e5c;
+            --border: #edebe9;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.15);
+          }
+
+          body {
+            font-family: "Segoe UI", "Segoe UI Web (West European)", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif;
+            background: linear-gradient(135deg, #f3f2f1 0%, #e8e7e6 100%);
+            background-attachment: fixed;
+            background-size: 100% 100%;
+            min-height: 100vh;
+            padding: clamp(8px, 1.5vw, 12px);
+            font-size: clamp(12px, 1.2vw, 14px);
+          }
+
+          h2 {
+            text-align: center;
+            color: var(--primary);
+            margin: 30px 0 20px;
+          }
+          
+          .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 clamp(8px, 1.5vw, 12px);
+          }
+          
+          /* === Turnover-style header === */
+          .header {
+            background: var(--primary);
+            color: #fff;
+            padding: clamp(16px, 3vw, 32px);
+            border-radius: clamp(8px, 1vw, 12px);
+            margin-bottom: clamp(16px, 2.5vw, 28px);
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            overflow: hidden;
+          }
+
+          .header::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: clamp(120px, 18vw, 300px);
+            height: clamp(120px, 18vw, 300px);
+            background: rgba(255, 255, 255, 0.10);
+            border-radius: 50%;
+            transform: translate(50%, -50%);
+          }
+          
+          .header h1 {
+            font-size: clamp(18px, 2.5vw, 32px);
+            margin-bottom: clamp(4px, 0.8vw, 8px);
+            font-weight: 700;
+            position: relative;
+            z-index: 1;
+          }
+
+          .header p {
+            font-size: clamp(11px, 1.2vw, 14px);
+            opacity: 0.95;
+            position: relative;
+            z-index: 1;
+          }
+
+          /* Filter card */
+          .filter-card {
+            background: #fff;
+            padding: clamp(12px, 1.8vw, 20px) clamp(14px, 2vw, 20px);
+            border-radius: clamp(8px, 1vw, 12px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: clamp(14px, 2vw, 20px);
+            display: flex;
+            gap: clamp(8px, 1.2vw, 12px);
+            align-items: center;
+            justify-content: flex-start;
+          }
+
+          .filter-card__icon {
+            display: none !important;
+          }
+
+          .filter-card__control {
+            position: relative;
+            flex: 0 1 320px;
+            min-width: 200px;
+            max-width: 320px;
+            width: 100%;
+          }
+
+          .filter-select {
+            width: 100%;
+            padding: clamp(8px, 1.2vw, 10px) clamp(36px, 4vw, 44px) clamp(8px, 1.2vw, 10px) clamp(10px, 1.5vw, 12px);
+            border: 2px solid var(--border);
+            border-radius: clamp(6px, 0.8vw, 8px);
+            font-size: clamp(12px, 1.3vw, 14px);
+            font-weight: 600;
+            color: var(--text-primary);
+            background: #fff;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+          }
+
+          .filter-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0,120,212,0.10);
+            outline: none;
+          }
+
+          .filter-select__chevron {
+            position: absolute;
+            right: clamp(8px, 1.2vw, 10px);
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: clamp(18px, 2.2vw, 22px);
+            height: clamp(18px, 2.2vw, 22px);
+            background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+            border-radius: clamp(4px, 0.6vw, 6px);
+            box-shadow: 0 2px 4px rgba(0,120,212,0.3);
+            z-index: 2;
+          }
+
+          .filter-select__chevron::after {
+            content: '▼';
+            color: #fff;
+            font-size: clamp(8px, 1vw, 10px);
+            display: block;
+          }
+
+          /* New Button */
+          .btn-new {
+            background: linear-gradient(135deg, #2bad76, #0b1559);
+            color: white;
+            border: none;
+            padding: clamp(8px, 1.2vw, 10px) clamp(16px, 2vw, 20px);
+            border-radius: clamp(6px, 0.8vw, 8px);
+            cursor: pointer;
+            font-size: clamp(12px, 1.3vw, 14px);
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(43, 173, 118, 0.3);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: clamp(6px, 0.8vw, 8px);
+            white-space: nowrap;
+            flex-shrink: 0;
+            margin-left: auto;
+          }
+
+          .btn-new:hover {
+            background: linear-gradient(135deg, #0b1559, #2bad76);
+            box-shadow: 0 4px 12px rgba(43, 173, 118, 0.4);
+            transform: translateY(-2px);
+          }
+
+          .btn-new:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(43, 173, 118, 0.3);
+          }
+
+          .btn-new-icon {
+            font-size: clamp(14px, 1.5vw, 16px);
+            font-weight: bold;
+          }
+
+          /* Button Container */
+          .btn-container {
+            display: flex;
+            gap: clamp(4px, 0.6vw, 6px);
+            align-items: center;
+            justify-content: center;
+          }
+
+          /* Button Styling - smaller sizes */
+          .btn-view,
+          .btn-cancel {
+            background: linear-gradient(135deg, #0b1559, #2bad76);
+            color: white;
+            border: none;
+            padding: clamp(4px, 0.5vw, 5px) clamp(6px, 0.8vw, 8px);
+            border-radius: clamp(3px, 0.4vw, 4px);
+            cursor: pointer;
+            font-size: clamp(8px, 0.85vw, 9px);
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: clamp(2px, 0.4vw, 3px);
+            white-space: nowrap;
+            min-width: clamp(28px, 3.5vw, 36px);
+            height: clamp(24px, 2.8vw, 28px);
+          }
+
+          .btn-cancel {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+          }
+
+          .btn-view:hover {
+            background: linear-gradient(135deg, #2bad76, #0b1559);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transform: translateY(-2px);
+          }
+
+          .btn-cancel:hover {
+            background: linear-gradient(135deg, #c0392b, #a93226);
+            box-shadow: 0 4px 8px rgba(231, 76, 60, 0.4);
+            transform: translateY(-2px);
+          }
+
+          .btn-view:active,
+          .btn-cancel:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+          }
+
+          .btn-view .arrow {
+            display: inline-block;
+            transition: transform 0.3s ease;
+            font-size: clamp(6px, 0.7vw, 8px);
+          }
+
+          .btn-view.expanded .arrow {
+            transform: rotate(180deg);
+          }
+
+          /* Responsive table wrapper - NO SCROLL */
+          .table-wrapper {
+            background: white;
+            border-radius: clamp(8px, 1vw, 12px);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            margin-bottom: clamp(8px, 1.2vw, 10px);
+          }
+
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: clamp(9.5px, 0.95vw, 11px);
+            table-layout: fixed;
+          }
+          
+          .table-header {
+            background: linear-gradient(135deg, #0b1559, #2bad76);
+          }
+          
+          th,
+          td {
+            padding: clamp(5px, 0.75vw, 8px) clamp(3px, 0.5vw, 6px);
+            border: 1px solid #ddd;
+            text-align: left;
+            word-wrap: break-word;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            hyphens: auto;
+          }
+
+          /* Specific column widths for optimal space distribution */
+          th:nth-child(1), td:nth-child(1) { width: 10%; } /* Effective Date */
+          th:nth-child(2), td:nth-child(2) { width: 10%; } /* Expiry Date */
+          th:nth-child(3), td:nth-child(3) { width: 9%; } /* Frequency */
+          th:nth-child(4), td:nth-child(4) { width: 12%; } /* Last Adjustment Date */
+          th:nth-child(5), td:nth-child(5) { width: 10%; } /* Charge Type */
+          th:nth-child(6), td:nth-child(6) { width: 10%; } /* Increase Type */
+          th:nth-child(7), td:nth-child(7) { width: 9%; } /* Flat Amount */
+          th:nth-child(8), td:nth-child(8) { width: 10%; } /* Step Rent % */
+          th:nth-child(9), td:nth-child(9) { width: 20%; } /* Action Buttons */
+
+          th:last-child,
+          td:last-child {
+            text-align: center;
+          }
+
+          th {
+            color: white;
+            font-size: clamp(9px, 0.9vw, 10.5px);
+            font-weight: 600;
+            line-height: 1.2;
+          }
+
+          .no-records-container {
+            background: #fff;
+            border-radius: clamp(8px, 1.2vw, 12px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            padding: clamp(20px, 4vw, 32px) clamp(16px, 3vw, 24px);
+            width: 100%;
+            margin: 5vh auto;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+          }
+
+          .no-records-icon {
+            font-size: clamp(28px, 4.5vw, 48px);
+            color: #d1d5db;
+            margin-bottom: 1rem;
+          }
+
+          .no-records-title {
+            font-size: clamp(16px, 1.8vw, 20px);
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.4rem;
+          }
+
+          .no-records-message {
+            font-size: clamp(13px, 1.4vw, 15px);
+            color: #6b7280;
+            line-height: 1.5;
+            max-width: 90%;
+          }
+
+          .hidden {
+            display: none !important;
+          }
+
+          .no-records {
+            text-align: center;
+            color: #777;
+            margin-top: 20px;
+            font-size: clamp(12px, 1.3vw, 14px);
+          }
+
+          /* History section */
+          .history-section {
+            background: #f9f9f9;
+            padding: clamp(12px, 1.5vw, 16px);
+            border-radius: clamp(6px, 0.8vw, 8px);
+          }
+
+        .history-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(12px, 1.5vw, 16px);
+    margin-bottom: 0;
+    flex: 1;
+  }
+
+        .detail-item {
+    background: white;
+    padding: clamp(5px, 0.85vw, 8px) clamp(3px, 0.6vw, 6px);
+    border-radius: clamp(4px, 0.5vw, 6px);
+    border: 1px solid #ddd;
+    display: flex; /* Add this */
+    align-items: center; /* Add this */
+    gap: 4px; /* Add this - space between label and value */
+  }
+
+        .detail-label {
+    font-size: clamp(8.5px, 0.95vw, 10.5px);
+    color: var(--text-secondary);
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 0; /* Change from 2px to 0 */
+    white-space: nowrap; /* Add this - prevents label from wrapping */
+  }
+
+          .detail-value {
+            font-size: clamp(8.5px, 0.95vw, 10.5px);
+            color: var(--text-primary);
+            font-weight: 500;
+          }
+
+  /* History table - also responsive, NO SCROLL */
+  .history-table {
+    width: 100%;
+    margin: clamp(4px, 0.8vw, 5px) 0 clamp(12px, 1.8vw, 15px) 0;
+    border: 1px solid #ccc;
+    border-radius: clamp(6px, 0.9vw, 8px);
+    background: #fafafa;
+    overflow: visible;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .history-header {
+    background: linear-gradient(135deg, #2bad76, #0b1559);
+    font-weight: bold;
+    color: white;
+  }
+
+  /* Header cells - NO borders */
+  .history-table thead th {
+    padding: clamp(5px, 0.85vw, 8px) clamp(3px, 0.6vw, 6px);
+    font-size: clamp(8.5px, 0.95vw, 10.5px);
+    white-space: nowrap;
+    border: none; /* Remove all borders from headers */
+  }
+
+  .history-table thead th:first-child {
+    border-top-left-radius: clamp(6px, 0.9vw, 8px);
+  }
+
+  .history-table thead th:last-child {
+    border-top-right-radius: clamp(6px, 0.9vw, 8px);
+  }
+
+  /* Data cells - WITH borders */
+  .history-table tbody td {
+    padding: clamp(5px, 0.85vw, 8px) clamp(3px, 0.6vw, 6px);
+    font-size: clamp(8.5px, 0.95vw, 10.5px);
+    border-right: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+    white-space: nowrap;
+  }
+
+  .history-table tbody td:first-child {
+    border-left: 1px solid #ddd;
+  }
+
+  /* First row of data - add top border */
+  .history-table tbody tr:first-child td {
+    border-top: 1px solid #ddd;
+  }
+
+  /* Bottom corners */
+  .history-table tbody tr:last-child td:first-child {
+    border-bottom-left-radius: clamp(6px, 0.9vw, 8px);
+  }
+
+  .history-table tbody tr:last-child td:last-child {
+    border-bottom-right-radius: clamp(6px, 0.9vw, 8px);
+  }
+
+          .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+          }
+
+          .modal-overlay.active {
+            display: flex;
+          }
+
+          .modal-content {
+            background: white;
+            padding: clamp(20px, 3vw, 30px);
+            border-radius: clamp(8px, 1vw, 12px);
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            text-align: center;
+          }
+
+          .modal-title {
+            font-size: clamp(16px, 1.8vw, 18px);
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+          }
+
+          .modal-message {
+            font-size: clamp(13px, 1.2vw, 14px);
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            line-height: 1.5;
+          }
+
+          .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+          }
+
+          .modal-btn {
+            padding: clamp(8px, 1vw, 10px) clamp(16px, 2vw, 20px);
+            border: none;
+            border-radius: clamp(4px, 0.5vw, 6px);
+            cursor: pointer;
+            font-size: clamp(12px, 1.1vw, 13px);
+            font-weight: 600;
+            transition: all 0.3s ease;
+          }
+
+          .modal-btn-confirm {
+            background: var(--danger);
+            color: white;
+          }
+
+          .modal-btn-confirm:hover {
+            background: #8b2025;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(164, 38, 44, 0.3);
+          }
+
+          .modal-btn-cancel {
+            background: #e0e0e0;
+            color: var(--text-primary);
+          }
+
+          .modal-btn-cancel:hover {
+    background: #d0d0d0;
+    transform: translateY(-2px);
+  }
+
+  /* Loading Overlay */
+  .loading-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .loading-overlay.active {
+    display: flex;
+  }
+/* Page Loader - Initial Load */
+#pageLoader {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.95);
+  z-index: 2000;
+  align-items: center;
+  justify-content: center;
+}
+
+#pageLoader.active {
+  display: flex;
+}
+
+#pageLoader .loading-content {
+  background: white;
+}
+  .loading-content {
+    background: white;
+    padding: 30px 40px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+
+  .spinner {
+    width: 50px;
+    height: 50px;
+    margin: 0 auto 20px;
+    border: 4px solid #f3f2f1;
+    border-top: 4px solid #2bad76;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .loading-text {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+  }
+
+  .loading-subtext {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  /* Create Clause Modal Styles */
+
+          /* Create Clause Modal Styles */
+          .create-modal-content {
+            background: white;
+            padding: clamp(24px, 3vw, 32px);
+            border-radius: clamp(8px, 1vw, 12px);
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+          }
+
+          .create-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--border);
+          }
+
+          .create-modal-header h2 {
+            margin: 0;
+            color: var(--primary);
+            font-size: clamp(18px, 2vw, 22px);
+          }
+
+          .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+          }
+
+          .close-btn:hover {
+            background: #f0f0f0;
+            color: var(--text-primary);
+          }
+
+          .form-group {
+            margin-bottom: 20px;
+          }
+
+          .form-label {
+            display: block;
+            font-size: clamp(13px, 1.3vw, 14px);
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+          }
+
+          .form-label.required::after {
+            content: ' *';
+            color: var(--danger);
+          }
+
+          .form-input,
+          .form-select {
+            width: 100%;
+            padding: clamp(8px, 1vw, 10px) clamp(10px, 1.2vw, 12px);
+            border: 2px solid var(--border);
+            border-radius: clamp(4px, 0.5vw, 6px);
+            font-size: clamp(12px, 1.2vw, 14px);
+            color: var(--text-primary);
+            background: white;
+            transition: all 0.2s ease;
+          }
+
+          .form-input:focus,
+          .form-select:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(11, 21, 89, 0.1);
+          }
+
+          .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+          }
+
+          .form-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 2px solid var(--border);
+          }
+
+          .btn-save {
+            background: linear-gradient(135deg, #2bad76, #0b1559);
+            color: white;
+            border: none;
+            padding: clamp(10px, 1.2vw, 12px) clamp(20px, 2.5vw, 24px);
+            border-radius: clamp(4px, 0.5vw, 6px);
+            cursor: pointer;
+            font-size: clamp(13px, 1.3vw, 14px);
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(43, 173, 118, 0.3);
+          }
+
+          .btn-save:hover {
+            background: linear-gradient(135deg, #0b1559, #2bad76);
+            box-shadow: 0 4px 12px rgba(43, 173, 118, 0.4);
+            transform: translateY(-2px);
+          }
+
+          .btn-cancel-form {
+            background: #e0e0e0;
+            color: var(--text-primary);
+            border: none;
+            padding: clamp(10px, 1.2vw, 12px) clamp(20px, 2.5vw, 24px);
+            border-radius: clamp(4px, 0.5vw, 6px);
+            cursor: pointer;
+            font-size: clamp(13px, 1.3vw, 14px);
+            font-weight: 600;
+            transition: all 0.2s ease;
+          }
+
+          .btn-cancel-form:hover {
+            background: #d0d0d0;
+            transform: translateY(-2px);
+          }
+
+          @media (max-width: 768px) {
+            .form-row {
+              grid-template-columns: 1fr;
+            }
+          }
+        /* Info Fact Box - Blue Information Style */
+  .info-fact-box {
+    padding: 16px 18px;
+    border-radius: 8px;
+    background-color: #e3f2fd;
+    border: 1px solid #2196f3;
+    margin-top: 12px;
+    text-align: left;
+  }
+
+  .info-fact-box-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #0d47a1;
+    margin-bottom: 6px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .info-fact-box-label::before {
+    content: "ℹ️";
+    font-size: 14px;
+  }
+
+  .info-fact-box-body {
+    font-size: 10.5px;
+    color: #1565c0;
+    line-height: 1.5;
+  }
+
+  .info-fact-box.warning {
+    background-color: #fff3e0;
+    border-color: #ff9800;
+  }
+
+  .info-fact-box.warning .info-fact-box-label {
+    color: #92400e;
+  }
+
+  .info-fact-box.warning .info-fact-box-label::before {
+    content: "⚠️";
+  }
+
+  .info-fact-box.warning .info-fact-box-body {
+    color: #92400e;
+  }
+
+  .fact-box {
+    padding: 16px 18px;
+    border-radius: 8px;
+    background-color: #fffbeb;
+    border: 1px solid #fbbf24;
+    height: 100%;
+    text-align: left;
+    overflow: hidden;
+    word-wrap: break-word;
+    box-sizing: border-box;
+  }
+
+  .fact-box.warning {
+    background-color: #fff3cd;
+    border-color: #ffc107;
+  }
+
+  .fact-box.info {
+    background-color: #d1ecf1;
+    border-color: #0dcaf0;
+  }
+  
+  .fact-box-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #92400e;
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  
+  .fact-box-body {
+    font-size: 10.5px;
+    color: #92400e;
+    line-height: 1.5;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+  }
+  .history-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 16px;
+    align-items: stretch; /* Makes both columns equal height */
+  }
+  .history-left {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .history-right {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  @media (max-width: 900px) {
+    .history-layout {
+      grid-template-columns: 1fr 1fr; /* Keep side by side */
+      gap: 12px; /* Slightly smaller gap on mobile */
+    }
+    
+    .history-details {
+      grid-template-columns: 1fr 1fr; /* Stack detail items vertically */
+    }
+    
+    .fact-box {
+      padding: 12px 14px;
+      text-align: left; /* Slightly smaller padding on mobile */
+    }
+    
+    .fact-box-label {
+      font-size: 10px;
+    }
+    
+    .fact-box-body {
+      font-size: 11px;
+    }
+  }
+  /* Details Box - Cool Blue (for Step Rent Details) */
+  .details-box {
+    padding: 16px 18px;
+    border-radius: 8px;
+    background-color: #dbeafe;
+    border: 1px solid #3b82f6;
+    height: 100%;
+    text-align: left;
+    overflow: hidden;
+    word-wrap: break-word;
+    box-sizing: border-box;
+  }
+  
+  .details-box-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #1e40af;
+    margin-bottom: 6px;
+    font-weight: 600;
+    word-wrap: break-word;
+  }
+  
+  .details-box-body {
+    font-size: 10.5px;
+    color: #1e3a8a;
+    line-height: 1.5;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+  }
+
+  .details-box-body strong {
+    font-weight: 600;
+    font-size: 10.5px;
+  }
+  .two-column {
+    display: grid;
+    grid-template-columns: 180px auto;
+    row-gap: 6px;
+    column-gap: 10px;
+  }
+      </style>
+
+        <script>
+          const Xrm = window.parent.Xrm || window.opener.Xrm;
+          let leaseId = null;
+          let clauseData = {};
+  let currentRentAmount = null;
+  let currencySymbol = 'EUR';
+let vatRate = null;
+  let globalLeaseStartDate = null;
+  let globalLeaseEndDate = null;
+
+  const RECURRING_CHARGE_CONFIG = {
+    entityName: "array_recurringcharge",
+    leaseAgreementField: "array_leaseagreement",
+    amountField: "array_amount",
+    chargeTypeField: "array_chargetype",
+    statusField: "statecode",
+    currencyField: "transactioncurrencyid"
+  };
+
+// Frequency Definitions
+const FREQUENCY_MONTHS = {
+    '126330000': 1,  // Monthly
+    '126330001': 3,  // Quarterly
+    '126330002': 6,  // Semi-Annually
+    '126330003': 12  // Yearly
+};
+
+// Handle Frequency Change
+function handleFrequencyChange() {
+    // Trigger calculation if dates are already present
+    calculateCycleEndDate();
+}
+
+// Toggle Visibility of Custom Schedule Fields
+ function toggleCycleStartDate() {
+    const enableCustomSchedule = document.getElementById('enableCustomSchedule').value;
+    const container = document.getElementById('cycleDatesContainer');
+    const cycleStartInput = document.getElementById('cycleStartDate');
+    const cycleEndInput = document.getElementById('cycleEndDate');
+    
+    if (enableCustomSchedule === 'yes') {
+        container.style.display = 'block';
+        cycleStartInput.required = true;
+        // Trigger calculation in case data was pre-filled
+        calculateCycleEndDate();
+    } else {
+        container.style.display = 'none';
+        cycleStartInput.required = false;
+        
+        // Clear values when hiding
+        cycleStartInput.value = '';
+        cycleEndInput.value = '';
+    }
+} 
+
+// Calculate Cycle End Date (Start Date + Frequency - 1 Day)
+function calculateCycleEndDate() {
+    // Only calculate if custom schedule is enabled
+    const enableCustom = document.getElementById('enableCustomSchedule');
+    if (!enableCustom || enableCustom.value !== 'yes') return;
+
+    const startDateVal = document.getElementById('cycleStartDate').value;
+    const frequencyVal = document.getElementById('frequency').value;
+    const endDateInput = document.getElementById('cycleEndDate');
+
+    // If missing data, clear the result
+    if (!startDateVal || !frequencyVal || !FREQUENCY_MONTHS[frequencyVal]) {
+        endDateInput.value = '';
+        return;
+    }
+
+    const monthsToAdd = FREQUENCY_MONTHS[frequencyVal];
+    
+    // Create Date object
+    const startDate = new Date(startDateVal);
+    
+    // Create target date and add months
+    const targetDate = new Date(startDate);
+    targetDate.setMonth(startDate.getMonth() + monthsToAdd);
+    
+    // Subtract 1 Day
+    targetDate.setDate(targetDate.getDate() - 1);
+    
+    // Format back to YYYY-MM-DD for the input field
+    endDateInput.value = targetDate.toISOString().split('T')[0];
+}
+  
+  async function fetchCurrentRentAmount(leaseAgreementId, chargeTypeId) {
+      vatRate = null;
+    if (!leaseAgreementId) {
+      return null;
+    }
+
+    try {
+      const cleanLeaseId = leaseAgreementId.replace(/[{}]/g, '');
+      
+      if (!chargeTypeId) {
+        return null;
+      }
+      
+      const cleanChargeTypeId = chargeTypeId.replace(/[{}]/g, '');
+      
+      // Modified fetchXml to retrieve ALL active recurring charges (removed top="1")
+      const fetchXml = `
+        <fetch>
+          <entity name="${RECURRING_CHARGE_CONFIG.entityName}">
+            <attribute name="${RECURRING_CHARGE_CONFIG.amountField}" />
+            <attribute name="${RECURRING_CHARGE_CONFIG.currencyField}" />
+            <attribute name="array_vat" />
+            <filter type="and">
+              <condition attribute="${RECURRING_CHARGE_CONFIG.leaseAgreementField}" operator="eq" value="${cleanLeaseId}" />
+              <condition attribute="${RECURRING_CHARGE_CONFIG.statusField}" operator="eq" value="0" />
+              <condition attribute="${RECURRING_CHARGE_CONFIG.chargeTypeField}" operator="eq" value="${cleanChargeTypeId}" />
+            </filter>
+            <order attribute="createdon" descending="true" />
+          </entity>
+        </fetch>
+      `;
+
+      const result = await Xrm.WebApi.retrieveMultipleRecords(
+        RECURRING_CHARGE_CONFIG.entityName,
+        "?fetchXml=" + encodeURIComponent(fetchXml)
+      );
+
+      if (result && result.entities && result.entities.length > 0) {
+  let totalAmount = 0;
+  let currencyId = null;
+  let vatId = null;  // ADD THIS
+
+  result.entities.forEach(entity => {
+    const amount = entity[RECURRING_CHARGE_CONFIG.amountField];
+    if (amount !== null && amount !== undefined) {
+      totalAmount += amount;
+    }
+    if (!currencyId && entity[`_${RECURRING_CHARGE_CONFIG.currencyField}_value`]) {
+      currencyId = entity[`_${RECURRING_CHARGE_CONFIG.currencyField}_value`];
+    }
+    // STORE VAT LOOKUP ID
+    if (!vatId && entity['_array_vat_value']) {
+      vatId = entity['_array_vat_value'];
+    }
+  });
+
+  if (currencyId) {
+    await fetchCurrencySymbol(currencyId);
+  }
+
+  // FETCH VAT RATE SEPARATELY USING THE LOOKUP ID
+  if (vatId) {
+    try {
+      const cleanVatId = vatId.replace(/[{}]/g, '');
+      const vatRecord = await Xrm.WebApi.retrieveRecord(
+        'array_vat',          // entity name of the VAT lookup target
+        cleanVatId,
+        '?$select=array_name' // primary name field that holds the rate number e.g. "21"
+      );
+      if (vatRecord && vatRecord.array_name) {
+        const parsed = parseFloat(vatRecord.array_name);
+        if (!isNaN(parsed)) vatRate = parsed;
+      }
+    } catch (e) {
+      vatRate = null;
+    }
+  }
+
+  return totalAmount;
+} else {
+        return null;
+      }
+    } catch (error) {
+      return null;
+    }
+  }
+
+  //Fetch both Start and End dates from Lease Agreement
+async function fetchLeaseDetails(leaseId) {
+    if (!leaseId) return;
+    try {
+        const result = await Xrm.WebApi.retrieveRecord(
+            "array_leaseagreement",
+            leaseId.replace(/[{}]/g, ""),
+            "?$select=array_leasestartdate,array_leaseenddate"
+        );
+        globalLeaseStartDate = result.array_leasestartdate;
+        globalLeaseEndDate = result.array_leaseenddate;
+    } catch (error) {
+        console.error("Error fetching lease details:", error);
+    }
+}
+
+  async function fetchCurrencySymbol(currencyId) {
+    if (!currencyId) {
+      return;
+    }
+
+    try {
+      const cleanId = currencyId.replace(/[{}]/g, '');
+      
+      const currency = await Xrm.WebApi.retrieveRecord(
+        "transactioncurrency",
+        cleanId,
+        "?$select=isocurrencycode,currencysymbol"
+      );
+      
+      if (currency) {
+        currencySymbol = currency.currencysymbol || currency.isocurrencycode || 'EUR';
+      }
+    } catch (error) {
+      currencySymbol = 'EUR';
+    }
+  }
+
+function formatCurrency(amount) {
+  if (amount === null || amount === undefined) return "Not Set";
+  try {
+    const formatter = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const sym = currencySymbol;
+    const base = sym + formatter.format(amount);
+
+    if (vatRate !== null && !isNaN(vatRate) && vatRate > 0) {
+      const tax = amount * (vatRate / 100);
+      return base + " + " + sym + formatter.format(tax) + " VAT";
+    }
+    return base;
+  } catch (error) {
+    return `${currencySymbol}${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+}
+
+
+  function calculateNewRent(currentAmount, increaseType, flatAmount, percentage) {
+    if (currentAmount === null || currentAmount === undefined) return null;
+    
+    if (increaseType === "Flat" && flatAmount !== null && flatAmount !== undefined) {
+      return currentAmount + flatAmount;
+    } else if (increaseType === "Percentage" && percentage !== null && percentage !== undefined) {
+      return currentAmount + (currentAmount * percentage / 100);
+    }
+    
+    return null;
+  }
+
+
+          // Load step rents with filter mode
+          async function loadStepRents(mode = 'active') {
+            const tbody = document.getElementById("stepRentBody");
+            tbody.innerHTML = `<tr><td colspan="9" class="no-records">Loading...</td></tr>`;
+
+            if (!leaseId) {
+              tbody.innerHTML = `<tr><td colspan="9" class="no-records">Lease ID not provided.</td></tr>`;
+              return;
+            }
+
+            try {
+              let statusFilter = '';
+              if (mode === 'active')       statusFilter = ' and statuscode eq 1';
+              else if (mode === 'inactive') statusFilter = ' and statuscode eq 2';
+
+            
+            const query =
+            `?$select=array_leaseclauseid,array_clausetitle,_array_clausetype_value,array_effectivedate,array_expirydate,array_lastadjustmentdate,array_steprentfrequency,_array_chargetypestepincrease_value,array_increasetype,array_flatamount,array_steprentpercentage,array_lastadjustmentdatesteprent,array_steprentstartdate,array_steprentenddate,array_steprentcyclestartdate,array_nexttriggerdate,array_enablecustomsteprentschedule,statuscode
+                &$filter=_array_leaseagreement_value eq ${leaseId}${statusFilter}
+                &$orderby=array_effectivedate desc`;
+
+
+
+              const result = await Xrm.WebApi.retrieveMultipleRecords("array_leaseclause", query);
+
+              const steprent = result.entities.filter(
+                (record) =>
+                  record["_array_clausetype_value@OData.Community.Display.V1.FormattedValue"] === "Step Rent Indexation"
+              );
+
+              tbody.innerHTML = "";
+
+              if (steprent.length === 0) {
+                document.querySelector(".table-wrapper").classList.add("hidden");
+                document.getElementById("noRecordsContainer").classList.remove("hidden");
+                updateEmptyStateMessage(mode);
+                return;
+              } else {
+                document.querySelector(".table-wrapper").classList.remove("hidden");
+                document.getElementById("noRecordsContainer").classList.add("hidden");
+              }
+
+              steprent.forEach((clause) => {
+                clauseData[clause.array_leaseclauseid] = clause;
+                const row = document.createElement("tr");
+
+                const clausefrequency =
+                  clause["array_steprentfrequency@OData.Community.Display.V1.FormattedValue"] ?? "—";
+                const ClauseIncreaseType =
+                  clause["array_increasetype@OData.Community.Display.V1.FormattedValue"] ?? "—";
+                const flatamount =
+                  clause["array_flatamount@OData.Community.Display.V1.FormattedValue"] ?? "—";
+                const chargetype =
+                  clause["_array_chargetypestepincrease_value@OData.Community.Display.V1.FormattedValue"] ?? "—";
+
+                // Store reference to clause ID for event handlers
+                const clauseIdForHandlers = clause.array_leaseclauseid;
+                
+                row.innerHTML = `
+                  <td>${formatDate(clause.array_effectivedate)}</td>
+                  <td>${formatDate(clause.array_expirydate)}</td>
+                  <td>${clausefrequency}</td>
+                  <td>${formatDate(clause.array_lastadjustmentdatesteprent)}</td>
+                  <td>${chargetype}</td>
+                  <td>${ClauseIncreaseType}</td>
+                  <td>${ClauseIncreaseType === "Flat" && clause.array_flatamount != null ? flatamount : '-'}</td>
+                  <td>${ClauseIncreaseType !== "Flat" && clause.array_steprentpercentage != null ? clause.array_steprentpercentage + '%' : '-'}</td>
+                  <td>
+                    <div class="btn-container">
+                      <button type="button" class="btn-view" data-clause-id="${clauseIdForHandlers}">
+                        <span class="arrow">▼</span>
+                      </button>
+                      <button type="button" class="btn-cancel" data-clause-id="${clauseIdForHandlers}">
+                        ✕
+                      </button>
+                    </div>
+                  </td>
+                `;
+                
+                // Add event listeners after creating the row
+                const viewBtn = row.querySelector('.btn-view');
+                const cancelBtn = row.querySelector('.btn-cancel');
+                
+                viewBtn.addEventListener('click', function(e) {
+                  e.stopPropagation();
+                  toggleHistory(clauseIdForHandlers, this);
+                });
+                
+                cancelBtn.addEventListener('click', function(e) {
+                  e.stopPropagation();
+                  showCancelConfirmation(clauseIdForHandlers);
+                });
+
+                const historyRow = document.createElement("tr");
+                historyRow.classList.add("hidden");
+                historyRow.id = `history-row-${clause.array_leaseclauseid}`;
+                historyRow.innerHTML = `
+                  <td colspan="9" id="history-${clause.array_leaseclauseid}">
+                    <div class="no-records">Click to load history...</div>
+                  </td>`;
+
+                tbody.appendChild(row);
+                tbody.appendChild(historyRow);
+              });
+
+            } catch (error) {
+              tbody.innerHTML = `<tr><td colspan="9" class="no-records">Error loading clauses.</td></tr>`;
+            }
+          }
+          
+          // Update header title based on filter mode
+          function updateHeaderTitleByFilter(mode) {
+            const h1 = document.querySelector('.header h1');
+            if (!h1) return;
+
+            const hasIcon = h1.querySelector('i');
+            let titleText = 'All Step Increase Clauses';
+            
+            if (mode === 'inactive') {
+              titleText = 'Inactive Step Increase Clauses';
+            }else if (mode === 'active') {
+    titleText = 'Active Step Increase Clauses';
+    }if (hasIcon) {
+          h1.innerHTML = `${hasIcon.outerHTML} ${titleText}`;
+        } else {
+          h1.textContent = titleText;
+        }
+      }
+
+      // Update empty state message based on filter mode
+      function updateEmptyStateMessage(mode) {
+        const titleElement = document.querySelector('.no-records-title');
+        const messageElement = document.querySelector('.no-records-message');
+        
+        if (mode === 'inactive') {
+          titleElement.textContent = 'No Inactive Step Increase';
+          messageElement.textContent = 'There are no inactive step increase clauses available for this lease agreement at the moment.';
+        } else if (mode === 'active') {
+          titleElement.textContent = 'No Active Step Increase';
+          messageElement.textContent = 'There are no active step increase clauses available for this lease agreement at the moment.';
+        } else {
+          titleElement.textContent = 'No Step Increase Clauses';
+          messageElement.textContent = 'There are no step increase clauses available for this lease agreement at the moment.';
+        }
+      }
+
+      // Reload data based on filter selection
+      function reloadStepRentsByFilter() {
+        const ddl = document.getElementById('clauseStatusFilter');
+        const mode = ddl ? ddl.value : 'active';
+        updateHeaderTitleByFilter(mode);
+        loadStepRents(mode);
+      }
+      
+      // Set initial title on load
+      window.addEventListener('load', () => {
+        const ddl = document.getElementById('clauseStatusFilter');
+        const initialMode = ddl ? ddl.value : 'active';
+        updateHeaderTitleByFilter(initialMode);
+      });
+
+      // Show cancel confirmation modal
+      function showCancelConfirmation(clauseId) {
+        const modal = document.getElementById('confirmationModal');
+        modal.classList.add('active');
+        
+        const confirmBtn = modal.querySelector('.modal-btn-confirm');
+        confirmBtn.onclick = () => {
+          cancelClause(clauseId);
+          modal.classList.remove('active');
+        };
+
+        const cancelBtn = modal.querySelector('.modal-btn-cancel');
+        cancelBtn.onclick = () => {
+          modal.classList.remove('active');
+        };
+      }
+  async function cancelClause(clauseId) {
+    try {
+      const updateData = {
+        statecode: 1,
+        statuscode: 2
+      };
+
+      await Xrm.WebApi.updateRecord("array_leaseclause", clauseId, updateData);
+      
+      // Reload the web resource data
+      //reloadStepRentsByFilter();
+      
+      // ✨ Refresh both lease clause subgrids
+    // await refreshLeaseClauseSubgrid();
+      
+    } catch (error) {
+      alert("Error deactivating clause. Please try again.");
+    }
+  }
+
+      // Toggle history visibility
+      async function toggleHistory(clauseId, button) {
+    const historyRow = document.getElementById(`history-row-${clauseId}`);
+    
+    if (!historyRow) {
+      return;
+    }
+
+    const currentlyVisible = !historyRow.classList.contains("hidden");
+    
+    if (currentlyVisible) {
+      historyRow.classList.add("hidden");
+      button.classList.remove('expanded');
+      return;
+    }
+
+    historyRow.classList.remove("hidden");
+    button.classList.add('expanded');
+
+    const container = document.getElementById(`history-${clauseId}`);
+    container.innerHTML = `<div class="no-records">Loading history...</div>`;
+
+    try {
+      const clauseInfo = clauseData[clauseId];
+      
+      // Fetch current rent amount for this clause
+      const chargeTypeId = clauseInfo._array_chargetypestepincrease_value;
+      currentRentAmount = await fetchCurrentRentAmount(leaseId, chargeTypeId);
+      
+  const result = await Xrm.WebApi.retrieveMultipleRecords(
+    "array_steprenthistory",
+    `?$select=array_steprenthistoryid,array_effectivefromdate,array_historyid,_array_recurringcharge_value,array_appliedrentamount,array_previousrentamount,_array_unit_value,array_effectivetodate,statuscode,_transactioncurrencyid_value&$expand=array_RecurringCharge($select=array_chargename)&$filter=_array_leaseclause_value eq '${clauseId}'&$orderby=array_appliedrentamount desc`
+  );
+
+      let html = `<div class="history-section">`;
+      html += `<div class="history-layout">`;
+      html += `<div class="history-left">`;
+
+      // Inside toggleHistory(clauseId, button)...
+
+      if (clauseInfo) {
+        // 1. Use Clause Effective/Expiry dates for the main labels (as per correction)
+        const Steprentstartdate = formatDate(clauseInfo.array_effectivedate);
+        const steprentenddate = formatDate(clauseInfo.array_expirydate);
+        
+        // Keep next trigger date
+        const nexttriggerdate = clauseInfo["array_nexttriggerdate@OData.Community.Display.V1.FormattedValue"] ?? formatDate(clauseInfo["array_nexttriggerdate"]) ?? "—";
+        
+        // 2. Custom Schedule Logic
+        const isCustomSchedule = clauseInfo.array_enablecustomsteprentschedule;
+        const customScheduleDisplay = isCustomSchedule ? "Yes" : "No";
+
+        html += `
+        <div class="details-box">
+          <div class="details-box-label" style="font-weight: bold;">Step Rent Details</div>
+          <div class="details-box-body two-column">
+            <div>Step Rent Start Date:</div><div><strong>${Steprentstartdate}</strong></div>
+            <div>Step Rent End Date:</div><div><strong>${steprentenddate}</strong></div>
+            <div>Custom Schedule:</div><div><strong>${customScheduleDisplay}</strong></div>
+        `;
+
+        // 3. Show extra fields if Custom Schedule is Yes
+        if (isCustomSchedule) {
+            const cycleStartDate = clauseInfo["array_steprentcyclestartdate@OData.Community.Display.V1.FormattedValue"] ?? formatDate(clauseInfo["array_steprentcyclestartdate"]) ?? "—";
+            // Use the specific step rent end date field here
+            const customEndDate = clauseInfo["array_steprentenddate@OData.Community.Display.V1.FormattedValue"] ?? formatDate(clauseInfo["array_steprentenddate"]) ?? "—";
+
+            html += `
+            <div>Cycle Start Date:</div><div><strong>${cycleStartDate}</strong></div>
+            <div>Cycle End Date:</div><div><strong>${customEndDate}</strong></div>
+            `;
+        }
+
+        html += `
+          </div>
+        </div>
+        `;
+      }
+
+      html += `</div>`;
+      html += `<div class="history-right">`;
+      
+      // ==========================================
+      // THIS IS THE KEY INTEGRATION - Updated Fact Box with Calculations
+      // ==========================================
+      
+      const increaseType = clauseInfo["array_increasetype@OData.Community.Display.V1.FormattedValue"];
+      const flatAmount = clauseInfo.array_flatamount;
+      const percentage = clauseInfo.array_steprentpercentage;
+      const frequency = clauseInfo["array_steprentfrequency@OData.Community.Display.V1.FormattedValue"];
+      
+      // Calculate the new rent amount
+      const newRentAmount = calculateNewRent(currentRentAmount, increaseType, flatAmount, percentage);
+      
+  // Build the increase display text
+  let increaseText = '';
+  if (increaseType === "Flat" && flatAmount !== null) {
+    increaseText = formatCurrency(flatAmount);
+  } else if (increaseType === "Percentage" && percentage !== null) {
+    increaseText = percentage + '%';
+  } else {
+    increaseText = '—';
+  }
+
+  // Create First line content
+  let FirstLine = '';
+  if (currentRentAmount !== null) {
+    FirstLine = `Step rent adjustment applies to charge type (<strong>${clauseInfo["_array_chargetypestepincrease_value@OData.Community.Display.V1.FormattedValue"]}</strong>) occurring <strong>${frequency}</strong> on a <strong>${increaseText}</strong> increase.`;
+  }
+
+  // Create second line for fact box
+  let SecondLine = '';
+  if (currentRentAmount !== null && newRentAmount !== null) {
+    SecondLine = `Current Amount: <strong>${formatCurrency(currentRentAmount)}</strong> | 
+    New Amount: <strong>${formatCurrency(newRentAmount)}</strong>`;
+  } else if (currentRentAmount !== null) {
+    SecondLine = `Current Amount: <strong>${formatCurrency(currentRentAmount)}</strong>`;
+  } else {
+    SecondLine = `Current Amount: <strong>${formatCurrency(currentRentAmount)}</strong>`;
+  }
+
+  // Create the last line for info card 
+  let LastLine = `Effective: ${formatDate(clauseInfo.array_effectivedate)} → ${formatDate(clauseInfo.array_expirydate)} `;
+
+  // Merge all the lines to a single variable
+  let finalText = `
+  ${FirstLine} <br>
+  ${SecondLine} <br>
+  ${LastLine}
+  `;
+
+  // Show the info card content in html div
+  html += `
+    <div class="fact-box">
+      <div class="fact-box-label" style="font-weight: bold;">Note:</div>
+      <div class="fact-box-body">
+        ${finalText}
+      </div>
+    </div>
+  `;
+      
+      html += `</div>`;
+      html += `</div>`;
+
+      // Continue with the history table
+      if (result.entities.length === 0) {
+        html += `<div class="no-records">No history records found for this clause.</div>`;
+      } else {
+        html += `
+          <table class="history-table">
+            <thead>
+              <tr class="history-header">
+                <th>Effective From Date</th>
+                <th>Effective To Date</th>
+                <th>Applied Amount</th>
+                <th>Previous Amount</th>
+                <th>Recurring Charge</th>
+              </tr>
+            </thead>
+            <tbody>
+        `;
+
+  result.entities.forEach((h) => {
+    const RecurringChargeName = h.array_RecurringCharge?.array_chargename ?? h["_array_recurringcharge_value@OData.Community.Display.V1.FormattedValue"] ?? "—";
+    const RecurringChargeId = h._array_recurringcharge_value;
+    const PreviousAmount = h["array_previousrentamount@OData.Community.Display.V1.FormattedValue"] ?? "—";
+    const AppliedAmount = h["array_appliedrentamount@OData.Community.Display.V1.FormattedValue"] ?? "—";
+
+    // Create hyperlink for recurring charge if ID exists
+    let RecurringChargeDisplay = RecurringChargeName;
+    if (RecurringChargeId) {
+      RecurringChargeDisplay = `<a href="#" onclick="openRecurringChargeRecord('${RecurringChargeId}'); return false;" style="color: #0b1559; text-decoration: underline; cursor: pointer;">${RecurringChargeName}</a>`;
+    }
+
+    html += `
+      <tr>
+        <td>${formatDate(h.array_effectivefromdate)}</td>
+        <td>${formatDate(h.array_effectivetodate)}</td>
+        <td>${AppliedAmount}</td>
+        <td>${PreviousAmount}</td>
+        <td>${RecurringChargeDisplay}</td>
+      </tr>`;
+  });
+
+        html += `</tbody></table>`;
+      }
+
+      html += `</div>`;
+      container.innerHTML = html;
+    } catch (error) {
+      container.innerHTML = `<div class="no-records">Error loading history data.</div>`;
+    }
+  }
+      // Format date helper
+      function formatDate(dateStr) {
+        if (!dateStr) return "—";
+        const d = new Date(dateStr);
+        return d.toLocaleDateString();
+      }
+      // Open recurring charge record
+  function openRecurringChargeRecord(recurringChargeId) {
+    if (!recurringChargeId) {
+      return;
+    }
+    
+    try {
+      const cleanId = recurringChargeId.replace(/[{}]/g, '');
+      
+      // Open the form in a new window
+      Xrm.Navigation.openForm({
+        entityName: "array_recurringcharge",
+        entityId: cleanId,
+        openInNewWindow: true
+      }).then(
+        function success() {
+        },
+        function error(err) {
+        // alert("Unable to open the recurring charge record.");
+        }
+      );
+    } catch (error) {
+      alert("An error occurred while trying to open the record.");
+    }
+  }
+  // Refresh both lease clause subgrids in the parent form
+  async function refreshLeaseClauseSubgrid() {
+    try {
+      // Access parent form context
+      let parentFormContext = null;
+      
+      // Try different ways to access parent Xrm
+      if (window.parent && window.parent.Xrm && window.parent.Xrm.Page) {
+        parentFormContext = window.parent.Xrm.Page;
+      } else if (window.top && window.top.Xrm && window.top.Xrm.Page) {
+        parentFormContext = window.top.Xrm.Page;
+      }
+      
+      if (!parentFormContext) {
+        return;
+      }
+      
+      // Array of subgrid control names to refresh
+      const subgridNames = ['Subgrid_new_4', 'Subgrid_new_7','Subgrid_new_16'];
+      
+      let refreshedCount = 0;
+      
+      // Loop through and refresh each subgrid
+      subgridNames.forEach(subgridName => {
+        const subgridControl = parentFormContext.getControl(subgridName);
+        
+        if (subgridControl) {
+   
+          
+          // Refresh the subgrid
+          subgridControl.refresh();
+          refreshedCount++;
+        } else {
+        }
+      });
+      
+      if (refreshedCount > 0) {
+
+      } else {
+
+      }
+      
+    } catch (error) {
+    }
+  }
+
+async function openQuickCreate() {
+    if (!leaseId) {
+      alert("Lease ID is not available.");
+      return;
+    }
+    
+    closeSuccessModal();
+    const form = document.getElementById('createClauseForm');
+    form.reset();
+    
+    // Auto-populate Title
+    try {
+        const generatedTitle = await generateLeaseClauseName(leaseId, "Step Rent Indexation", null);
+        if (generatedTitle) document.getElementById('clauseTitle').value = generatedTitle;
+    } catch (error) { console.error(error); }
+    
+    // Auto-populate Effective Date with Lease Start Date
+    if (globalLeaseStartDate) {
+        document.getElementById('effectiveDate').value = globalLeaseStartDate.split('T')[0];
+    }
+    
+    // Auto-populate Expiry Date with Lease End Date
+    if (globalLeaseEndDate) {
+        document.getElementById('expiryDate').value = globalLeaseEndDate.split('T')[0];
+    }
+    
+    // Apply date constraints based on lease dates
+    setupDateConstraints();
+    
+    // Reset Custom Schedule UI
+    document.getElementById('cycleDatesContainer').style.display = 'none';
+    document.getElementById('cycleEndDate').value = '';
+    
+    // Reset dynamic fields
+    document.getElementById('flatAmountField').style.display = 'none';
+    document.getElementById('percentageField').style.display = 'none';
+    document.getElementById('flatAmount').required = false;
+    document.getElementById('percentage').required = false;
+    
+    // Open Modal
+    const modal = document.getElementById('createClauseModal');
+    modal.classList.add('active');
+}
+
+function setupDateConstraints() {
+    const effectiveDateInput = document.getElementById('effectiveDate');
+    const expiryDateInput    = document.getElementById('expiryDate');
+
+    // Derive boundary strings (YYYY-MM-DD)
+    const leaseStart = globalLeaseStartDate ? globalLeaseStartDate.split('T')[0] : null;
+    const leaseEnd   = globalLeaseEndDate   ? globalLeaseEndDate.split('T')[0]   : null;
+
+    // --- Effective Date ---
+    // User may pick any date >= lease start date
+    if (leaseStart) {
+        effectiveDateInput.min = leaseStart;
+    } else {
+        effectiveDateInput.removeAttribute('min');
+    }
+    effectiveDateInput.removeAttribute('max'); // no upper cap on effective date itself
+
+    // --- Expiry Date ---
+    // Initial state: must be after the current effective date value, and <= lease end
+    function refreshExpiryConstraints() {
+        const currentEffective = effectiveDateInput.value;
+
+        // min = day after the chosen effective date (or lease start if nothing chosen yet)
+        if (currentEffective) {
+            // Add 1 day to the effective date
+            const effDate   = new Date(currentEffective);
+            effDate.setDate(effDate.getDate() + 1);
+            const minExpiry = effDate.toISOString().split('T')[0];
+            expiryDateInput.min = minExpiry;
+
+            // If the currently selected expiry is now invalid, clear it
+            if (expiryDateInput.value && expiryDateInput.value <= currentEffective) {
+                expiryDateInput.value = '';
+            }
+        } else if (leaseStart) {
+            expiryDateInput.min = leaseStart;
+        } else {
+            expiryDateInput.removeAttribute('min');
+        }
+
+        // max = lease end date (cannot exceed)
+        if (leaseEnd) {
+            expiryDateInput.max = leaseEnd;
+
+            // If the currently selected expiry exceeds lease end, clamp it
+            if (expiryDateInput.value && expiryDateInput.value > leaseEnd) {
+                expiryDateInput.value = leaseEnd;
+            }
+        } else {
+            expiryDateInput.removeAttribute('max');
+        }
+    }
+
+    // Run immediately to set the initial state
+    refreshExpiryConstraints();
+
+    // Re-run whenever the user changes the effective date
+    // Use a named handler so we can safely replace it each time the modal opens
+    effectiveDateInput.onchange = function () {
+        refreshExpiryConstraints();
+    };
+}
+
+// Update clause title when charge type changes
+async function updateClauseTitleOnChargeTypeChange() {
+    const chargeTypeId = document.getElementById('chargeType').value;
+    
+    if (chargeTypeId && leaseId) {
+        try {
+            const generatedTitle = await generateLeaseClauseName(
+                leaseId,
+                "Step Rent Indexation",
+                chargeTypeId
+            );
+            
+            if (generatedTitle) {
+                document.getElementById('clauseTitle').value = generatedTitle;
+            }
+        } catch (error) {
+            console.error("Error updating clause title:", error);
+        }
+    } else if (leaseId) {
+        // If charge type is cleared, regenerate without it
+        try {
+            const generatedTitle = await generateLeaseClauseName(
+                leaseId,
+                "Step Rent Indexation",
+                null
+            );
+            
+            if (generatedTitle) {
+                document.getElementById('clauseTitle').value = generatedTitle;
+            }
+        } catch (error) {
+            console.error("Error updating clause title:", error);
+        }
+    }
+    
+    // Also handle the existing charge type change logic (for currency info)
+    const increaseType = document.getElementById('increaseType').value;
+    if (increaseType === '126330000') { // Only if Flat is selected
+        showFlatIncreaseInfoForStepRent();
+    }
+}
+    // Close create modal
+  async function closeCreateModal() {
+    // Close success modal if it's open
+    closeSuccessModal();
+    
+    const modal = document.getElementById('createClauseModal');
+    modal.classList.remove('active');
+    
+    // Reset form
+    const form = document.getElementById('createClauseForm');
+    form.reset();
+    
+    // Set Effective Date to today after reset
+    const today = new Date().toISOString().split('T')[0];
+    const effDateInput = document.getElementById('effectiveDate');
+    if(effDateInput) effDateInput.value = today;
+    
+    // Re-populate Step Rent End Date after reset
+    await populateStepRentEndDate();
+    
+    // Reset all dynamic fields
+    document.getElementById('flatAmountField').style.display = 'none';
+    document.getElementById('percentageField').style.display = 'none';
+    document.getElementById('customScheduleField').style.display = 'none';
+    document.getElementById('cycleStartDateField').style.display = 'none';
+    document.getElementById('flatIncreaseInfoBox').style.display = 'none'; // NEW
+    
+    // Clear required attributes
+    document.getElementById('flatAmount').required = false;
+    document.getElementById('percentage').required = false;
+    document.getElementById('cycleStartDate').required = false;
+    
+    // Clear stored override data
+    existingClauseToOverride = null;
+    pendingFormData = null;
+  }
+  // Store the existing clause ID and form data for override
+  let existingClauseToOverride = null;
+  let pendingFormData = null;
+
+  // Check if clause with same charge type exists
+  async function checkExistingChargeType(chargeTypeId) {
+    if (!chargeTypeId || !leaseId) return null;
+    
+    try {
+      const cleanLeaseId = leaseId.replace(/[{}]/g, '');
+      const cleanChargeTypeId = chargeTypeId.replace(/[{}]/g, '');
+      
+      const fetchXml = `
+        <fetch top="1">
+          <entity name="array_leaseclause">
+            <attribute name="array_leaseclauseid" />
+            <attribute name="array_effectivedate" />
+            <attribute name="array_clausetitle" />
+            <filter type="and">
+              <condition attribute="array_leaseagreement" operator="eq" value="${cleanLeaseId}" />
+              <condition attribute="array_chargetypestepincrease" operator="eq" value="${cleanChargeTypeId}" />
+              <condition attribute="statecode" operator="eq" value="0" />
+              <condition attribute="statuscode" operator="eq" value="1" />
+            </filter>
+            <link-entity name="array_clausetype" from="array_clausetypeid" to="array_clausetype" alias="ct">
+              <filter>
+                <condition attribute="array_clausetypename" operator="eq" value="Step Rent Indexation" />
+              </filter>
+            </link-entity>
+            <order attribute="createdon" descending="true" />
+          </entity>
+        </fetch>
+      `;
+
+      const result = await Xrm.WebApi.retrieveMultipleRecords(
+        "array_leaseclause",
+        "?fetchXml=" + encodeURIComponent(fetchXml)
+      );
+
+      if (result && result.entities && result.entities.length > 0) {
+        return result.entities[0];
+      }
+      
+      return null;
+    } catch (error) {
+      return null;
+    }
+  }
+  // Show override confirmation modal
+  function showOverrideModal(existingClause, formData) {
+    
+    if (!existingClause || !formData) {
+      alert("Error: Invalid data for override operation");
+      return;
+    }
+    
+    if (!existingClause.array_leaseclauseid) {
+      alert("Error: Existing clause data is incomplete");
+      return;
+    }
+    
+    existingClauseToOverride = existingClause;
+    pendingFormData = formData;    
+    const modal = document.getElementById('overrideClauseModal');
+    const messageDiv = document.getElementById('overrideMessage');
+    
+    const effectiveDate = existingClause.array_effectivedate 
+      ? formatDate(existingClause.array_effectivedate) 
+      : 'Unknown';
+    
+    const clauseTitle = existingClause.array_clausetitle || 'Untitled Clause';
+    
+    messageDiv.innerHTML = `
+      An active step increase clause already exists for this charge type: <strong>${clauseTitle}</strong> (Effective: ${effectiveDate}). 
+      Overriding will deactivate the existing clause and set its expiry date to today. Do you want to proceed?
+    `;
+    
+    modal.classList.add('active');
+  }
+
+  // Close override modal
+  function closeOverrideModal() {
+    const modal = document.getElementById('overrideClauseModal');
+    modal.classList.remove('active');
+    existingClauseToOverride = null;
+    pendingFormData = null;
+  }
+  // Show success modal
+  function showSuccessModal(message) {
+    const modal = document.getElementById('successModal');
+    const messageDiv = document.getElementById('successMessage');
+    messageDiv.textContent = message;
+    modal.classList.add('active');
+  }
+  // Close success modal and close dialog after longer delay
+  function closeSuccessModal() {
+    const modal = document.getElementById('successModal');
+    if (modal) {
+      modal.classList.remove('active');
+    }
+    
+    const createModal = document.getElementById('createClauseModal');
+    if (createModal) {
+      createModal.classList.remove('active');
+    }
+    
+    // Close dialog after 2 seconds (gives time for refresh to complete)
+    setTimeout(() => {
+      try {
+        if (window.parent?.Xrm?.Navigation?.closeDialog) {
+          window.parent.Xrm.Navigation.closeDialog();
+        }
+      } catch (err) {
+      }
+    }, 2000); // 2 seconds delay
+  }
+  // Show loading overlay
+  function showLoadingOverlay(message = 'Processing...') {
+    const overlay = document.getElementById('loadingOverlay');
+    const loadingText = document.getElementById('loadingText');
+    if (overlay && loadingText) {
+      loadingText.textContent = message;
+      overlay.classList.add('active');
+    }
+  }
+
+  // Hide loading overlay
+  function hideLoadingOverlay() {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) {
+      overlay.classList.remove('active');
+    }
+  }
+  // Hide page loader and show content
+function hidePageLoader() {
+  const pageLoader = document.getElementById('pageLoader');
+  const mainContent = document.getElementById('mainContent');
+  
+  if (pageLoader) {
+    pageLoader.classList.remove('active');
+  }
+  if (mainContent) {
+    mainContent.style.display = 'block';
+  }
+}
+  // Confirm override and deactivate existing clause
+  async function confirmOverride() {
+    // Store in local variables to prevent losing reference
+    const clauseToOverride = existingClauseToOverride;
+    const formData = pendingFormData;
+   
+    if (!clauseToOverride || !formData) {
+      alert("Error: Missing required data for override operation. Please try again.");
+      closeOverrideModal();
+      return;
+    }
+    
+    if (!clauseToOverride.array_leaseclauseid) {
+      alert("Error: Clause ID is missing. Please try again.");
+      closeOverrideModal();
+      return;
+    }
+    
+    // Close override modal and show loading
+    closeOverrideModal();
+    showLoadingOverlay('Overriding existing clause...');
+    
+    try {
+          
+      // Get today's date in ISO format
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Deactivate existing clause and set expiry date to today
+      const updateData = {
+        statecode: 1,
+        statuscode: 2,
+        array_expirydate: today
+      };
+      
+      await Xrm.WebApi.updateRecord(
+        "array_leaseclause",
+        clauseToOverride.array_leaseclauseid,
+        updateData
+      );
+
+      await createNewClause(formData);
+
+      // Clear the stored data
+      existingClauseToOverride = null;
+      pendingFormData = null;
+
+      // Close modals and hide loading after successful creation
+      hideLoadingOverlay();
+      showSuccessModal("Existing clause overridden and new clause created successfully!");
+
+    } catch (error) {
+      hideLoadingOverlay();
+      alert("Error overriding existing clause: " + error.message);
+      
+      // Clear the stored data on error too
+      existingClauseToOverride = null;
+      pendingFormData = null;
+    }
+  }
+  // Extracted clause creation logic
+  async function createNewClause(newClause) {
+    try {
+      
+      if (!newClause.array_effectivedate) {
+        throw new Error("Effective date is required");
+      }
+      if (!newClause.array_steprentfrequency) {
+        throw new Error("Frequency is required");
+      }
+      if (!newClause.array_increasetype) {
+        throw new Error("Increase type is required");
+      }
+      if (!newClause["array_ClauseType@odata.bind"]) {
+        throw new Error("Clause type binding is required");
+      }
+      if (!newClause["array_LeaseAgreement@odata.bind"]) {
+        throw new Error("Lease agreement binding is required");
+      }
+
+      
+      const result = await Xrm.WebApi.createRecord("array_leaseclause", newClause);
+      // Reset the form immediately after successful creation
+      const form = document.getElementById('createClauseForm');
+      if (form) {
+        form.reset();
+      }
+      
+      // Reload the web resource data
+    // reloadStepRentsByFilter();
+      
+      // Refresh the parent form's subgrid
+      //refreshParentSubgrid();
+      
+    } catch (error) {
+      throw error;
+    }
+  }
+    // Save new clause
+  async function saveNewClause(event) {
+    event.preventDefault();
+    
+    const form = document.getElementById('createClauseForm');
+    
+    // Validate form before proceeding
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+    
+    // Additional custom validation
+const clauseTitle = document.getElementById('clauseTitle').value.trim();
+const frequency = document.getElementById('frequency').value;
+const chargeType = document.getElementById('chargeType').value;
+const increaseType = document.getElementById('increaseType').value;
+//const stepRentStartDate = document.getElementById('stepRentStartDate').value;
+//const stepRentEndDate = document.getElementById('stepRentEndDate').value;
+const effectiveDate = document.getElementById('effectiveDate').value;
+const expiryDate = document.getElementById('expiryDate').value;
+
+if (!clauseTitle) {
+  alert("Please enter a Clause Title");
+  document.getElementById('clauseTitle').focus();
+  return;
+}
+
+if (!frequency) {
+  alert("Please select a Frequency");
+  document.getElementById('frequency').focus();
+  return;
+}
+
+if (!chargeType) {
+  alert("Please select a Charge Type");
+  document.getElementById('chargeType').focus();
+  return;
+}
+
+if (!increaseType) {
+  alert("Please select an Increase Type");
+  document.getElementById('increaseType').focus();
+  return;
+}
+
+
+
+if (!effectiveDate) {
+      alert("Please select an Effective Date");
+      document.getElementById('effectiveDate').focus();
+      return;
+    }
+
+    // UPDATED: Validate Expiry Date
+    if (!expiryDate) {
+      alert("Please select an Expiry Date");
+      document.getElementById('expiryDate').focus();
+      return;
+    }
+
+    // UPDATED: Validate that End Date is after Start Date
+    if (new Date(expiryDate) <= new Date(effectiveDate)) {
+      alert("Expiry Date must be after Effective Date");
+      document.getElementById('expiryDate').focus();
+      return;
+    }
+    
+    // Validate based on increase type
+    if (increaseType === '126330000') { // Flat
+      const flatAmount = document.getElementById('flatAmount').value;
+      if (!flatAmount || parseFloat(flatAmount) <= 0) {
+        alert("Please enter a valid Flat Amount");
+        document.getElementById('flatAmount').focus();
+        return;
+      }
+    } else if (increaseType === '126330001') { // Percentage
+      const percentage = document.getElementById('percentage').value;
+      if (!percentage || parseFloat(percentage) <= 0) {
+        alert("Please enter a valid Percentage");
+        document.getElementById('percentage').focus();
+        return;
+      }
+    }
+    
+  // Validate custom schedule if enabled
+  const enableCustomSchedule = document.getElementById('enableCustomSchedule').value;
+  if (enableCustomSchedule === 'yes') {
+    const cycleStartDate = document.getElementById('cycleStartDate').value;
+    if (!cycleStartDate) {
+      alert("Please enter a Step Rent Cycle Start Date when custom schedule is enabled");
+      document.getElementById('cycleStartDate').focus();
+      return;
+    }
+  }
+
+  // Show loading overlay
+  showLoadingOverlay('Saving step increase clause...');
+
+  const formData = new FormData(form);
+
+    for (let [key, value] of formData.entries()) {
+    }
+    
+    // Get today's date in ISO format
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Get lease end date for expiry date
+    const leaseEndDate = await getLeaseEndDate(leaseId);
+    
+    // Fetch the Clause Type GUID dynamically
+    const clauseTypeGuid = await getClauseTypeByName('Step Rent Indexation');
+    
+    if (!clauseTypeGuid) {
+      alert("Error: Could not find Clause Type 'Step Rent Indexation'");
+      return;
+    }
+    
+    // Check if charge type already exists
+    const chargeTypeId = formData.get('chargeType');
+    
+    if (chargeTypeId) {
+      const existingClause = await checkExistingChargeType(chargeTypeId);
+
+      
+      if (existingClause) {
+        // Store form data as plain object for override flow
+        const formDataObject = {
+          clauseTitle: formData.get('clauseTitle'),
+          frequency: formData.get('frequency'),
+          chargeType: formData.get('chargeType'),
+          increaseType: formData.get('increaseType'),
+          flatAmount: formData.get('flatAmount'),
+          percentage: formData.get('percentage'),
+          // UPDATED KEYS HERE:
+          effectiveDate: formData.get('effectiveDate'),
+          expiryDate: formData.get('expiryDate'),
+          // ------------------
+          cycleStartDate: formData.get('cycleStartDate'),
+          enableCustomSchedule: document.getElementById('enableCustomSchedule').value
+        };
+  // Prepare the new clause data
+  const newClause = prepareClauseData(formDataObject, today, leaseEndDate, clauseTypeGuid);
+  // Hide loading overlay before showing modal
+  hideLoadingOverlay();
+
+  // Show override confirmation
+  showOverrideModal(existingClause, newClause);
+  return; // Stop here, wait for user confirmation
+      }
+    }
+    const newClause = prepareClauseData(formData, today, leaseEndDate, clauseTypeGuid);
+     
+  try {
+    await createNewClause(newClause);
+  
+    hideLoadingOverlay();
+    showSuccessModal("Step increase clause created successfully!");
+  } catch (error) {
+    hideLoadingOverlay();
+    alert("Error creating clause: " + error.message);
+  }
+  }
+  // Function to refresh the parent subgrid by triggering the Refresh menu item
+  function refreshParentSubgrid() {
+    try {
+           // Get parent window and Xrm
+      const parentXrm = window.parent?.opener?.Xrm || window.opener?.Xrm || window.parent?.parent?.Xrm;
+      const parentWindow = window.parent?.opener || window.opener || window.parent?.parent;
+      
+      if (!parentXrm || !parentWindow) {
+         return false;
+      }
+      
+      // Method 1: Use the Dynamics API to refresh subgrids
+      try {
+        const parentPage = parentXrm.Page;
+        
+        // Find and refresh BOTH subgrids
+        const subgridNames = ['Subgrid_new_4', 'subgrid_new_4', 'Subgrid_new_7','subgrid_new_16','Subgrid_new_16'];
+        let refreshedCount = 0;
+        
+        for (const name of subgridNames) {
+          try {
+            const subgrid = parentPage.getControl(name);
+            if (subgrid && typeof subgrid.refresh === 'function') {
+
+              subgrid.refresh();
+              refreshedCount++;
+            }
+          } catch (err) {
+               }
+        }
+        
+        if (refreshedCount > 0) {
+                    return true;
+        }
+      } catch (err) {
+              }
+      
+      // Method 2: Click the Refresh button in the overflow menu
+      try {
+        const parentDoc = parentWindow.document;
+        
+        if (parentDoc) {
+          const overflowButton = parentDoc.querySelector('[data-id="OverflowButton"][data-lp-id*="array_leaseclause"]');
+          
+          if (overflowButton) {
+            overflowButton.click();
+            
+            setTimeout(() => {
+              try {
+                const refreshButtons = parentDoc.querySelectorAll('button[data-id*="refresh" i], button[aria-label*="Refresh" i], [role="menuitem"][aria-label*="Refresh" i]');
+                
+                if (refreshButtons.length > 0) {
+                       refreshButtons[0].click();
+                                return true;
+                } else {
+                              }
+              } catch (menuErr) {
+                           }
+            }, 300);
+            
+            return true;
+          }
+        }
+      } catch (domErr) {
+          }
+      
+      // Method 3: Refresh all subgrids as fallback
+      try {
+        const parentPage = parentXrm.Page;
+        const controls = parentPage.ui.controls.get();
+        let refreshed = false;
+        
+        controls.forEach(control => {
+          try {
+            if (control.getControlType && (control.getControlType() === "subgrid" || control.getControlType() === 6)) {
+                          control.refresh();
+              refreshed = true;
+            }
+          } catch (err) {
+            // Continue with other controls
+          }
+        });
+        
+        if (refreshed) {
+                  return true;
+        }
+      } catch (err) {
+          }     
+      // Method 4: Last resort - refresh form data
+      parentXrm.Page.data.refresh(false);
+      return true;
+      
+    } catch (error) {
+      return false;
+    }
+  }
+  // Function to refresh the Timeline web resource
+  function refreshTimelineWebResource() {
+    try {
+      const parentXrm = window.parent?.opener?.Xrm || window.opener?.Xrm || window.parent?.parent?.Xrm;
+      const parentWindow = window.parent?.opener || window.opener || window.parent?.parent;
+      
+      if (!parentXrm || !parentWindow) {
+        return false;
+      }
+      
+      try {
+        const parentPage = parentXrm.Page;
+        const timelineWebResourceName = 'WebResource_new_1';
+        
+        const webResourceControl = parentPage.getControl(timelineWebResourceName);
+        
+        if (webResourceControl) {
+          const iframeElement = webResourceControl.getObject();
+          
+          if (iframeElement && iframeElement.contentWindow) {
+            iframeElement.contentWindow.location.reload();
+            return true;
+          }
+        }
+      } catch (err) {
+       }
+      
+      return false;
+    } catch (error) {
+      return false;
+    }
+  }
+function prepareClauseData(formData, today, leaseEndDate, clauseTypeGuid) {
+  // Handle both FormData and plain objects
+  const getValue = (key) => {
+    if (formData instanceof FormData) {
+      return formData.get(key);
+    }
+    return formData[key];
+  };
+
+  // 1. Get the NEW inputs (Effective/Expiry)
+  const effectiveDate = getValue('effectiveDate');
+  const expiryDate = getValue('expiryDate');
+
+  const newClause = {
+    "array_leaseclausename": getValue('clauseTitle'),
+    // Map Effective Date input to standard Clause Effective Date
+    "array_steprent": true,
+    "array_effectivedate": effectiveDate || today,
+    "array_steprentfrequency": parseInt(getValue('frequency')),
+    "array_increasetype": parseInt(getValue('increaseType')),
+    ["array_ClauseType@odata.bind"]: `/array_clausetypes(${clauseTypeGuid})`,
+    ["array_LeaseAgreement@odata.bind"]: `/array_leaseagreements(${leaseId})`
+  };
+  const summaryVal = getValue('clauseSummary');
+if (summaryVal && summaryVal.trim()) {
+    newClause["array_clausesummary"] = summaryVal.trim();
+}
+
+  // Map Expiry Date input to standard Clause Expiry Date
+  if (expiryDate) {
+    newClause.array_expirydate = expiryDate;
+  } else if (leaseEndDate) {
+    newClause.array_expirydate = leaseEndDate;
+  }
+
+  // Add charge type if selected
+  const chargeTypeId = getValue('chargeType');
+  if (chargeTypeId) {
+    newClause["array_ChargeTypeStepIncrease@odata.bind"] = `/array_chargetypes(${chargeTypeId})`;
+  }
+
+  // Add flat amount or percentage based on increase type
+  const increaseType = parseInt(getValue('increaseType'));
+  if (increaseType === 126330000) { // Flat
+    const flatAmount = getValue('flatAmount');
+    if (flatAmount) {
+      newClause.array_flatamount = parseFloat(flatAmount);
+    }
+  } else if (increaseType === 126330001) { // Percentage
+    const percentage = getValue('percentage');
+    if (percentage) {
+      newClause.array_steprentpercentage = parseFloat(percentage);
+    }
+  }
+  if (expiryDate) {
+    newClause.array_steprentenddate = expiryDate;
+  }
+
+  // 3. Handle custom step rent schedule (Updated logic)
+  const enableCustomSchedule = getValue('enableCustomSchedule') || document.getElementById('enableCustomSchedule')?.value;
+  
+  if (enableCustomSchedule === 'yes') {
+    newClause.array_enablecustomsteprentschedule = true;
+    
+    // Map Cycle Start Date
+    const cycleStartDate = getValue('cycleStartDate');
+    if (cycleStartDate) {
+      newClause.array_steprentcyclestartdate = cycleStartDate;
+    }
+    
+    // Map Calculated Cycle End Date -> This overrides the standard Step Rent End Date
+    const cycleEndDate = getValue('cycleEndDate');
+    if (cycleEndDate) {
+      newClause.array_steprentenddate = cycleEndDate;
+    }
+  }
+  
+  return newClause;
+}
+  function toggleIncreaseFields() {
+  const increaseType = document.getElementById('increaseType').value;
+  const flatAmountField = document.getElementById('flatAmountField');
+  const percentageField = document.getElementById('percentageField');
+  const flatAmountInput = document.getElementById('flatAmount');
+  const percentageInput = document.getElementById('percentage');
+  const flatAmountLabel = flatAmountField.querySelector('.form-label');
+  const percentageLabel = percentageField.querySelector('.form-label');
+  
+  if (increaseType === '126330000') { // Flat
+    flatAmountField.style.display = 'block';
+    percentageField.style.display = 'none';
+    flatAmountInput.required = true;
+    percentageInput.required = false;
+    percentageInput.value = ''; // Clear percentage value
+    
+    // Add required class to label
+    if (flatAmountLabel && !flatAmountLabel.classList.contains('required')) {
+      flatAmountLabel.classList.add('required');
+    }
+    if (percentageLabel) {
+      percentageLabel.classList.remove('required');
+    }
+    
+    // Show flat increase info
+    showFlatIncreaseInfoForStepRent();
+  } else if (increaseType === '126330001') { // Percentage
+    flatAmountField.style.display = 'none';
+    percentageField.style.display = 'block';
+    flatAmountInput.required = false;
+    flatAmountInput.value = ''; // Clear flat amount value
+    percentageInput.required = true;
+    
+    // Add required class to label
+    if (percentageLabel && !percentageLabel.classList.contains('required')) {
+      percentageLabel.classList.add('required');
+    }
+    if (flatAmountLabel) {
+      flatAmountLabel.classList.remove('required');
+    }
+    
+    // Hide info box for percentage
+    const infoBox = document.getElementById('flatIncreaseInfoBox');
+    if (infoBox) infoBox.style.display = 'none';
+  } else {
+    flatAmountField.style.display = 'none';
+    percentageField.style.display = 'none';
+    flatAmountInput.required = false;
+    flatAmountInput.value = ''; // Clear value
+    percentageInput.required = false;
+    percentageInput.value = ''; // Clear value
+    
+    // Remove required class from both labels
+    if (flatAmountLabel) {
+      flatAmountLabel.classList.remove('required');
+    }
+    if (percentageLabel) {
+      percentageLabel.classList.remove('required');
+    }
+    
+    // Hide info box
+    const infoBox = document.getElementById('flatIncreaseInfoBox');
+    if (infoBox) infoBox.style.display = 'none';
+  }
+}
+// Function to generate lease clause name
+async function generateLeaseClauseName(leaseId, clauseTypeName, chargeTypeId) {
+    try {
+       const leaseAgreement = await Xrm.WebApi.retrieveRecord(
+            "array_leaseagreement",
+            leaseId.replace(/[{}]/g, ""),
+            "?$select=array_leasename,array_leaserecordid"
+        );
+        
+        const leaseName = leaseAgreement.array_leasename || leaseAgreement.array_leaserecordid || "Unknown Lease";
+        
+        // Build the clause name
+        let clauseName = leaseName + " - " + clauseTypeName;
+        
+        // Add charge type if provided
+        if (chargeTypeId) {
+            const chargeType = await Xrm.WebApi.retrieveRecord(
+                "array_chargetype",
+                chargeTypeId.replace(/[{}]/g, ""),
+                "?$select=array_name"
+            );
+            
+            if (chargeType && chargeType.array_name) {
+                clauseName += " - " + chargeType.array_name;
+            }
+        }
+        
+        return clauseName;
+    } catch (error) {
+        console.error("Error generating lease clause name:", error);
+        return null;
+    }
+}
+  // Show flat increase info based on charge type selection
+  async function showFlatIncreaseInfoForStepRent() {
+    const FLAT_VALUE = '126330000';
+    
+    const infoBox = document.getElementById('flatIncreaseInfoBox');
+    const infoBoxContent = document.getElementById('infoBoxContent');
+    const infoBoxMessage = document.getElementById('infoBoxMessage');
+    
+    if (!infoBox || !infoBoxMessage) {
+      return;
+    }
+    
+    // Default - hide the info box
+    infoBox.style.display = 'none';
+    
+    const increaseType = document.getElementById('increaseType').value;
+    const chargeTypeId = document.getElementById('chargeType').value;
+    
+    // Only show if increase type is Flat
+    if (increaseType !== FLAT_VALUE || !chargeTypeId || !leaseId) {
+      return;
+    }
+    
+    try {
+      const cleanLeaseId = leaseId.replace(/[{}]/g, '');
+      const cleanChargeTypeId = chargeTypeId.replace(/[{}]/g, '');
+      
+      const query = `?$select=transactioncurrencyid&$filter=_array_leaseagreement_value eq ${cleanLeaseId} and _array_chargetype_value eq ${cleanChargeTypeId} and statecode eq 0`;
+      
+      const result = await Xrm.WebApi.retrieveMultipleRecords("array_recurringcharge", query);
+      
+      if (result.entities.length === 0) {
+        return;
+      }
+      
+      // Get distinct currencies
+      const distinctCurrencies = new Set();
+      result.entities.forEach(entity => {
+        const currencyId = entity["_transactioncurrencyid_value"];
+        if (currencyId) {
+          distinctCurrencies.add(currencyId);
+        }
+      });
+      
+      if (distinctCurrencies.size === 0) {
+        return;
+      }
+      
+      const firstEntity = result.entities[0];
+      const currencyName = firstEntity["_transactioncurrencyid_value@OData.Community.Display.V1.FormattedValue"];
+      const chargeName = firstEntity["_array_chargetype_value@OData.Community.Display.V1.FormattedValue"];
+      
+      if (!currencyName) {
+        return;
+      }
+      
+      // Show the info box with appropriate message
+      infoBox.style.display = 'block';
+      
+      if (distinctCurrencies.size > 1) {
+        // Multiple currencies - show warning
+        infoBoxContent.classList.add('warning');
+        infoBoxMessage.innerHTML = `This charge type <strong>${chargeName}</strong> is used with multiple currencies. To ensure accurate calculations across currencies, it is recommended to use <strong>Percentage</strong> as the Increase Type.`;
+      } else {
+        // Single currency - show info
+        infoBoxContent.classList.remove('warning');
+        infoBoxMessage.innerHTML = `The currency used for this charge is <strong>${currencyName}</strong>. Any flat amount increase will be applied in the same currency as the recurring charge.`;
+      }
+      
+    } catch (error) {
+      infoBox.style.display = 'none';
+    }
+  }
+  // Toggle custom step rent schedule fields based on frequency
+  // Toggle custom step rent schedule fields based on frequency
+  /* function toggleCustomStepRentFields() {
+    const frequency = document.getElementById('frequency').value;
+    const customScheduleField = document.getElementById('customScheduleField');
+    const cycleStartDateField = document.getElementById('cycleStartDateField');
+    const enableCustomSchedule = document.getElementById('enableCustomSchedule');
+    
+    // Show custom schedule option only for Yearly frequency (126330003)
+    if (frequency === '126330003') {
+      customScheduleField.style.display = 'block';
+      // Show cycle start date based on custom schedule dropdown
+      toggleCycleStartDate();
+    } else {
+      customScheduleField.style.display = 'none';
+      cycleStartDateField.style.display = 'none';
+      enableCustomSchedule.value = 'no';
+    }
+  } */
+
+  
+  // Load Frequency options from Global Option Set
+  async function loadFrequencyOptions() {
+    const frequencySelect = document.getElementById("frequency");
+    
+    if (!frequencySelect) {
+      return;
+    }
+    
+    try {
+      const clientUrl = Xrm.Utility.getGlobalContext().getClientUrl();
+      const globalOptionSetName = "array_periodiccycle";
+      const apiUrl = `${clientUrl}/api/data/v9.2/GlobalOptionSetDefinitions(Name='${globalOptionSetName}')/Microsoft.Dynamics.CRM.OptionSetMetadata`;
+      
+      const response = await fetch(apiUrl, {
+        method: "GET",
+        headers: {
+          "OData-MaxVersion": "4.0",
+          "OData-Version": "4.0",
+          Accept: "application/json",
+          "Content-Type": "application/json; charset=utf-8",
+          Prefer: 'odata.include-annotations="*"',
+        },
+        credentials: "same-origin",
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`HTTP error ${response.status}: ${errorData.error?.message || response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data && data.Options && Array.isArray(data.Options) && data.Options.length > 0) {
+        frequencySelect.innerHTML = '<option value="">Select Frequency</option>';
+        
+        const sortedOptions = data.Options.sort((a, b) => a.Value - b.Value);
+        
+        sortedOptions.forEach((option) => {
+          const optionElement = document.createElement("option");
+          optionElement.value = option.Value;
+          
+          let label = "Unknown";
+          if (option.Label) {
+            if (option.Label.UserLocalizedLabel && option.Label.UserLocalizedLabel.Label) {
+              label = option.Label.UserLocalizedLabel.Label;
+            } else if (option.Label.LocalizedLabels && option.Label.LocalizedLabels.length > 0) {
+              label = option.Label.LocalizedLabels[0].Label;
+            }
+          }
+          
+          optionElement.textContent = label;
+          frequencySelect.appendChild(optionElement);
+            });
+      } else {
+        frequencySelect.innerHTML = '<option value="">No frequency options available</option>';
+      }
+    } catch (error) {
+      frequencySelect.innerHTML = '<option value="">Error loading frequency options</option>';
+    }
+  }
+
+  // Load Increase Type options from Global Option Set
+  async function loadIncreaseTypeOptions() {
+    const increaseTypeSelect = document.getElementById("increaseType");
+    
+    if (!increaseTypeSelect) {
+   
+      return;
+    }
+    
+    try {
+      const clientUrl = Xrm.Utility.getGlobalContext().getClientUrl();
+      const globalOptionSetName = "array_increasetype";
+      const apiUrl = `${clientUrl}/api/data/v9.2/GlobalOptionSetDefinitions(Name='${globalOptionSetName}')/Microsoft.Dynamics.CRM.OptionSetMetadata`;
+      
+      const response = await fetch(apiUrl, {
+        method: "GET",
+        headers: {
+          "OData-MaxVersion": "4.0",
+          "OData-Version": "4.0",
+          Accept: "application/json",
+          "Content-Type": "application/json; charset=utf-8",
+          Prefer: 'odata.include-annotations="*"',
+        },
+        credentials: "same-origin",
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`HTTP error ${response.status}: ${errorData.error?.message || response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data && data.Options && Array.isArray(data.Options) && data.Options.length > 0) {
+        increaseTypeSelect.innerHTML = '<option value="">Select Increase Type</option>';
+        
+        const sortedOptions = data.Options.sort((a, b) => a.Value - b.Value);
+        
+        sortedOptions.forEach((option) => {
+          const optionElement = document.createElement("option");
+          optionElement.value = option.Value;
+          
+          let label = "Unknown";
+          if (option.Label) {
+            if (option.Label.UserLocalizedLabel && option.Label.UserLocalizedLabel.Label) {
+              label = option.Label.UserLocalizedLabel.Label;
+            } else if (option.Label.LocalizedLabels && option.Label.LocalizedLabels.length > 0) {
+              label = option.Label.LocalizedLabels[0].Label;
+            }
+          }
+          
+          optionElement.textContent = label;
+          increaseTypeSelect.appendChild(optionElement);
+        });
+      } else {
+        increaseTypeSelect.innerHTML = '<option value="">No increase type options available</option>';
+      }
+    } catch (error) {
+      increaseTypeSelect.innerHTML = '<option value="">Error loading increase type options</option>';
+    }
+  }
+
+
+      // Initialize on page load
+    window.onload = async function () {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const dataParam = params.get("data");
+      if (!dataParam) throw new Error("No data passed to Web Resource");
+      const parsedData = JSON.parse(dataParam);
+      leaseId = parsedData.leaseId;
+
+      // Load charge types, frequency, and increase type options
+      await loadChargeTypes();
+      await loadFrequencyOptions();
+      await loadIncreaseTypeOptions();
+      await getLeaseEndDate(leaseId);
+      await fetchLeaseDetails(leaseId);
+
+    await loadStepRents('active');
+      
+      // Hide page loader and show content
+      hidePageLoader();
+      const filterSelect = document.getElementById('clauseStatusFilter');
+      if (filterSelect) {
+        filterSelect.addEventListener('change', reloadStepRentsByFilter);
+      }
+
+      const newButton = document.getElementById('btnNewStepRent');
+      if (newButton) {
+        newButton.addEventListener('click', openQuickCreate);
+      }
+  } catch (e) {
+      console.error(e);
+      
+      // Hide page loader even on error
+      hidePageLoader();
+      
+      document.getElementById("stepRentBody").innerHTML =
+        `<tr><td colspan="9" class="no-records">Error reading Lease ID.</td></tr>`;
+    }
+  }// ✅ ADD AUTO-REFRESH ON WINDOW CLOSE
+  window.addEventListener('beforeunload', function(e) {
+    
+    try {
+      // Refresh the lease clause subgrids
+      refreshParentSubgrid();
+       
+      // Refresh the Timeline web resource
+      refreshTimelineWebResource();
+    } catch (error) {
+      }
+  });
+
+  // Also use 'unload' as fallback
+  window.addEventListener('unload', function(e) {
+      
+    try {
+      refreshParentSubgrid();
+      refreshTimelineWebResource();
+    } catch (error) {
+       }
+  });
+
+  async function loadChargeTypes() {
+    try {
+      const result = await Xrm.WebApi.retrieveMultipleRecords(
+        "array_chargetype",
+        "?$select=array_chargetypeid,array_name&$filter=statecode eq 0&$orderby=array_name asc"
+      );
+      
+      const chargeTypeSelect = document.getElementById("chargeType");
+      chargeTypeSelect.innerHTML = '<option value="">Select Charge Type</option>';
+      
+      result.entities.forEach((type) => {
+        const option = document.createElement("option");
+        option.value = type.array_chargetypeid;
+        option.textContent = type.array_name;
+        chargeTypeSelect.appendChild(option);
+      });
+      
+    } catch (error) {
+    }
+  }
+  async function getLeaseEndDate(leaseId) {
+    try {
+      const result = await Xrm.WebApi.retrieveRecord(
+        "array_leaseagreement",
+        leaseId,
+        "?$select=array_leaseenddate"
+      );
+      return result.array_leaseenddate;
+    } catch (error) {
+      return null;
+    }
+  }
+  // Populate Expiry Date with Lease End Date
+  async function populateStepRentEndDate() {
+    try {
+      const leaseEndDate = await getLeaseEndDate(leaseId);
+      const expiryDateInput = document.getElementById('expiryDate'); // Correct ID
+      
+      if (leaseEndDate && expiryDateInput) {
+        const formattedDate = leaseEndDate.split('T')[0];
+        expiryDateInput.value = formattedDate;
+      }
+    } catch (error) {
+    }
+  }
+  // Fetch Clause Type GUID by name
+  async function getClauseTypeByName(clauseTypeName) {
+    try {
+      const result = await Xrm.WebApi.retrieveMultipleRecords(
+        "array_clausetype",
+        `?$select=array_clausetypeid&$filter=array_clausetypename eq '${clauseTypeName}'`
+      );
+      
+      if (result.entities.length > 0) {
+        return result.entities[0].array_clausetypeid;
+      } else {
+        return null;
+      }
+    } catch (error) {
+            return null;
+    }
+  }
+      </script>
+    </head>
+     <body>
+  <!-- Initial Page Loader -->
+  <div id="pageLoader" class="loader-overlay active">
+    <div class="loader-content">
+      <div class="spinner"></div>
+      <div class="loading-text">Loading Step Increase Clauses...</div>
+      <div class="loading-subtext">Please wait while we fetch your data</div>
+    </div>
+  </div>
+
+  <div class="container" id="mainContent" style="display: none;">
+          <!-- Turnover-style header -->
+          <div class="header">
+            <h1><i class="fas fa-arrow-trend-up"></i> Active Step Increase Clauses</h1>
+            <p>Manage step increments and review history</p>
+          </div><!-- Filter card (All / Active / Inactive) -->
+      <div class="filter-card">
+        <div class="filter-card__left">
+          <div class="filter-card__icon">
+            <i class="fas fa-filter"></i>
+          </div>
+        </div>
+
+        <div class="filter-card__control">
+          <select id="clauseStatusFilter" class="filter-select" aria-label="Filter step rent clauses">
+            <option value="active" selected>Active</option>
+            <option value="inactive">Inactive</option>
+            <option value="all">All</option>
+          </select>
+          <div class="filter-select__chevron" aria-hidden="true"></div>
+        </div>
+
+        <button type="button" id="btnNewStepRent" class="btn-new">
+          <span class="btn-new-icon">+</span>
+          <span>New</span>
+        </button>
+      </div>
+
+      <!-- No records container -->
+      <div id="noRecordsContainer" class="no-records-container hidden">
+        <div class="no-records-icon">📄</div>
+        <div class="no-records-title">No Active Step Increase</div>
+        <div class="no-records-message">
+          There are no active step increase clauses available for this lease agreement at the moment.
+        </div>
+      </div>
+
+      <!-- Main table wrapper -->
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr class="table-header">
+              <th>Effective Date</th>
+              <th>Expiry Date</th>
+              <th>Frequency</th>
+              <th>Last Adjustment Date</th>
+              <th>Charge Type</th>
+              <th>Increase Type</th>
+              <th>Flat Amount</th>
+              <th>Step Rent Percentage</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="stepRentBody">
+            <tr>
+              <td colspan="9" class="no-records">Loading...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmationModal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-title">Deactivate Clause</div>
+        <div class="modal-message">
+          Are you sure you want to deactivate this step increase clause? This action will mark it as inactive.
+        </div>
+        <div class="modal-actions">
+          <button class="modal-btn modal-btn-cancel">Cancel</button>
+          <button class="modal-btn modal-btn-confirm">Deactivate</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Create Clause Modal -->
+    <div id="createClauseModal" class="modal-overlay">
+      <div class="create-modal-content">
+        <div class="create-modal-header">
+          <h2>Create New Step Increase Clause</h2>
+          <button type="button" class="close-btn" onclick="closeCreateModal()">×</button>
+        </div>
+        
+      <form id="createClauseForm" onsubmit="saveNewClause(event)">
+    <!-- 1. Clause Title -->
+    <div class="form-group">
+      <label class="form-label required" for="clauseTitle">Financial Clause Name</label>
+      <input type="text" id="clauseTitle" name="clauseTitle" class="form-input" required>
+    </div>
+
+    <!-- 2. Charge Type -->
+    <div class="form-group">
+      <label class="form-label required" for="chargeType">Charge Type (Step Increase)</label>
+      <select id="chargeType" name="chargeType" class="form-select" 
+        onchange="updateClauseTitleOnChargeTypeChange()" required>
+        <option value="">Select Charge Type</option>
+      </select>
+    </div>
+
+   <!-- 3. Effective Date -->
+    <div class="form-group">
+      <label class="form-label required" for="effectiveDate">Effective Date</label>
+      <input type="date" id="effectiveDate" name="effectiveDate" class="form-input" required>
+    </div>
+
+<!-- 4. Expiry Date -->
+    <div class="form-group">
+      <label class="form-label required" for="expiryDate">Expiry Date</label>
+      <input type="date" id="expiryDate" name="expiryDate" class="form-input" required>
+    </div>
+
+  <!-- 5. Increase Type -->
+    <div class="form-group">
+      <label class="form-label required" for="increaseType">Increase Type (Step Rent)</label>
+      <select id="increaseType" name="increaseType" class="form-select" onchange="toggleIncreaseFields()" required>
+        <option value="">Select Increase Type</option>
+      </select>
+    </div>
+
+    <!-- Flat Increase Info Box - MOVED HERE -->
+    <div id="flatIncreaseInfoBox" style="display: none;">
+      <div class="info-fact-box" id="infoBoxContent">
+        <div class="info-fact-box-label">Currency Information</div>
+        <div class="info-fact-box-body" id="infoBoxMessage">
+          <!-- Message will be populated dynamically -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Flat Amount Field - conditionally shown -->
+    <div class="form-group" id="flatAmountField" style="display: none;">
+      <label class="form-label" for="flatAmount">Flat Amount</label>
+      <input type="number" id="flatAmount" name="flatAmount" class="form-input" step="0.01" min="0">
+    </div>
+
+    <!-- Percentage Field - conditionally shown -->
+    <div class="form-group" id="percentageField" style="display: none;">
+      <label class="form-label" for="percentage">Percentage</label>
+      <input type="number" id="percentage" name="percentage" class="form-input" step="0.01" min="0" max="100">
+    </div>
+  
+    <!-- 6. Step Rent Frequency -->
+    <div class="form-group">
+      <label class="form-label required" for="frequency">Step Rent Frequency</label>
+      <select id="frequency" name="frequency" class="form-select" onchange="handleFrequencyChange()" required>
+        <option value="">Select Frequency</option>
+      </select>
+    </div>
+
+    <div class="form-group" id="customScheduleField">
+      <label class="form-label" for="enableCustomSchedule">Enable Custom Step Rent Schedule</label>
+      <select id="enableCustomSchedule" name="enableCustomSchedule" class="form-select" onchange="toggleCycleStartDate()">
+        <option value="no">No</option>
+        <option value="yes">Yes</option>
+      </select>
+    </div>
+
+    <div id="cycleDatesContainer" style="display: none;">
+      <div class="form-group">
+        <label class="form-label required" for="cycleStartDate">Step Rent Cycle Start Date</label>
+        <input type="date" id="cycleStartDate" name="cycleStartDate" class="form-input" onchange="calculateCycleEndDate()">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label" for="cycleEndDate">Step Rent Cycle End Date (Calculated)</label>
+        <input type="date" id="cycleEndDate" name="cycleEndDate" class="form-input" readonly style="background-color: #f3f2f1; cursor: not-allowed;">
+      </div>
+    </div>
+      <!-- Clause Summary -->
+<div class="form-group">
+  <label class="form-label" for="clauseSummary">Clause Summary</label>
+  <textarea id="clauseSummary" name="clauseSummary" class="form-input" 
+    rows="3" style="resize: vertical; font-family: inherit;"></textarea>
+</div>
+
+    <div class="form-actions">
+      <button type="button" class="btn-cancel-form" onclick="closeCreateModal()">Cancel</button>
+      <button type="submit" class="btn-save">Save</button>
+    </div>
+  </form>
+      
+    </div>
+    <!-- Override Clause Modal -->
+  <div id="overrideClauseModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-title">Existing Clause Found</div>
+      <div class="modal-message" id="overrideMessage">
+        <!-- Dynamic message will be inserted here -->
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn modal-btn-cancel" onclick="closeOverrideModal()">Cancel</button>
+        <button class="modal-btn modal-btn-confirm" onclick="confirmOverride()">Override</button>
+      </div>
+    </div>
+  </div>
+  <!-- Success Modal -->
+  <div id="successModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-title" style="color: #2bad76;">✓ Success</div>
+      <div class="modal-message" id="successMessage">
+        Step increase clause created successfully!
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn" style="background: #2bad76; color: white;" onclick="closeSuccessModal()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-content">
+      <div class="spinner"></div>
+      <div class="loading-text" id="loadingText">Processing...</div>
+      <div class="loading-subtext">Please wait while we save your changes</div>
+    </div>
+  </div>
+      </body>
+  </html>

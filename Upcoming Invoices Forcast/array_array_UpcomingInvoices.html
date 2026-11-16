@@ -1,0 +1,4000 @@
+<!DOCTYPE html>
+<html><head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Automated Invoice Forecast</title>
+    <style>
+      :root {
+        --ar-g1: #f5f5f7;
+        --ar-g2: #f2f2f2;
+        --ar-g3: #e8e8ed;
+        --ar-g4: #d2d2d7;
+        --ar-g5: #aeaeb2;
+        --ar-g6: #8e8e93;
+        --ar-g7: #636366;
+        --ar-g8: #3a3a3c;
+        --ar-g9: #1d1d1f;
+        --ar-white: #fff;
+        --ar-bg: #f5f5f7;
+        --ar-blue: #0071e3;
+        --ar-blue-d: #0077ed;
+        --ar-blue-l: rgba(0, 113, 227, 0.08);
+        --ar-blue-g: rgba(0, 113, 227, 0.14);
+        --ar-blue-mid: rgba(0, 113, 227, 0.3);
+        --ar-green: #34c759;
+        --ar-red: #ff3b30;
+        --ar-amber: #ff9f0a;
+        --ar-font:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", "Segoe UI Variable",
+          system-ui, Roboto, Helvetica, Arial, sans-serif;
+        --ar-r: 12px;
+        --ar-r-sm: 8px;
+        --ar-r-lg: 18px;
+        --ar-sh-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+        --ar-sh-sm:
+          0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+        --ar-sh-md:
+          0 4px 16px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04);
+      }
+      * { box-sizing: border-box; }
+      body {
+        font-family: var(--ar-font);
+        font-size: 13px;
+        color: var(--ar-g9);
+        background: var(--ar-bg);
+        margin: 0;
+        padding: 0;
+        -webkit-font-smoothing: antialiased;
+      }
+      ::-webkit-scrollbar { width: 6px; height: 6px; }
+      ::-webkit-scrollbar-thumb { background: var(--ar-g4); border-radius: 99px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+
+      /* Header */
+      .ui-header {
+        background: linear-gradient(135deg, #0b3a82 0%, #1C6BD4 100%);
+        border-bottom: none;
+        padding: 16px 24px;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        box-shadow: 0 2px 14px rgba(11,58,130,0.20);
+      }
+      .ui-header h1 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+        letter-spacing: -0.015em;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .ui-header h1 svg { color: rgba(255,255,255,0.92); }
+
+      .ui-body { padding: 20px 22px 40px; }
+
+      /* Toolbar card */
+      .card {
+        background: var(--ar-white);
+        border: 1px solid var(--ar-g3);
+        border-radius: var(--ar-r);
+        box-shadow: var(--ar-sh-sm);
+        margin-bottom: 16px;
+        overflow: hidden;
+      }
+      .toolbar {
+        padding: 12px 14px;
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 10px;
+        align-items: flex-end;
+        overflow-x: auto;
+      }
+      .toolbar::-webkit-scrollbar { height: 4px; }
+      .field { display: flex; flex-direction: column; flex-shrink: 0; }
+      .field label {
+        font-size: 10.5px;
+        font-weight: 600;
+        color: var(--ar-g6);
+        margin-bottom: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        white-space: nowrap;
+      }
+      .field input, .field select {
+        border: 1px solid var(--ar-g3);
+        border-radius: var(--ar-r-sm);
+        padding: 6px 10px;
+        font-size: 12.5px;
+        font-family: inherit;
+        color: var(--ar-g9);
+        background: var(--ar-white);
+        min-width: 0;
+        height: 34px;
+        outline: none;
+        transition: border-color 0.15s, box-shadow 0.15s;
+      }
+      .field.f-month input { width: 130px; }
+      .field.f-sm select { width: 130px; }
+      .field.f-md select { width: 160px; }
+      .field.f-lg select { width: 200px; }
+      .field input:focus, .field select:focus {
+        border-color: var(--ar-blue);
+        box-shadow: 0 0 0 3px var(--ar-blue-g);
+      }
+
+      /* Buttons — pill style */
+      .btn {
+        border: none;
+        border-radius: 980px;
+        padding: 7px 16px;
+        font-size: 12.5px;
+        font-weight: 500;
+        font-family: inherit;
+        cursor: pointer;
+        height: 34px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        letter-spacing: -0.005em;
+        transition: background 0.15s, opacity 0.15s;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      .btn-primary { background: var(--ar-blue); color: #fff; }
+      .btn-primary:hover { background: var(--ar-blue-d); }
+      .btn-secondary {
+        background: var(--ar-g2);
+        color: var(--ar-g8);
+        border: 1px solid var(--ar-g3);
+      }
+      .btn-secondary:hover { background: var(--ar-g3); }
+      .btn-soft {
+        background: var(--ar-blue-l);
+        color: var(--ar-blue);
+      }
+      .btn-soft:hover { background: var(--ar-blue-g); }
+      .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+      /* FX banner */
+      .banner {
+        background: var(--ar-blue-l);
+        border: 1px solid transparent;
+        border-radius: var(--ar-r);
+        padding: 12px 16px;
+        font-size: 13px;
+        color: var(--ar-g8);
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .banner strong { color: var(--ar-blue); font-weight: 600; }
+      .banner.warn {
+        background: rgba(255,159,10,0.10);
+        color: #7a4c00;
+      }
+      .banner.warn strong { color: #b25000; }
+
+      /* Stat bar — card grid */
+      #summary.card { background: transparent; border: none; box-shadow: none; overflow: visible; }
+      .stats {
+        padding: 4px 0;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 12px;
+      }
+      .stat {
+        background: var(--ar-white);
+        border: 1px solid var(--ar-g3);
+        border-radius: var(--ar-r);
+        padding: 14px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        box-shadow: var(--ar-sh-xs);
+        transition: box-shadow 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
+      }
+      .stat:hover {
+        box-shadow: var(--ar-sh-sm);
+        transform: translateY(-1px);
+        border-color: var(--ar-blue-mid);
+      }
+      .stat .label {
+        font-size: 11px;
+        color: var(--ar-g6);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 600;
+      }
+      .stat .value {
+        font-family: var(--ar-font);
+        font-variant-numeric: tabular-nums;
+        font-size: 21px;
+        font-weight: 700;
+        color: var(--ar-g9);
+        letter-spacing: -0.02em;
+      }
+      .stat.stat-accent { border-top: 3px solid var(--ar-blue); }
+      .stat.stat-accent .value { color: var(--ar-blue-d); }
+
+      /* Date block — top-level collapsible card */
+      .date-block {
+        background: var(--ar-white);
+        border: 1px solid var(--ar-g3);
+        border-radius: var(--ar-r);
+        box-shadow: var(--ar-sh-xs);
+        overflow: hidden;
+        margin-bottom: 12px;
+      }
+      .date-block.collapsed .date-content { display: none; }
+      .date-content { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .date-content > table { min-width: 1000px; }
+      .date-header {
+        padding: 14px 18px;
+        background: var(--ar-white);
+        border-left: 3px solid var(--ar-blue);
+        font-size: 13.5px;
+        font-weight: 600;
+        color: var(--ar-g9);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        transition: background 0.15s;
+        user-select: none;
+      }
+      .date-header:hover { background: var(--ar-blue-l); }
+      .date-block:not(.collapsed) .date-header { border-bottom: 1px solid var(--ar-g3); }
+      .date-header .d-date { display: flex; align-items: center; gap: 10px; letter-spacing: -0.01em; }
+      .date-header .d-label {
+        font-size: 10.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--ar-g6);
+      }
+      .date-header .d-value { font-size: 14px; font-weight: 700; color: var(--ar-g9); }
+      .date-header .d-chevron {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 22px;
+        border-radius: 6px;
+        background: var(--ar-blue-g);
+        color: var(--ar-blue);
+        font-size: 11px;
+        transition: transform 0.18s ease;
+        transform: rotate(90deg);
+      }
+      .date-block.collapsed .d-chevron { transform: rotate(0deg); }
+      .date-header .d-meta { color: var(--ar-g6); font-weight: 500; font-size: 12px; }
+      .date-header .d-meta strong { color: var(--ar-g8); font-weight: 600; }
+
+      /* Table */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--ar-white);
+      }
+      thead th {
+        background: var(--ar-blue-g);
+        color: var(--ar-blue-d);
+        font-size: 10.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        padding: 10px 12px;
+        text-align: left;
+        border-bottom: 2px solid var(--ar-blue-mid);
+        white-space: nowrap;
+      }
+      tbody td {
+        padding: 11px 12px;
+        font-size: 12.5px;
+        color: var(--ar-g9);
+        border-bottom: 1px solid var(--ar-g3);
+        vertical-align: middle;
+      }
+      tbody tr:last-child td { border-bottom: none; }
+      tr.group-row {
+        background: var(--ar-white);
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+      tr.group-row:hover { background: var(--ar-g1); }
+      tr.child-row { display: none; }
+      tr.child-row.visible { display: table-row; }
+      tr.child-row > td { padding: 0; background: var(--ar-blue-l); }
+      .detail-wrap {
+        padding: 2px 18px 18px 46px;
+        border-left: 3px solid #5a6b85;
+      }
+      .detail-title {
+        font-size: 10.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        color: #5a6b85;
+        padding: 12px 0 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .detail-title svg { width: 13px; height: 13px; }
+      .detail-wrap .subtable {
+        border: 1px solid var(--ar-g3);
+        border-radius: var(--ar-r-sm);
+        overflow: hidden;
+        box-shadow: var(--ar-sh-xs);
+      }
+
+      .toggle-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        border-radius: 6px;
+        background: var(--ar-g2);
+        color: var(--ar-g7);
+        font-family: inherit;
+        font-size: 9px;
+        transition: background 0.15s, color 0.15s, transform 0.18s ease;
+      }
+      tr.group-row:hover .toggle-icon { background: var(--ar-blue-g); color: var(--ar-blue); }
+      tr.group-row.open .toggle-icon { background: var(--ar-blue); color: #fff; transform: rotate(90deg); }
+      tr.group-row.open { background: var(--ar-blue-l); }
+      tr.group-row.open > td { border-bottom-color: transparent; font-weight: 500; }
+
+      .badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 99px;
+        font-size: 10px;
+        font-weight: 600;
+        margin-left: 4px;
+        vertical-align: middle;
+      }
+      .badge-info  { background: var(--ar-blue-l); color: var(--ar-blue); }
+      .badge-warn  { background: rgba(255,159,10,0.12); color: #b25000; }
+      .badge-term  { background: var(--ar-g2); color: var(--ar-g7); }
+      .badge-success { background: rgba(52,199,89,0.14); color: #1a7a34; }
+
+      /* Custom searchable dropdown */
+      .combobox {
+        position: relative;
+        z-index: 100;
+      }
+      .combobox.open {
+        z-index: 6000;
+      }
+      .combobox-input {
+        cursor: text;
+        padding-right: 26px !important;
+      }
+      .combobox-caret {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+        color: var(--ar-g6);
+        font-size: 10px;
+        transition: transform 0.15s ease;
+      }
+      .combobox.open .combobox-caret {
+        transform: translateY(-50%) rotate(180deg);
+      }
+      .combobox-clear {
+        position: absolute;
+        right: 22px;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        color: var(--ar-g6);
+        font-size: 14px;
+        line-height: 1;
+        padding: 2px 4px;
+        border-radius: 4px;
+        user-select: none;
+        display: none;
+      }
+      .combobox-clear:hover {
+        background: var(--ar-g2);
+        color: var(--ar-g8);
+      }
+      .combobox.has-value .combobox-clear { display: block; }
+      .combobox-list {
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        right: 0;
+        max-height: 260px;
+        overflow-y: auto;
+        background: var(--ar-white);
+        border: 1px solid var(--ar-g3);
+        border-radius: var(--ar-r-sm);
+        box-shadow: var(--ar-sh-md);
+        z-index: 5000;
+        display: none;
+        min-width: 220px;
+      }
+      .combobox.open .combobox-list { display: block; }
+      .combobox-option {
+        padding: 8px 12px;
+        font-size: 13px;
+        color: var(--ar-g9);
+        cursor: pointer;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .combobox-option:hover,
+      .combobox-option.highlight {
+        background: var(--ar-blue-l);
+        color: var(--ar-blue-d);
+      }
+      .combobox-empty {
+        padding: 12px;
+        color: var(--ar-g6);
+        font-size: 12px;
+        text-align: center;
+        font-style: italic;
+      }
+
+      .amt {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        font-family: var(--ar-font);
+        font-size: 12.5px;
+      }
+      .amt-pln { color: var(--ar-blue); font-weight: 600; }
+      .amt-native { color: var(--ar-g6); font-size: 11.5px; }
+
+      .link-icon {
+        color: var(--ar-blue);
+        text-decoration: none;
+        margin-left: 5px;
+        font-size: 12px;
+        opacity: 0.7;
+        transition: opacity 0.15s;
+      }
+      .link-icon:hover { opacity: 1; }
+
+      /* Product sub-table */
+      .subtable {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--ar-g1);
+      }
+      .subtable thead th {
+        background: #eef1f6;
+        color: #5a6b85;
+        border-bottom: 1px solid #d6dde8;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 8px 12px;
+      }
+      .subtable tbody td {
+        background: var(--ar-g1);
+        border-bottom: 1px solid var(--ar-g3);
+        font-size: 12px;
+        padding: 9px 12px;
+      }
+      .subtable tfoot tr td {
+        background: var(--ar-white);
+        border-top: 1px solid var(--ar-g3);
+        font-weight: 600;
+        padding: 10px 12px;
+      }
+      .product-name { font-weight: 600; color: var(--ar-g9); }
+      .product-sub { color: var(--ar-g6); font-size: 11px; margin-top: 2px; }
+      .period-cell { font-size: 11px; }
+      .period-freq { color: var(--ar-g6); }
+
+      th.sortable { cursor: pointer; user-select: none; }
+      th.sortable:hover { background: var(--ar-blue-mid); color: #fff; }
+      th.sortable .arrow { opacity: 0.5; margin-left: 4px; font-size: 9px; }
+      th.sortable.active .arrow { opacity: 1; }
+
+      .loader {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--ar-g6);
+        font-size: 13px;
+      }
+      .spinner {
+        display: inline-block;
+        width: 22px;
+        height: 22px;
+        border: 2.5px solid var(--ar-g3);
+        border-top-color: var(--ar-blue);
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+        margin-bottom: 10px;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      .empty {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--ar-g6);
+        background: var(--ar-white);
+        border: 1px solid var(--ar-g3);
+        border-radius: var(--ar-r);
+      }
+      .err {
+        background: rgba(255,59,48,0.08);
+        color: var(--ar-red);
+        border: 1px solid rgba(255,59,48,0.20);
+        padding: 12px 16px;
+        border-radius: var(--ar-r);
+        margin-bottom: 16px;
+        font-size: 13px;
+      }
+
+      /* Responsive */
+      @media (max-width: 720px) {
+        .ui-header { padding: 14px 16px; }
+        .ui-header h1 { font-size: 16px; }
+        .ui-body { padding: 14px 12px 32px; }
+        .stats { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .stat { padding: 12px 14px; }
+        .stat .value { font-size: 18px; }
+        .date-header { padding: 12px 14px; }
+        .date-header .d-value { font-size: 13px; }
+        .date-header .d-meta { font-size: 11px; }
+        .toolbar { padding: 10px 12px; }
+      }
+      @media (max-width: 440px) {
+        .stats { grid-template-columns: 1fr 1fr; }
+        .stat .value { font-size: 16px; }
+      }
+
+      /* ══════════════════════════════════════════════════════════════
+         LEASE AMENDMENT UI DESIGN LAYER — appended last, wins by cascade.
+         Mirrors the frosted-glass header, refined shadows, and modal
+         polish from the Lease Amendment web resource.
+         ══════════════════════════════════════════════════════════════ */
+
+      body {
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* Frosted-glass header (replaces navy gradient) */
+      .ui-header {
+        background: rgba(255, 255, 255, 0.85) !important;
+        -webkit-backdrop-filter: saturate(180%) blur(20px);
+        backdrop-filter: saturate(180%) blur(20px);
+        border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+        box-shadow: none !important;
+      }
+      .ui-header h1 {
+        color: var(--ar-g9) !important;
+        font-weight: 600 !important;
+        letter-spacing: -0.015em !important;
+      }
+      .ui-header h1 svg {
+        color: var(--ar-g9) !important;
+        stroke: var(--ar-g9) !important;
+      }
+
+      /* Cards & date blocks — refined shadow */
+      .card,
+      .date-block {
+        box-shadow: var(--ar-sh-sm) !important;
+      }
+
+      /* Stat cards — softer hover */
+      .stat {
+        transition: box-shadow 0.18s ease, transform 0.18s ease,
+          border-color 0.18s ease !important;
+      }
+      .stat:hover {
+        border-color: var(--ar-blue-mid) !important;
+      }
+
+      /* Table headers — cleaner tint */
+      thead th {
+        background: var(--ar-blue-g) !important;
+        color: var(--ar-blue-d) !important;
+        border-bottom: 2px solid var(--ar-blue-mid) !important;
+      }
+
+      /* Frosted-glass footer bars (if any added later) */
+      .wizard-footer-nav {
+        background: rgba(255, 255, 255, 0.9) !important;
+        -webkit-backdrop-filter: saturate(180%) blur(20px);
+        backdrop-filter: saturate(180%) blur(20px);
+        border-top: 1px solid var(--ar-g3) !important;
+        box-shadow: none !important;
+      }
+
+      /* Toast notification system (drop-in for future notify() calls) */
+      .ar-toast-wrap {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 2147483600;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        font-family: var(--ar-font);
+      }
+      .ar-toast {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        background: #fff;
+        border: 1px solid var(--ar-g3);
+        border-radius: var(--ar-r);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.10),
+          0 2px 8px rgba(0, 0, 0, 0.05);
+        padding: 14px 16px;
+        min-width: 300px;
+        max-width: 380px;
+        position: relative;
+        overflow: hidden;
+        animation: arToastIn 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      }
+      .ar-toast::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+      }
+      .ar-toast.success::before { background: var(--ar-green); }
+      .ar-toast.error::before   { background: var(--ar-red); }
+      .ar-toast.info::before    { background: var(--ar-blue); }
+      .ar-toast.warning::before { background: var(--ar-amber); }
+      .ar-toast .ar-ic {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.78em;
+        font-weight: 700;
+        color: #fff;
+        flex-shrink: 0;
+        margin-top: 1px;
+      }
+      .ar-toast.success .ar-ic { background: var(--ar-green); }
+      .ar-toast.error   .ar-ic { background: var(--ar-red); }
+      .ar-toast.info    .ar-ic { background: var(--ar-blue); }
+      .ar-toast.warning .ar-ic { background: var(--ar-amber); }
+      .ar-toast .ar-tc { flex: 1; min-width: 0; }
+      .ar-toast .ar-tt {
+        font-size: 0.88em;
+        font-weight: 600;
+        color: var(--ar-g9);
+      }
+      .ar-toast .ar-tm {
+        font-size: 0.82em;
+        color: var(--ar-g6);
+        margin-top: 2px;
+        line-height: 1.4;
+        word-break: break-word;
+      }
+      .ar-toast .ar-tx {
+        background: none;
+        border: none;
+        color: var(--ar-g5);
+        cursor: pointer;
+        font-size: 1.1em;
+        line-height: 1;
+        padding: 0 2px;
+      }
+      @keyframes arToastIn {
+        from { opacity: 0; transform: translateX(20px); }
+        to   { opacity: 1; transform: translateX(0); }
+      }
+
+      /* ══════════════════════════════════════════════════════════════
+         D365 NATIVE TYPOGRAPHY LAYER — Segoe UI, sentence-case labels,
+         matches the "Active Lease Agreements" grid view aesthetic.
+         ══════════════════════════════════════════════════════════════ */
+
+      :root {
+        --ar-font:
+          "Segoe UI Variable", "Segoe UI", -apple-system, BlinkMacSystemFont,
+          system-ui, Roboto, Helvetica, Arial, sans-serif !important;
+      }
+      body {
+        font-family: var(--ar-font) !important;
+        font-size: 14px !important;
+      }
+
+      /* Header title — sentence case, semibold, dark */
+      .ui-header h1 {
+        font-family: var(--ar-font) !important;
+        font-size: 18px !important;
+        font-weight: 600 !important;
+        letter-spacing: -0.005em !important;
+      }
+
+      /* Toolbar labels — normal case (drop uppercase tracking) */
+      .field label {
+        font-family: var(--ar-font) !important;
+        font-size: 12px !important;
+        font-weight: 600 !important;
+        text-transform: none !important;
+        letter-spacing: 0 !important;
+        color: var(--ar-g7) !important;
+      }
+
+      .field input,
+      .field select,
+      .btn {
+        font-family: var(--ar-font) !important;
+        font-size: 14px !important;
+      }
+
+      /* Stat card labels — normal case */
+      .stat .label {
+        font-family: var(--ar-font) !important;
+        font-size: 12px !important;
+        font-weight: 600 !important;
+        text-transform: none !important;
+        letter-spacing: 0 !important;
+        color: var(--ar-g7) !important;
+      }
+      .stat .value {
+        font-family: var(--ar-font) !important;
+        font-size: 22px !important;
+        font-weight: 600 !important;
+        letter-spacing: -0.01em !important;
+      }
+
+      /* Date-block header — normal case */
+      .date-header {
+        font-family: var(--ar-font) !important;
+        font-size: 14px !important;
+      }
+      .date-header .d-label {
+        font-family: var(--ar-font) !important;
+        font-size: 12px !important;
+        font-weight: 600 !important;
+        text-transform: none !important;
+        letter-spacing: 0 !important;
+        color: var(--ar-g7) !important;
+      }
+      .date-header .d-value {
+        font-family: var(--ar-font) !important;
+        font-size: 14px !important;
+        font-weight: 600 !important;
+        letter-spacing: -0.005em !important;
+      }
+      .date-header .d-meta {
+        font-family: var(--ar-font) !important;
+        font-size: 13px !important;
+      }
+
+      /* Main tables — D365 grid style: normal case, semibold headers */
+      table {
+        font-family: var(--ar-font) !important;
+      }
+      thead th {
+        font-family: var(--ar-font) !important;
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        text-transform: none !important;
+        letter-spacing: 0 !important;
+        padding: 10px 12px !important;
+      }
+      tbody td {
+        font-family: var(--ar-font) !important;
+        font-size: 13px !important;
+        color: var(--ar-g9) !important;
+      }
+      .amt {
+        font-family: var(--ar-font) !important;
+        font-size: 13px !important;
+      }
+      .amt-native {
+        font-size: 12px !important;
+      }
+
+      /* Sub-tables (invoice line items) — same treatment */
+      .subtable thead th {
+        font-family: var(--ar-font) !important;
+        font-size: 12px !important;
+        font-weight: 600 !important;
+        text-transform: none !important;
+        letter-spacing: 0 !important;
+      }
+      .subtable tbody td {
+        font-family: var(--ar-font) !important;
+        font-size: 13px !important;
+      }
+      .subtable tfoot tr td {
+        font-family: var(--ar-font) !important;
+        font-size: 13px !important;
+        font-weight: 600 !important;
+      }
+      .product-name {
+        font-size: 13px !important;
+        font-weight: 600 !important;
+      }
+      .product-sub {
+        font-size: 12px !important;
+      }
+      .period-cell {
+        font-size: 12px !important;
+      }
+      .period-freq {
+        font-size: 12px !important;
+      }
+
+      /* Detail section titles — normal case */
+      .detail-title {
+        font-family: var(--ar-font) !important;
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        text-transform: none !important;
+        letter-spacing: 0 !important;
+      }
+
+      /* Badges — keep small but drop uppercase */
+      .badge {
+        font-family: var(--ar-font) !important;
+        text-transform: none !important;
+        letter-spacing: 0 !important;
+      }
+
+      /* Banner text */
+      .banner {
+        font-family: var(--ar-font) !important;
+        font-size: 13px !important;
+      }
+
+      /* ══════════════════════════════════════════════════════════════
+         STAT CARD FIT FIX — keep values on one line, wider min-width
+         ══════════════════════════════════════════════════════════════ */
+      .stats {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+        gap: 10px !important;
+      }
+      .stat .value {
+        font-size: 18px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        letter-spacing: -0.01em !important;
+      }
+      @media (max-width: 720px) {
+        .stat .value { font-size: 16px !important; }
+      }
+      @media (max-width: 440px) {
+        .stat .value { font-size: 15px !important; }
+      }
+
+      /* Combined stat card — PLN primary + EUR secondary */
+      .stat .value-sub {
+        font-family: var(--ar-font);
+        font-variant-numeric: tabular-nums;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--ar-g6);
+        letter-spacing: -0.005em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-top: 2px;
+      }
+      .stat.stat-accent .value-sub { color: var(--ar-g6); }
+    </style>
+  </head>
+  <body>
+    <div class="ui-header">
+      <h1 id="pageTitle">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+          <line x1="16" y1="2" x2="16" y2="6"></line>
+          <line x1="8" y1="2" x2="8" y2="6"></line>
+          <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+        Automated Invoice Forecast
+      </h1>
+    </div>
+
+    <div class="ui-body">
+      <div class="card" style="overflow: visible; position: relative; z-index: 200;">
+        <div class="toolbar" style="overflow-x: visible;">
+          <div class="field f-sm">
+            <label>Horizon</label>
+            <select id="fltHorizon">
+              <option value="3">Next 3 months</option>
+              <option value="6">Next 6 months</option>
+              <option value="12" selected="selected">Next 12 months</option>
+              <option value="24">Next 24 months</option>
+            </select>
+          </div>
+          <div class="field f-md">
+            <label>Month</label>
+            <select id="fltMonth"><option value="2026-08" selected="selected">August 2026</option><option value="2026-09">September 2026</option><option value="2026-10">October 2026</option><option value="2026-11">November 2026</option><option value="2026-12">December 2026</option><option value="2027-01">January 2027</option><option value="2027-02">February 2027</option><option value="2027-03">March 2027</option><option value="2027-04">April 2027</option><option value="2027-05">May 2027</option><option value="2027-06">June 2027</option><option value="2027-07">July 2027</option></select>
+          </div>
+          <div class="field f-sm">
+            <label>Term</label>
+            <select id="fltTerm">
+              <option value="" selected="selected">All</option>
+              <option value="long">Long Term</option>
+              <option value="short">Short Term</option>
+            </select>
+          </div>
+          <div class="field f-md">
+            <label>Property</label>
+            <div class="combobox" id="fltPropertyBox">
+              <input type="text" id="fltProperty" class="combobox-input" placeholder="All properties…" autocomplete="off" />
+              <span class="combobox-clear" data-target="fltProperty">×</span>
+              <span class="combobox-caret">▼</span>
+              <div class="combobox-list" id="fltPropertyList"></div>
+            </div>
+          </div>
+          <div class="field f-md">
+            <label>Tenant</label>
+            <div class="combobox" id="fltTenantBox">
+              <input type="text" id="fltTenant" class="combobox-input" placeholder="All tenants…" autocomplete="off" />
+              <span class="combobox-clear" data-target="fltTenant">×</span>
+              <span class="combobox-caret">▼</span>
+              <div class="combobox-list" id="fltTenantList"></div>
+            </div>
+          </div>
+          <div class="field f-lg">
+            <label>Lease</label>
+            <div class="combobox" id="fltLeaseBox">
+              <input type="text" id="fltLease" class="combobox-input" placeholder="All leases…" autocomplete="off" />
+              <span class="combobox-clear" data-target="fltLease">×</span>
+              <span class="combobox-caret">▼</span>
+              <div class="combobox-list" id="fltLeaseList"></div>
+            </div>
+          </div>
+          <button class="btn btn-primary" id="btnRefresh">Refresh</button>
+          <button class="btn btn-soft" id="btnXlsx" disabled="disabled">
+            Export to Excel
+          </button>
+        </div>
+      </div>
+
+      <div id="fxBanner" class="banner" style="display: none"></div>
+      <div id="truncationWarn" class="banner warn" style="display: none"></div>
+
+      <div class="card" id="summary" style="display: none">
+        <div class="stats">
+          <div class="stat">
+            <span class="label">Projected Invoices</span>
+            <span class="value" id="stInv">0</span>
+          </div>
+          <div class="stat">
+            <span class="label">Total Payment Amount</span>
+            <span class="value" id="stPay">0</span>
+            <span class="value-sub" id="stPayEUR">0</span>
+          </div>
+          <div class="stat">
+            <span class="label">Total Discount In Payment Currency</span>
+            <span class="value" id="stDiscPay">0</span>
+            <span class="value-sub" id="stDiscPayEUR">0</span>
+          </div>
+          <div class="stat">
+            <span class="label">Total Net Amount</span>
+            <span class="value" id="stNet">0</span>
+            <span class="value-sub" id="stNetEUR">0</span>
+          </div>
+          <div class="stat">
+            <span class="label">Total Discount Net Amount</span>
+            <span class="value" id="stDisc">0</span>
+            <span class="value-sub" id="stDiscEUR">0</span>
+          </div>
+          <div class="stat">
+            <span class="label">Total Tax</span>
+            <span class="value" id="stTax">0</span>
+            <span class="value-sub" id="stTaxEUR">0</span>
+          </div>
+          <div class="stat stat-accent">
+            <span class="label">Total Gross Amount</span>
+            <span class="value" id="stGross">0</span>
+            <span class="value-sub" id="stGrossEUR">0</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="content"><div class="loader"><div class="spinner"></div><div>Loading recurring charges and exchange rates…</div></div></div>
+    </div>
+
+    <script>
+      // ================================================================
+      // Array Lease Management — Upcoming Invoices
+      // Source: array_recurringcharge, projected forward to lease/RC end
+      // ================================================================
+
+      var Xrm = window.parent.Xrm;
+      var _allRCs = [];
+      var _projections = [];
+      var _filtered = [];
+      var _leaseNameMap = {};
+      var _leaseCodeMap = {}; // leaseId -> array_leaserecordid (business code, e.g. "PB-PL-003-ST-LA54")
+      var _leaseStatusMap = {}; // leaseId -> { statecode, statuscode }
+      // Label→id maps for searchable filter inputs
+      var _propLabelToId = {};
+      var _tenantLabelToId = {};
+      var _leaseLabelToId = {};
+      var _leaseTermMap = {};
+      var _leaseEndMap = {};
+      var _chargeTypeMap = {};
+      var _discountsByLease = {};
+      var _vatMap = {};
+      var _clauseMap = {}; // clauseId -> { type: string } (Step Rent / CPI / Turnover)
+      var _invoiceMap = {}; // "leaseId|invoiceTypeId|YYYY-MM-DD" -> invoice header record
+      var _invoiceLineMap = {}; // invoiceId -> [invoicedetail records]
+      var _invoiceOriginalMap = {}; // correctiveId -> originalInvoiceId
+      var _tenantNIPMap = {}; // tenantId -> NIP string
+      var _unitAreaMap = {}; // unitId -> area sq m
+      var _bankAccountMap = {}; // "propertyId|currencyId" -> bank account number
+      var _leasePropertyMap = {}; // leaseId -> propertyId (from lease agreement)
+      var _fxRate = null;
+      var _plnCurrencyId = null;
+
+      // ---------- Utilities ----------
+      function fmtDate(d) {
+        if (!d) return "";
+        var dt = d instanceof Date ? d : new Date(d);
+        if (isNaN(dt)) return "";
+        return (
+          String(dt.getDate()).padStart(2, "0") +
+          "/" +
+          String(dt.getMonth() + 1).padStart(2, "0") +
+          "/" +
+          dt.getFullYear()
+        );
+      }
+      function fmtAmt(n) {
+        if (n == null || isNaN(n)) return "";
+        return Number(n).toLocaleString("pl-PL", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        });
+      }
+      // Area is a measurement (m²), not currency — use en-US format with a DOT decimal.
+      // Trims trailing zeros so 209.00 shows as 209, 209.5 shows as 209.5.
+      function fmtArea(n) {
+        if (n == null || isNaN(n)) return "";
+        return Number(n).toLocaleString("en-US", {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 2,
+          useGrouping: false,
+        });
+      }
+      function ccySym(code) {
+        var raw = code || "";
+        var up = raw.toUpperCase();
+        // PLN — English "PLN"/"Polish Zloty" AND Polish "Polski złoty" (with Ł diacritic)
+        if (
+          /ł/i.test(raw) ||
+          up.indexOf("PLN") >= 0 ||
+          up.indexOf("ZLOT") >= 0 ||
+          up.indexOf("POLISH") >= 0 ||
+          up.indexOf("POLSKI") >= 0
+        )
+          return "zł";
+        if (up.indexOf("EUR") >= 0) return "€";
+        if (up.indexOf("USD") >= 0 || up.indexOf("DOLLAR") >= 0) return "$";
+        if (up.indexOf("GBP") >= 0 || up.indexOf("POUND") >= 0) return "£";
+        return up.substring(0, 3);
+      }
+      // Normalize any currency label (formatted value like "Polish zloty", "Euro", ISO like "EUR")
+      // to its ISO code for use as a stable lookup key across entities.
+      function ccyCode(code) {
+        var raw = code || "";
+        var up = raw.toUpperCase();
+        if (
+          /ł/i.test(raw) ||
+          up.indexOf("PLN") >= 0 ||
+          up.indexOf("ZLOT") >= 0 ||
+          up.indexOf("POLISH") >= 0 ||
+          up.indexOf("POLSKI") >= 0
+        )
+          return "PLN";
+        if (up.indexOf("EUR") >= 0) return "EUR";
+        if (up.indexOf("USD") >= 0 || up.indexOf("DOLLAR") >= 0) return "USD";
+        if (up.indexOf("GBP") >= 0 || up.indexOf("POUND") >= 0) return "GBP";
+        // Fallback: first 3 uppercase letters
+        return up.replace(/[^A-Z]/g, "").substring(0, 3);
+      }
+      function fmtPLN(n) {
+        var s = fmtAmt(n);
+        return s ? s + " zł" : "";
+      }
+      function fmtCcy(n, code) {
+        var s = fmtAmt(n);
+        return s ? s + " " + ccySym(code) : "";
+      }
+      // True when a row's native currency label starts with "EUR"
+      function isEurRow(r) {
+        return (
+          r &&
+          r.nativeCurrency &&
+          String(r.nativeCurrency).toUpperCase().indexOf("EUR") >= 0
+        );
+      }
+      function yMonth(d) {
+        return (
+          d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0")
+        );
+      }
+      function ymd(d) {
+        return (
+          d.getUTCFullYear() +
+          "-" +
+          String(d.getUTCMonth() + 1).padStart(2, "0") +
+          "-" +
+          String(d.getUTCDate()).padStart(2, "0")
+        );
+      }
+      function monthLabel(ym) {
+        var p = ym.split("-");
+        return new Date(p[0], p[1] - 1, 1).toLocaleDateString("en-GB", {
+          month: "long",
+          year: "numeric",
+        });
+      }
+      function esc(s) {
+        return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
+          return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+        });
+      }
+
+      function addMonthsSafely(dateStr, months) {
+        var d = new Date(dateStr);
+        var day = d.getUTCDate();
+        var target = new Date(
+          Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + months, 1),
+        );
+        var lastDay = new Date(
+          Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0),
+        ).getUTCDate();
+        target.setUTCDate(Math.min(day, lastDay));
+        return target;
+      }
+      function addDays(dateStr, days) {
+        var d = new Date(dateStr);
+        d.setUTCDate(d.getUTCDate() + days);
+        return d;
+      }
+      function endOfMonth(dateInput) {
+        var d = dateInput instanceof Date ? dateInput : new Date(dateInput);
+        return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0));
+      }
+      function startOfMonth(dateInput) {
+        var d = dateInput instanceof Date ? dateInput : new Date(dateInput);
+        return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1));
+      }
+      function openRecord(entity, id) {
+        try {
+          window.parent.Xrm.Navigation.openForm({
+            entityName: entity,
+            entityId: id,
+          });
+        } catch (e) {
+          console.warn(e);
+        }
+      }
+      window.openRecord = openRecord;
+
+      function computeDueDate(invoiceDate, ruleCode, dueInDays) {
+        if (!invoiceDate) return null;
+        var d = new Date(invoiceDate);
+        dueInDays = dueInDays || 0;
+        switch (ruleCode) {
+          case 126330000:
+            return addDays(invoiceDate, dueInDays);
+          // On receipt of sales document: treat receipt (= invoice/generation date) as the anchor
+          // and add the configured number of days (per tester; overrides the doc's "immediate").
+          case 126330001:
+            return addDays(invoiceDate, dueInDays);
+          case 126330002:
+            var candidate = new Date(
+              Date.UTC(
+                d.getUTCFullYear(),
+                d.getUTCMonth(),
+                Math.min(dueInDays, endOfMonth(d).getUTCDate()),
+              ),
+            );
+            if (candidate < d)
+              candidate = new Date(
+                Date.UTC(
+                  d.getUTCFullYear(),
+                  d.getUTCMonth() + 1,
+                  Math.min(
+                    dueInDays,
+                    endOfMonth(addMonthsSafely(invoiceDate, 1)).getUTCDate(),
+                  ),
+                ),
+              );
+            return candidate;
+          case 126330004:
+            var nextMonth = new Date(
+              Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1),
+            );
+            return new Date(
+              Date.UTC(
+                nextMonth.getUTCFullYear(),
+                nextMonth.getUTCMonth(),
+                Math.min(dueInDays, endOfMonth(nextMonth).getUTCDate()),
+              ),
+            );
+          case 126330005:
+            var m2 = new Date(
+              Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 2, 1),
+            );
+            return new Date(
+              Date.UTC(
+                m2.getUTCFullYear(),
+                m2.getUTCMonth(),
+                Math.min(dueInDays, endOfMonth(m2).getUTCDate()),
+              ),
+            );
+          case 126330006:
+            return endOfMonth(d);
+          default:
+            return addDays(invoiceDate, dueInDays);
+        }
+      }
+      function advanceCycle(invoiceDate, freq) {
+        switch (freq) {
+          case 126330000:
+            return addMonthsSafely(invoiceDate, 1);
+          case 126330001:
+            return addMonthsSafely(invoiceDate, 12);
+          case 126330003:
+            return addDays(invoiceDate, 1);
+          case 126330004:
+            return addDays(invoiceDate, 7);
+          case 126330005:
+            return addMonthsSafely(invoiceDate, 3);
+          default:
+            return null;
+        }
+      }
+      function advanceFreqEnd(freqEnd, freq) {
+        return advanceCycle(freqEnd, freq);
+      }
+
+      // ---------- Init ----------
+      function populateMonths() {
+        var sel = document.getElementById("fltMonth");
+        var prev = sel.value;
+        var n = parseInt(document.getElementById("fltHorizon").value, 10) || 12;
+        var base = new Date();
+        sel.innerHTML = "";
+        var matched = false;
+        for (var i = 0; i < n; i++) {
+          var d = new Date(
+            Date.UTC(base.getFullYear(), base.getMonth() + i, 1),
+          );
+          var ym =
+            d.getUTCFullYear() +
+            "-" +
+            String(d.getUTCMonth() + 1).padStart(2, "0");
+          var o = document.createElement("option");
+          o.value = ym;
+          o.textContent = d.toLocaleDateString("en-GB", {
+            month: "long",
+            year: "numeric",
+            timeZone: "UTC",
+          });
+          if (ym === prev) {
+            o.selected = true;
+            matched = true;
+          }
+          sel.appendChild(o);
+        }
+        // If prior selection fell outside the new range, default to the first month
+        if (!matched && sel.options.length) sel.options[0].selected = true;
+      }
+
+      // Custom combobox controller: open on click/focus, filter as user types,
+      // select on option click, arrow-key navigation, and cascade dependents / re-render.
+      function wireCombobox(inputId, listId, boxId, cascade) {
+        var input = document.getElementById(inputId);
+        var list = document.getElementById(listId);
+        var box = document.getElementById(boxId);
+        var _renderDebounce;
+        function openBox() {
+          renderComboboxOptions(inputId, listId, input.value);
+          box.classList.add("open");
+        }
+        function closeBox() { box.classList.remove("open"); }
+        function updateClearVisibility() {
+          if (input.value) box.classList.add("has-value");
+          else box.classList.remove("has-value");
+        }
+        function commit(cascadeNow) {
+          updateClearVisibility();
+          if (cascade) populateDependentFilters();
+          clearTimeout(_renderDebounce);
+          _renderDebounce = setTimeout(applyFiltersAndRender, 200);
+        }
+        input.addEventListener("focus", openBox);
+        input.addEventListener("click", function (e) {
+          e.stopPropagation();
+          openBox();
+        });
+        input.addEventListener("input", function () {
+          openBox();
+          commit();
+        });
+        input.addEventListener("keydown", function (e) {
+          if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+            e.preventDefault();
+            var opts = list.querySelectorAll(".combobox-option");
+            if (!opts.length) return;
+            var curr = list.querySelector(".combobox-option.highlight");
+            var idx = curr ? Array.prototype.indexOf.call(opts, curr) : -1;
+            if (curr) curr.classList.remove("highlight");
+            idx = e.key === "ArrowDown" ? (idx + 1) % opts.length : (idx - 1 + opts.length) % opts.length;
+            opts[idx].classList.add("highlight");
+            opts[idx].scrollIntoView({ block: "nearest" });
+          } else if (e.key === "Enter") {
+            var hl = list.querySelector(".combobox-option.highlight");
+            if (hl) {
+              e.preventDefault();
+              input.value = hl.getAttribute("data-value");
+              closeBox();
+              commit();
+            }
+          } else if (e.key === "Escape") {
+            closeBox();
+          }
+        });
+        list.addEventListener("mousedown", function (e) {
+          // mousedown (not click) so it fires before input blur
+          var opt = e.target.closest(".combobox-option");
+          if (!opt) return;
+          e.preventDefault();
+          input.value = opt.getAttribute("data-value");
+          closeBox();
+          commit();
+        });
+      }
+
+      function init() {
+        var now = new Date();
+        populateMonths();
+        document.getElementById("fltHorizon").onchange = function () {
+          populateMonths();
+          applyFiltersAndRender();
+        };
+        document.getElementById("btnRefresh").onclick = function () {
+          // Reset filters to All so results reflect a clean state
+          ["fltTerm", "fltProperty", "fltTenant", "fltLease"].forEach(
+            function (id) {
+              var el = document.getElementById(id);
+              if (el) el.value = "";
+            },
+          );
+          // Reset month picker to current month
+          var now = new Date();
+          document.getElementById("fltMonth").value =
+            now.getFullYear() +
+            "-" +
+            String(now.getMonth() + 1).padStart(2, "0");
+          // Reset horizon to default (12 months)
+          document.getElementById("fltHorizon").value = "12";
+          loadAll();
+        };
+        document.getElementById("fltMonth").onchange = applyFiltersAndRender;
+        document.getElementById("btnXlsx").onclick = exportXlsx;
+        // Custom searchable dropdown wiring for Property / Tenant / Lease.
+        wireCombobox("fltProperty", "fltPropertyList", "fltPropertyBox", true);
+        wireCombobox("fltTenant", "fltTenantList", "fltTenantBox", true);
+        wireCombobox("fltLease", "fltLeaseList", "fltLeaseBox", false);
+        document.getElementById("fltTerm").onchange = applyFiltersAndRender;
+        // Close any open combobox when clicking outside
+        document.addEventListener("click", function (e) {
+          document.querySelectorAll(".combobox.open").forEach(function (box) {
+            if (!box.contains(e.target)) box.classList.remove("open");
+          });
+        });
+        // Clear buttons
+        document.querySelectorAll(".combobox-clear").forEach(function (btn) {
+          btn.addEventListener("click", function (e) {
+            e.stopPropagation();
+            var input = document.getElementById(btn.getAttribute("data-target"));
+            input.value = "";
+            input.closest(".combobox").classList.remove("has-value");
+            // Trigger the same handler chain as an edit
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+            input.focus();
+          });
+        });
+        loadAll();
+      }
+
+      // ---------- Load ----------
+      function loadAll() {
+        document.getElementById("content").innerHTML =
+          '<div class="loader"><div class="spinner"></div><div>Loading recurring charges and exchange rates…</div></div>';
+        document.getElementById("btnXlsx").disabled = true;
+        document.getElementById("fxBanner").style.display = "none";
+        document.getElementById("truncationWarn").style.display = "none";
+
+        var fetchXml =
+          '<fetch version="1.0" mapping="logical" no-lock="true">' +
+          '<entity name="array_recurringcharge">' +
+          '<attribute name="array_recurringchargeid" />' +
+          '<attribute name="array_chargename" />' +
+          '<attribute name="array_chargeid" />' +
+          '<attribute name="array_chargetype" />' +
+          '<attribute name="array_upcominginvoicegenerationday" />' +
+          '<attribute name="array_frequencystartdate" />' +
+          '<attribute name="array_frequencyenddate" />' +
+          '<attribute name="array_frequency" />' +
+          '<attribute name="array_startdate" />' +
+          '<attribute name="array_enddate" />' +
+          '<attribute name="array_amount" />' +
+          '<attribute name="array_vat" />' +
+          '<attribute name="array_invoiceseparately" />' +
+          '<attribute name="array_useasinvoicecurrency" />' +
+          '<attribute name="array_taxincluded" />' +
+          '<attribute name="array_duedaterule" />' +
+          '<attribute name="array_dueindays" />' +
+          '<attribute name="transactioncurrencyid" />' +
+          '<attribute name="array_leaseagreement" />' +
+          '<attribute name="array_tenant" />' +
+          '<attribute name="array_property" />' +
+          '<attribute name="array_unit" />' +
+          '<attribute name="array_invoicetype" />' +
+          '<attribute name="array_invoiceprefix" />' +
+          '<attribute name="array_leaseclause" />' +
+          '<attribute name="array_prorationenabled" />' +
+          '<attribute name="array_prefrequencyoffset" />' +
+          '<attribute name="array_billablearea" />' +
+          '<attribute name="statecode" />' +
+          '<attribute name="statuscode" />' +
+          '<filter type="and">' +
+          '<condition attribute="statecode" operator="eq" value="0" />' +
+          '<condition attribute="statuscode" operator="ne" value="126330001" />' +
+          '<condition attribute="array_upcominginvoicegenerationday" operator="not-null" />' +
+          "</filter>" +
+          "</entity>" +
+          "</fetch>";
+
+        Promise.all([
+          Xrm.WebApi.retrieveMultipleRecords(
+            "array_recurringcharge",
+            "?fetchXml=" + encodeURIComponent(fetchXml),
+          ),
+          fetchLatestFX(),
+          fetchPlnCurrencyId(),
+        ])
+          .then(function (results) {
+            _allRCs = results[0].entities || [];
+            _fxRate = results[1];
+            _plnCurrencyId = results[2];
+            var leaseIds = {},
+              chargeTypeIds = {},
+              vatIds = {},
+              tenantIds = {},
+              unitIds = {},
+              propertyIds = {};
+            _allRCs.forEach(function (rc) {
+              if (rc._array_leaseagreement_value)
+                leaseIds[rc._array_leaseagreement_value] = 1;
+              if (rc._array_chargetype_value)
+                chargeTypeIds[rc._array_chargetype_value] = 1;
+              if (rc._array_vat_value) vatIds[rc._array_vat_value] = 1;
+              if (rc._array_tenant_value)
+                tenantIds[rc._array_tenant_value] = 1;
+              if (rc._array_unit_value) unitIds[rc._array_unit_value] = 1;
+              if (rc._array_property_value)
+                propertyIds[rc._array_property_value] = 1;
+            });
+            return Promise.all([
+              fetchLeaseInfo(Object.keys(leaseIds)),
+              fetchChargeTypes(Object.keys(chargeTypeIds)),
+              fetchDiscounts(Object.keys(leaseIds)),
+              fetchVats(Object.keys(vatIds)),
+              fetchTenantNIPs(Object.keys(tenantIds)),
+              fetchUnitAreas(Object.keys(unitIds)),
+              fetchBankAccounts(Object.keys(propertyIds)),
+            ]);
+          })
+          .then(function (results) {
+            _leaseNameMap = results[0].names;
+            _leaseCodeMap = results[0].codes || {};
+            _leaseStatusMap = results[0].statuses || {};
+            _leaseTermMap = results[0].terms;
+            _leaseEndMap = results[0].ends;
+            _leasePropertyMap = results[0].props || {};
+            _chargeTypeMap = results[1];
+            _discountsByLease = results[2];
+            _vatMap = results[3];
+            _tenantNIPMap = results[4];
+            _unitAreaMap = results[5];
+            _bankAccountMap = results[6];
+            _clauseMap = {}; // clause fetch removed — array_clausetype not on array_leaseclause
+            renderFxBanner();
+            populateFilters();
+            applyFiltersAndRender();
+          })
+          .catch(function (err) {
+            showError(
+              "Load failed: " + (err && err.message ? err.message : err),
+            );
+          });
+      }
+
+      function fetchLatestFX() {
+        // Correct schema (doc section 3.10): array_exchangerate, array_validfrom, array_validto, array_currency
+        // Currently-active rate = array_validto is null
+        var q =
+          "?$select=array_exchangerate,array_validfrom,array_validto,_array_currency_value" +
+          "&$filter=array_validto eq null" +
+          "&$top=10&$orderby=array_validfrom desc";
+        return Xrm.WebApi.retrieveMultipleRecords("array_exchangeratelog", q)
+          .then(function (r) {
+            if (!r.entities || r.entities.length === 0) return null;
+            // Prefer EUR
+            for (var i = 0; i < r.entities.length; i++) {
+              var e = r.entities[i];
+              var ccy = (
+                e[
+                  "_array_currency_value@OData.Community.Display.V1.FormattedValue"
+                ] || ""
+              ).toUpperCase();
+              if (ccy.indexOf("EUR") >= 0)
+                return {
+                  rate: e.array_exchangerate,
+                  date: e.array_validfrom,
+                  currency: "EUR",
+                };
+            }
+            var e = r.entities[0];
+            return {
+              rate: e.array_exchangerate,
+              date: e.array_validfrom,
+              currency:
+                e[
+                  "_array_currency_value@OData.Community.Display.V1.FormattedValue"
+                ] || "?",
+            };
+          })
+          .catch(function () {
+            return null;
+          });
+      }
+      function fetchPlnCurrencyId() {
+        return Xrm.WebApi.retrieveMultipleRecords(
+          "transactioncurrency",
+          "?$select=transactioncurrencyid,isocurrencycode&$filter=isocurrencycode eq 'PLN'&$top=1",
+        )
+          .then(function (r) {
+            return r.entities && r.entities[0]
+              ? r.entities[0].transactioncurrencyid
+              : null;
+          })
+          .catch(function () {
+            return null;
+          });
+      }
+      function fetchLeaseInfo(ids) {
+        if (!ids || ids.length === 0)
+          return Promise.resolve({
+            names: {},
+            terms: {},
+            ends: {},
+            props: {},
+          });
+        // FetchXML with <condition operator="in"> — one call per ~200 ids.
+        var chunks = [];
+        for (var i = 0; i < ids.length; i += 200)
+          chunks.push(ids.slice(i, i + 200));
+        var promises = chunks.map(function (chunk) {
+          var valuesXml = chunk
+            .map(function (id) { return "<value>" + id + "</value>"; })
+            .join("");
+          var fetchXml =
+            '<fetch version="1.0" mapping="logical" no-lock="true">' +
+              '<entity name="array_leaseagreement">' +
+                '<attribute name="array_leaseagreementid" />' +
+                '<attribute name="array_leasename" />' +
+                '<attribute name="array_leaserecordid" />' +
+                '<attribute name="array_leasetermtype" />' +
+                '<attribute name="array_leaseenddate" />' +
+                '<attribute name="array_property" />' +
+                '<attribute name="statecode" />' +
+                '<attribute name="statuscode" />' +
+                '<filter type="and">' +
+                  '<condition attribute="array_leaseagreementid" operator="in">' + valuesXml + '</condition>' +
+                '</filter>' +
+              '</entity>' +
+            '</fetch>';
+          return Xrm.WebApi.retrieveMultipleRecords(
+            "array_leaseagreement",
+            "?fetchXml=" + encodeURIComponent(fetchXml),
+          )
+            .then(function (r) { return r.entities; })
+            .catch(function (err) {
+              console.warn("Lease info fetch failed:", err && err.message ? err.message : err);
+              return [];
+            });
+        });
+        return Promise.all(promises).then(function (all) {
+          var names = {},
+            codes = {},
+            terms = {},
+            ends = {},
+            props = {},
+            statuses = {};
+          all.forEach(function (arr) {
+            arr.forEach(function (e) {
+              // Exclude inactive (statecode≠0) and non-Active statuscodes (Draft, Terminated, etc.)
+              // Lease Active per docs = statuscode 126330001. statecode 0 = active state.
+              statuses[e.array_leaseagreementid] = {
+                statecode: e.statecode,
+                statuscode: e.statuscode,
+                statuscodeLabel:
+                  e[
+                    "statuscode@OData.Community.Display.V1.FormattedValue"
+                  ] || "",
+              };
+              if (e.array_leasename)
+                names[e.array_leaseagreementid] = e.array_leasename;
+              // Business ID (e.g. "PB-PL-003-ST-LA54") — the human-readable lease code
+              if (e.array_leaserecordid)
+                codes[e.array_leaseagreementid] = e.array_leaserecordid;
+              var termLabel =
+                e[
+                  "array_leasetermtype@OData.Community.Display.V1.FormattedValue"
+                ];
+              if (termLabel) terms[e.array_leaseagreementid] = termLabel;
+              if (e.array_leaseenddate)
+                ends[e.array_leaseagreementid] = e.array_leaseenddate;
+              if (e._array_property_value)
+                props[e.array_leaseagreementid] = e._array_property_value;
+            });
+          });
+          return { names: names, codes: codes, terms: terms, ends: ends, props: props, statuses: statuses };
+        });
+      }
+      function fetchChargeTypes(ids) {
+        if (!ids || ids.length === 0) return Promise.resolve({});
+        var chunks = [];
+        for (var i = 0; i < ids.length; i += 200)
+          chunks.push(ids.slice(i, i + 200));
+        var promises = chunks.map(function (chunk) {
+          var valuesXml = chunk
+            .map(function (id) { return "<value>" + id + "</value>"; })
+            .join("");
+          var fetchXml =
+            '<fetch version="1.0" mapping="logical" no-lock="true">' +
+              '<entity name="array_chargetype">' +
+                '<attribute name="array_chargetypeid" />' +
+                '<attribute name="array_name" />' +
+                '<attribute name="array_invoicelinename" />' +
+                '<filter type="and">' +
+                  '<condition attribute="array_chargetypeid" operator="in">' + valuesXml + '</condition>' +
+                '</filter>' +
+              '</entity>' +
+            '</fetch>';
+          return Xrm.WebApi.retrieveMultipleRecords(
+            "array_chargetype",
+            "?fetchXml=" + encodeURIComponent(fetchXml),
+          )
+            .then(function (r) { return r.entities; })
+            .catch(function (err) {
+              console.warn("Charge type fetch failed:", err && err.message ? err.message : err);
+              return [];
+            });
+        });
+        return Promise.all(promises).then(function (all) {
+          var out = {};
+          all.forEach(function (arr) {
+            arr.forEach(function (e) {
+              out[e.array_chargetypeid] = {
+                name: e.array_name || "",
+                invoiceLineName: e.array_invoicelinename || e.array_name || "",
+              };
+            });
+          });
+          return out;
+        });
+      }
+
+      // Fallback VAT fetch — only used if the RC's own VAT lookup formatted value can't be parsed.
+      // Uses <all-attributes /> to stay tolerant of env-specific rate field names.
+      function fetchVats(ids) {
+        if (!ids || ids.length === 0) return Promise.resolve({});
+        var chunks = [];
+        for (var i = 0; i < ids.length; i += 200)
+          chunks.push(ids.slice(i, i + 200));
+        var promises = chunks.map(function (chunk) {
+          var valuesXml = chunk
+            .map(function (id) { return "<value>" + id + "</value>"; })
+            .join("");
+          var fetchXml =
+            '<fetch version="1.0" mapping="logical" no-lock="true">' +
+              '<entity name="array_vat">' +
+                '<all-attributes />' +
+                '<filter type="and">' +
+                  '<condition attribute="array_vatid" operator="in">' + valuesXml + '</condition>' +
+                '</filter>' +
+              '</entity>' +
+            '</fetch>';
+          return Xrm.WebApi.retrieveMultipleRecords(
+            "array_vat",
+            "?fetchXml=" + encodeURIComponent(fetchXml),
+          )
+            .then(function (r) { return r.entities; })
+            .catch(function (err) {
+              console.warn("VAT fetch failed:", err && err.message ? err.message : err);
+              return [];
+            });
+        });
+        return Promise.all(promises).then(function (all) {
+          var out = {};
+          all.forEach(function (arr) {
+            arr.forEach(function (e) {
+              // Try, in order: array_rate, array_vat, array_percentage, array_name (parsed)
+              var rate = null;
+              var candidates = [
+                "array_rate",
+                "array_vat",
+                "array_percentage",
+                "array_taxrate",
+              ];
+              for (var i = 0; i < candidates.length; i++) {
+                var v = e[candidates[i]];
+                if (v != null && !isNaN(Number(v))) {
+                  rate = Number(v);
+                  break;
+                }
+              }
+              if (rate == null && e.array_name) {
+                var m = String(e.array_name).match(/(-?\d+(?:[.,]\d+)?)/);
+                if (m) rate = Number(m[1].replace(",", "."));
+              }
+              out[e.array_vatid] = rate != null && !isNaN(rate) ? rate : 0;
+            });
+          });
+          return out;
+        });
+      }
+
+      // Fetch NIP (tax ID) for each tenant account.
+      // Field: account.array_nip
+      function fetchTenantNIPs(ids) {
+        if (!ids || ids.length === 0) return Promise.resolve({});
+        var chunks = [];
+        for (var i = 0; i < ids.length; i += 200)
+          chunks.push(ids.slice(i, i + 200));
+        var promises = chunks.map(function (chunk) {
+          var valuesXml = chunk
+            .map(function (id) { return "<value>" + id + "</value>"; })
+            .join("");
+          var fetchXml =
+            '<fetch version="1.0" mapping="logical" no-lock="true">' +
+              '<entity name="account">' +
+                '<attribute name="accountid" />' +
+                '<attribute name="array_nip" />' +
+                '<filter type="and">' +
+                  '<condition attribute="accountid" operator="in">' + valuesXml + '</condition>' +
+                '</filter>' +
+              '</entity>' +
+            '</fetch>';
+          return Xrm.WebApi.retrieveMultipleRecords(
+            "account",
+            "?fetchXml=" + encodeURIComponent(fetchXml),
+          )
+            .then(function (r) { return r.entities; })
+            .catch(function (err) {
+              console.warn("Tenant NIP fetch failed:", err && err.message ? err.message : err);
+              return [];
+            });
+        });
+        return Promise.all(promises).then(function (all) {
+          var out = {};
+          all.forEach(function (arr) {
+            arr.forEach(function (e) {
+              if (e.array_nip) out[e.accountid] = e.array_nip;
+            });
+          });
+          return out;
+        });
+      }
+
+      // Fetch unit area (sq m) for each unit.
+      // Field: array_unit.array_unitareasqm
+      function fetchUnitAreas(ids) {
+        if (!ids || ids.length === 0) return Promise.resolve({});
+        var chunks = [];
+        for (var i = 0; i < ids.length; i += 200)
+          chunks.push(ids.slice(i, i + 200));
+        var promises = chunks.map(function (chunk) {
+          var valuesXml = chunk
+            .map(function (id) { return "<value>" + id + "</value>"; })
+            .join("");
+          var fetchXml =
+            '<fetch version="1.0" mapping="logical" no-lock="true">' +
+              '<entity name="array_unit">' +
+                '<attribute name="array_unitid" />' +
+                '<attribute name="array_unitareasqm" />' +
+                '<filter type="and">' +
+                  '<condition attribute="array_unitid" operator="in">' + valuesXml + '</condition>' +
+                '</filter>' +
+              '</entity>' +
+            '</fetch>';
+          return Xrm.WebApi.retrieveMultipleRecords(
+            "array_unit",
+            "?fetchXml=" + encodeURIComponent(fetchXml),
+          )
+            .then(function (r) { return r.entities; })
+            .catch(function (err) {
+              console.warn("Unit area fetch failed:", err && err.message ? err.message : err);
+              return [];
+            });
+        });
+        return Promise.all(promises).then(function (all) {
+          var out = {};
+          all.forEach(function (arr) {
+            arr.forEach(function (e) {
+              if (e.array_unitareasqm != null)
+                out[e.array_unitid] = e.array_unitareasqm;
+            });
+          });
+          return out;
+        });
+      }
+
+      // Fetch bank accounts. Confirmed schema:
+      //   array_bankaccount { array_bankaccountid, array_bankaccountnumber (Primary),
+      //     _array_property_value, _array_currency_value }
+      // Currency here is a CUSTOM lookup (array_currency), so GUIDs won't match
+      // OOB transactioncurrencyid. We key the map by property + normalized ISO code
+      // (PLN, EUR, ...) and match RCs / invoices the same way.
+      function fetchBankAccounts(propertyIds) {
+        var q =
+          "?$select=array_bankaccountid,array_bankaccountnumber," +
+          "_array_property_value,_array_currency_value" +
+          "&$filter=statecode eq 0";
+        return Xrm.WebApi.retrieveMultipleRecords("array_bankaccount", q)
+          .then(function (r) {
+            var out = {};
+            var rows = r.entities || [];
+            window._bankDebug = {
+              count: rows.length,
+              sample: rows[0] || null,
+              keys: [],
+            };
+            console.log(
+              "[AIF] Bank accounts loaded:",
+              rows.length,
+              "row(s). Sample:",
+              rows[0],
+            );
+            rows.forEach(function (e) {
+              var num = e.array_bankaccountnumber;
+              if (!num) return;
+              var propId = e._array_property_value || "";
+              var ccyLabel =
+                e[
+                  "_array_currency_value@OData.Community.Display.V1.FormattedValue"
+                ] || "";
+              var code = ccyCode(ccyLabel);
+              var key = propId + "|" + code;
+              window._bankDebug.keys.push(key + " => " + num);
+              if (!out[key]) out[key] = num;
+            });
+            window._bankDebug.mapSize = Object.keys(out).length;
+            return out;
+          })
+          .catch(function (err) {
+            window._bankDebug = {
+              error: err && err.message ? err.message : String(err),
+            };
+            console.warn("[AIF] Bank account fetch failed:", err);
+            return {};
+          });
+      }
+
+
+      // Fetch existing invoices in the projection window, indexed by lease + invoice type + date.
+      // When a projected invoice matches an existing one, we swap in real data (header + line items).
+      function fetchExistingInvoices(startDate, endDate) {
+        var startISO = new Date(startDate).toISOString().slice(0, 10);
+        var endISO = new Date(endDate).toISOString().slice(0, 10);
+        var fetchXml =
+          '<fetch version="1.0" mapping="logical" no-lock="true">' +
+          '<entity name="invoice">' +
+          '<attribute name="invoiceid" />' +
+          '<attribute name="name" />' +
+          '<attribute name="invoicenumber" />' +
+          '<attribute name="msdyn_invoicedate" />' +
+          '<attribute name="datedelivered" />' +
+          '<attribute name="duedate" />' +
+          '<attribute name="totalamount" />' +
+          '<attribute name="totaltax" />' +
+          '<attribute name="transactioncurrencyid" />' +
+          '<attribute name="customerid" />' +
+          '<attribute name="array_leaseagreement" />' +
+          '<attribute name="array_property" />' +
+          '<attribute name="array_invoicetype" />' +
+          '<attribute name="array_invoiceprefix" />' +
+          '<attribute name="array_ksefstatus" />' +
+          '<attribute name="array_invoicemode" />' +
+          '<attribute name="array_originalinvoice" />' +
+          '<filter type="and">' +
+          '<condition attribute="msdyn_invoicedate" operator="on-or-after" value="' +
+          startISO +
+          '" />' +
+          '<condition attribute="msdyn_invoicedate" operator="on-or-before" value="' +
+          endISO +
+          '" />' +
+          '<condition attribute="array_leaseagreement" operator="not-null" />' +
+          "</filter>" +
+          "</entity>" +
+          "</fetch>";
+        return Xrm.WebApi.retrieveMultipleRecords(
+          "invoice",
+          "?fetchXml=" + encodeURIComponent(fetchXml),
+        )
+          .then(function (res) {
+            var invoices = res.entities || [];
+            if (invoices.length === 0) return { headers: {}, lines: {} };
+            var headers = {};
+            invoices.forEach(function (inv) {
+              if (!inv.msdyn_invoicedate || !inv._array_leaseagreement_value)
+                return;
+              var dateStr = inv.msdyn_invoicedate.slice(0, 10);
+              var key =
+                inv._array_leaseagreement_value +
+                "|" +
+                (inv._array_invoicetype_value || "") +
+                "|" +
+                dateStr;
+              headers[key] = inv;
+            });
+            // Batch fetch invoice details.
+            // For corrective invoices, also fetch the ORIGINAL invoice's lines as a
+            // fallback — corrective invoicedetail records reference the original via
+            // _array_originalinvoiceproduct_value, and the invoicing engine sometimes
+            // stores only header totals on the corrective while lines stay on the original.
+            var currentIds = invoices.map(function (i) { return i.invoiceid; });
+            var originalIds = invoices
+              .map(function (i) { return i._array_originalinvoice_value; })
+              .filter(function (v) { return v && currentIds.indexOf(v) < 0; });
+            var idsToFetch = currentIds.concat(originalIds);
+            return fetchInvoiceLines(idsToFetch).then(function (lines) {
+              return { headers: headers, lines: lines, originalMap: buildOriginalMap(invoices) };
+            });
+          })
+          .catch(function (err) {
+            console.warn("Existing invoice fetch failed:", err);
+            return { headers: {}, lines: {} };
+          });
+      }
+
+      // Map correctiveInvoiceId -> originalInvoiceId, so we can look up lines under the original.
+      function buildOriginalMap(invoices) {
+        var m = {};
+        (invoices || []).forEach(function (inv) {
+          if (inv.array_invoicemode === 2 && inv._array_originalinvoice_value) {
+            m[inv.invoiceid] = inv._array_originalinvoice_value;
+          }
+        });
+        return m;
+      }
+
+      function fetchInvoiceLines(invoiceIds) {
+        if (!invoiceIds || invoiceIds.length === 0) return Promise.resolve({});
+        // FetchXML with <condition operator="in"> supports up to 500 values per condition,
+        // and FetchXML URLs accept much larger payloads than OData $filter chains.
+        // Chunk at 200 for safety — well within Dataverse's practical FetchXML URL tolerance,
+        // and still 10× more efficient than the old 20-per-batch OData approach.
+        var chunks = [];
+        for (var i = 0; i < invoiceIds.length; i += 200)
+          chunks.push(invoiceIds.slice(i, i + 200));
+        var promises = chunks.map(function (chunk) {
+          var valuesXml = chunk
+            .map(function (id) {
+              return "<value>" + id + "</value>";
+            })
+            .join("");
+          var fetchXml =
+            '<fetch version="1.0" mapping="logical" no-lock="true">' +
+              '<entity name="invoicedetail">' +
+                '<attribute name="invoicedetailid" />' +
+                '<attribute name="productdescription" />' +
+                '<attribute name="quantity" />' +
+                '<attribute name="priceperunit" />' +
+                '<attribute name="tax" />' +
+                '<attribute name="extendedamount" />' +
+                '<attribute name="manualdiscountamount" />' +
+                '<attribute name="array_paymentamount" />' +
+                '<attribute name="array_currentexchangerate" />' +
+                '<attribute name="msdyn_lineorder" />' +
+                '<attribute name="invoiceid" />' +
+                '<attribute name="array_chargetype" />' +
+                '<attribute name="array_recurringcharge" />' +
+                '<order attribute="msdyn_lineorder" />' +
+                '<filter type="and">' +
+                  '<condition attribute="invoiceid" operator="in">' + valuesXml + '</condition>' +
+                '</filter>' +
+              '</entity>' +
+            '</fetch>';
+          return Xrm.WebApi.retrieveMultipleRecords(
+            "invoicedetail",
+            "?fetchXml=" + encodeURIComponent(fetchXml),
+          )
+            .then(function (r) {
+              return r.entities;
+            })
+            .catch(function (err) {
+              console.warn("Invoice line fetch failed:", err && err.message ? err.message : err, "chunk size:", chunk.length);
+              return [];
+            });
+        });
+        return Promise.all(promises).then(function (all) {
+          var out = {};
+          all.forEach(function (arr) {
+            arr.forEach(function (d) {
+              var id = d._invoiceid_value;
+              if (!out[id]) out[id] = [];
+              out[id].push(d);
+            });
+          });
+          return out;
+        });
+      }
+      //   array_discountamount, array_discountpercentage, array_chargetype (scope optionset:
+      //   126330000 All / 126330001 Specific Type / 126330002 Specific Charge),
+      //   _array_chargetypecategory_value, _array_recurringcharge_value,
+      //   array_startdate, array_enddate, _array_leaseagreement_value }
+      // NOTE: verify these field names against the deployed array_discount table before go-live.
+      function fetchDiscounts(leaseIds) {
+        if (!leaseIds || leaseIds.length === 0) return Promise.resolve({});
+        var chunks = [];
+        for (var i = 0; i < leaseIds.length; i += 200)
+          chunks.push(leaseIds.slice(i, i + 200));
+        var promises = chunks.map(function (chunk) {
+          var valuesXml = chunk
+            .map(function (id) { return "<value>" + id + "</value>"; })
+            .join("");
+          var fetchXml =
+            '<fetch version="1.0" mapping="logical" no-lock="true">' +
+              '<entity name="array_discount">' +
+                '<attribute name="array_discountid" />' +
+                '<attribute name="array_discounttype" />' +
+                '<attribute name="array_discountamount" />' +
+                '<attribute name="array_discountpercentage" />' +
+                '<attribute name="array_chargetype" />' +
+                '<attribute name="array_startdate" />' +
+                '<attribute name="array_enddate" />' +
+                '<attribute name="array_recurringcharge" />' +
+                '<attribute name="array_chargetypecategory" />' +
+                '<attribute name="array_leaseagreement" />' +
+                '<filter type="and">' +
+                  '<condition attribute="statecode" operator="eq" value="0" />' +
+                  '<condition attribute="array_leaseagreement" operator="in">' + valuesXml + '</condition>' +
+                '</filter>' +
+              '</entity>' +
+            '</fetch>';
+          return Xrm.WebApi.retrieveMultipleRecords(
+            "array_discount",
+            "?fetchXml=" + encodeURIComponent(fetchXml),
+          )
+            .then(function (r) { return r.entities; })
+            .catch(function (err) {
+              console.warn("Discount fetch failed:", err && err.message ? err.message : err);
+              return [];
+            });
+        });
+        return Promise.all(promises).then(function (all) {
+          var byLease = {};
+          all.forEach(function (arr) {
+            arr.forEach(function (d) {
+              var lid = d._array_leaseagreement_value;
+              if (!lid) return;
+              if (!byLease[lid]) byLease[lid] = [];
+              byLease[lid].push(d);
+            });
+          });
+          return byLease;
+        });
+      }
+
+      // Resolve the applicable discount for a charge as of a given date, mirroring the engine's
+      // specificity hierarchy: Specific Charge > Specific Charge Type > All Charges (most specific wins).
+      // Returns { net: <discount amount in charge currency>, type, label } or null.
+      function resolveDiscount(rc, asOfDate, netAmount) {
+        var list = _discountsByLease[rc._array_leaseagreement_value];
+        if (!list || !list.length) return null;
+        var t = asOfDate ? asOfDate.getTime() : Date.now();
+        var best = null,
+          bestRank = 0;
+        list.forEach(function (d) {
+          // Date window
+          if (d.array_startdate && new Date(d.array_startdate).getTime() > t)
+            return;
+          if (d.array_enddate && new Date(d.array_enddate).getTime() < t)
+            return;
+          var rank = 0;
+          if (
+            d.array_chargetype === 126330002 &&
+            d._array_recurringcharge_value === rc.array_recurringchargeid
+          )
+            rank = 3; // Specific Charge
+          else if (
+            d.array_chargetype === 126330001 &&
+            d._array_chargetypecategory_value === rc._array_chargetype_value
+          )
+            rank = 2; // Specific Charge Type
+          else if (d.array_chargetype === 126330000) rank = 1; // All Charges
+          if (rank > bestRank) {
+            best = d;
+            bestRank = rank;
+          }
+        });
+        if (!best) return null;
+        var discNet;
+        if (best.array_discounttype === 126330001) {
+          // Percentage
+          discNet = (netAmount * (best.array_discountpercentage || 0)) / 100;
+        } else {
+          // Flat (126330000)
+          discNet = best.array_discountamount || 0;
+        }
+        var label =
+          best.array_discounttype === 126330001
+            ? (best.array_discountpercentage || 0) + "%"
+            : "flat";
+        return { net: discNet, type: best.array_discounttype, label: label };
+      }
+
+      function renderFxBanner() {
+        var el = document.getElementById("fxBanner");
+        if (!_fxRate || !_fxRate.rate) {
+          el.style.display = "flex";
+          el.className = "banner warn";
+          el.innerHTML =
+            '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>' +
+            "<span>Could not load latest exchange rate — PLN conversion unavailable. Non-PLN amounts shown in native currency only.</span>";
+          return;
+        }
+        el.className = "banner";
+        el.style.display = "flex";
+        el.innerHTML =
+          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3h4v4"></path><path d="M21 3l-7 7"></path><path d="M7 21H3v-4"></path><path d="M3 21l7-7"></path></svg>' +
+          "<span>Amounts converted using latest Exchange Rate from <strong>" +
+          fmtDate(_fxRate.date) +
+          "</strong> — 1 " +
+          _fxRate.currency +
+          " = <strong>" +
+          Number(_fxRate.rate).toFixed(4) +
+          " PLN</strong></span>";
+      }
+
+      // Collect distinct (id → label) across BOTH active recurring charges and any past invoices
+      // already loaded. This ensures leases visible only via past invoices still appear in filters.
+      function collectFilterSources() {
+        var props = {}, tenants = {}, leases = {};
+        // Records with { propId, tenantId, tenantLabel, leaseId, leaseLookupLabel, propLabel }
+        var recs = [];
+        _allRCs.forEach(function (rc) {
+          recs.push({
+            propId: rc._array_property_value,
+            propLabel:
+              rc[
+                "_array_property_value@OData.Community.Display.V1.FormattedValue"
+              ] || "",
+            tenantId: rc._array_tenant_value,
+            tenantLabel:
+              rc[
+                "_array_tenant_value@OData.Community.Display.V1.FormattedValue"
+              ] || "",
+            leaseId: rc._array_leaseagreement_value,
+            leaseLookupLabel:
+              rc[
+                "_array_leaseagreement_value@OData.Community.Display.V1.FormattedValue"
+              ] || "",
+          });
+        });
+        (_pastInvoiceGroups || []).forEach(function (g) {
+          recs.push({
+            propId: g.propertyId || null,
+            propLabel: g.propertyName || "",
+            tenantId: g.tenantId || null,
+            tenantLabel: g.tenantName || "",
+            leaseId: g.leaseId,
+            leaseLookupLabel: g.leaseCode || "",
+          });
+        });
+        return recs;
+      }
+      // Resolve the selected id for a searchable input from its typed/selected label
+      function getFilterId(inputId, labelToIdMap) {
+        var v = (document.getElementById(inputId).value || "").trim();
+        if (!v) return "";
+        return labelToIdMap[v] || ""; // empty when text doesn't match any known label
+      }
+      function populateFilters() {
+        var recs = collectFilterSources();
+        var propMap = {};
+        recs.forEach(function (r) {
+          if (r.propId && !propMap[r.propId])
+            propMap[r.propId] = r.propLabel || "(unnamed)";
+        });
+        fillCombobox("fltProperty", "fltPropertyList", propMap, _propLabelToId = {});
+        populateDependentFilters();
+      }
+      // Lease list is scoped to the currently-selected Property AND Tenant.
+      // Tenant list is scoped to the currently-selected Property.
+      // We match by LABEL (name) rather than id — RC and past-invoice sources use
+      // different lookup tables (array_tenant vs customerid), so id equality fails
+      // even for the same real tenant. Names are the consistent join key.
+      function populateDependentFilters() {
+        var selectedPropLabel = (document.getElementById("fltProperty").value || "").trim();
+        var selectedTenantLabel = (document.getElementById("fltTenant").value || "").trim();
+        var recs = collectFilterSources();
+        var tenMap = {}, leaseMap = {};
+        // Preserve the tenant/lease selections we want to keep even if scope changes
+        recs.forEach(function (r) {
+          if (selectedPropLabel && r.propLabel !== selectedPropLabel) return;
+          if (r.tenantId && !tenMap[r.tenantId])
+            tenMap[r.tenantId] = r.tenantLabel || "(unnamed)";
+          if (selectedTenantLabel && r.tenantLabel !== selectedTenantLabel)
+            return;
+          if (r.leaseId && !leaseMap[r.leaseId]) {
+            var n = _leaseNameMap[r.leaseId];
+            var code = _leaseCodeMap[r.leaseId] || r.leaseLookupLabel;
+            leaseMap[r.leaseId] = n ? n + " — " + code : code;
+          }
+        });
+        var tenSel = document.getElementById("fltTenant");
+        var leaseSel = document.getElementById("fltLease");
+        _tenantLabelToId = {};
+        _leaseLabelToId = {};
+        fillCombobox("fltTenant", "fltTenantList", tenMap, _tenantLabelToId);
+        fillCombobox("fltLease", "fltLeaseList", leaseMap, _leaseLabelToId);
+        if (tenSel.value && !_tenantLabelToId[tenSel.value]) tenSel.value = "";
+        if (leaseSel.value && !_leaseLabelToId[leaseSel.value]) leaseSel.value = "";
+      }
+      // Populate a custom combobox <div> with option divs; build label→id map alongside.
+      // Duplicate labels are de-duped by appending a short suffix.
+      function fillCombobox(inputId, listId, map, labelToIdOut) {
+        var list = document.getElementById(listId);
+        list.innerHTML = "";
+        var labelSeen = {};
+        var options = [];
+        Object.keys(map)
+          .sort(function (a, b) {
+            return map[a].localeCompare(map[b]);
+          })
+          .forEach(function (id) {
+            var label = map[id];
+            if (labelSeen[label]) label = map[id] + " (" + id.substring(0, 4) + ")";
+            labelSeen[label] = true;
+            labelToIdOut[label] = id;
+            options.push(label);
+          });
+        // Store full option list on the input for filtering; render will happen on focus/type
+        var input = document.getElementById(inputId);
+        input._allOptions = options;
+        renderComboboxOptions(inputId, listId, input.value || "");
+      }
+
+      // Render options in a combobox, filtered by the current input text (case-insensitive substring).
+      function renderComboboxOptions(inputId, listId, filterText) {
+        var input = document.getElementById(inputId);
+        var list = document.getElementById(listId);
+        var opts = input._allOptions || [];
+        var q = (filterText || "").trim().toLowerCase();
+        var filtered = q
+          ? opts.filter(function (o) { return o.toLowerCase().indexOf(q) >= 0; })
+          : opts;
+        // Cap at 200 to keep DOM light; if there are more, show a hint.
+        var cap = 200;
+        var truncated = filtered.length > cap;
+        if (truncated) filtered = filtered.slice(0, cap);
+        if (filtered.length === 0) {
+          list.innerHTML = '<div class="combobox-empty">No matches</div>';
+          return;
+        }
+        var html = filtered
+          .map(function (o) {
+            return '<div class="combobox-option" data-value="' + o.replace(/"/g, "&quot;") + '">' + esc(o) + "</div>";
+          })
+          .join("");
+        if (truncated) html += '<div class="combobox-empty">Showing first ' + cap + ' — keep typing to narrow</div>';
+        list.innerHTML = html;
+      }
+
+      // Returns true if the lease is considered eligible for the forecast.
+      // Blocks only statecode = 1 (Inactive — deactivated record).
+      // All statuscodes are allowed, including Termination Initiated, Draft, etc.
+      function isLeaseActive(leaseId) {
+        var s = _leaseStatusMap[leaseId];
+        if (!s) return true; // no info → allow (avoid false-hiding)
+        if (s.statecode === 1) return false; // Inactive
+        return true;
+      }
+      // ---------- Projection ----------
+      function projectAll() {
+        _projections = [];
+        var truncated = 0;
+        var ym = document.getElementById("fltMonth").value;
+        var startPeriod = ym ? new Date(ym + "-01") : new Date();
+        startPeriod = startOfMonth(startPeriod);
+        // Show only the selected month
+        var horizonEnd = endOfMonth(startPeriod);
+        var MAX_CYCLES_PER_RC = 200;
+
+        _allRCs.forEach(function (rc) {
+          // Defensive: even though fetch filters statecode=0 and statuscode!=Closed,
+          // guard here so any drift or cached inactive record is skipped from projection.
+          if (rc.statecode !== 0) return;
+          if (rc.statuscode === 126330001) return; // Closed
+          // Skip charges whose parent lease is inactive/terminated/draft.
+          if (!isLeaseActive(rc._array_leaseagreement_value)) return;
+          var freq = rc.array_frequency;
+          var invDate = rc.array_upcominginvoicegenerationday;
+          if (!invDate) return;
+          var freqStart = rc.array_frequencystartdate;
+          var freqEnd = rc.array_frequencyenddate;
+          var rcEnd = rc.array_enddate;
+          var leaseEnd = _leaseEndMap[rc._array_leaseagreement_value];
+          var effectiveEnd = null;
+          if (rcEnd) effectiveEnd = new Date(rcEnd);
+          if (leaseEnd) {
+            var le = new Date(leaseEnd);
+            if (!effectiveEnd || le < effectiveEnd) effectiveEnd = le;
+          }
+          var stopDate = horizonEnd;
+          if (effectiveEnd && effectiveEnd < stopDate) stopDate = effectiveEnd;
+
+          var cycles = 0;
+          var currentInv = new Date(invDate);
+          var currentFS = freqStart ? new Date(freqStart) : null;
+          var currentFE = freqEnd ? new Date(freqEnd) : null;
+
+          while (currentInv <= stopDate && cycles < MAX_CYCLES_PER_RC) {
+            if (currentInv >= startPeriod) {
+              _projections.push({
+                rc: rc,
+                invoiceDate: new Date(currentInv.getTime()),
+                dueDate: computeDueDate(
+                  currentInv,
+                  rc.array_duedaterule,
+                  rc.array_dueindays,
+                ),
+                freqStart: currentFS ? new Date(currentFS.getTime()) : null,
+                freqEnd: currentFE ? new Date(currentFE.getTime()) : null,
+                cycleIndex: cycles,
+              });
+            }
+            cycles++;
+            if (freq === 126330002) break;
+            var nextInv = advanceCycle(currentInv, freq);
+            if (!nextInv) break;
+            currentInv = nextInv;
+            if (currentFS) currentFS = advanceFreqEnd(currentFS, freq);
+            if (currentFE) currentFE = advanceFreqEnd(currentFE, freq);
+          }
+          if (cycles >= MAX_CYCLES_PER_RC) truncated++;
+        });
+
+        if (truncated > 0) {
+          var w = document.getElementById("truncationWarn");
+          w.style.display = "flex";
+          w.innerHTML =
+            '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>' +
+            "<span>" +
+            truncated +
+            " recurring charge(s) hit the 200-cycle projection cap. Reduce horizon or narrow the filter.</span>";
+        }
+      }
+
+      // Global storage for past invoice groups (built from real invoices, not projections)
+      var _pastInvoiceGroups = [];
+
+      function applyFiltersAndRender() {
+        document.getElementById("truncationWarn").style.display = "none";
+        projectAll();
+
+        var propLabel = (document.getElementById("fltProperty").value || "").trim();
+        var tenantLabel = (document.getElementById("fltTenant").value || "").trim();
+        var leaseLabel = (document.getElementById("fltLease").value || "").trim();
+        var termFilter = document.getElementById("fltTerm").value;
+        // Property id resolves the same way from both RCs and invoices; use id when possible.
+        var propId = _propLabelToId[propLabel] || "";
+        // Tenant/lease ids differ between RC and invoice sources — match by label instead.
+
+        // "Today" as UTC start-of-day so past/future comparisons align with our stored dates
+        var now = new Date();
+        var today = new Date(
+          Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()),
+        );
+
+        // Future: projections only for dates strictly AFTER today.
+        // Anything on/before today is already a real invoice (fetched separately).
+        _filtered = _projections.filter(function (p) {
+          if (p.invoiceDate <= today) return false;
+          var rc = p.rc;
+          if (propId && rc._array_property_value !== propId) return false;
+          if (tenantLabel) {
+            var rcTenLabel =
+              rc[
+                "_array_tenant_value@OData.Community.Display.V1.FormattedValue"
+              ] || "";
+            if (rcTenLabel !== tenantLabel) return false;
+          }
+          if (leaseLabel) {
+            var rcLeaseCode =
+              _leaseCodeMap[rc._array_leaseagreement_value] ||
+              rc[
+                "_array_leaseagreement_value@OData.Community.Display.V1.FormattedValue"
+              ] || "";
+            var n = _leaseNameMap[rc._array_leaseagreement_value];
+            var rcLeaseLabel = n ? n + " — " + rcLeaseCode : rcLeaseCode;
+            if (rcLeaseLabel !== leaseLabel) return false;
+          }
+          if (termFilter) {
+            var term = (
+              _leaseTermMap[rc._array_leaseagreement_value] || ""
+            ).toLowerCase();
+            // Month-to-Month recognition — handle EN + PL + common abbreviations.
+            var isMtM =
+              term.indexOf("month") >= 0 ||        // "month-to-month", "monthly"
+              term.indexOf("miesi") >= 0 ||        // "miesięczny" (PL)
+              term.indexOf("m2m") >= 0 ||          // abbreviation
+              term.indexOf("mtm") >= 0;
+            // Business rule (per tester): Month-to-Month leases are Short Term.
+            var isShort = term.indexOf("short") >= 0 || isMtM;
+            var isLong = !isShort;
+            if (termFilter === "long" && !isLong) return false;
+            if (termFilter === "short" && !isShort) return false;
+          }
+          return true;
+        });
+
+        // Determine past window: from user-selected month start up to yesterday
+        var ym = document.getElementById("fltMonth").value;
+        var startPeriod = ym ? new Date(ym + "-01") : today;
+        startPeriod = new Date(
+          Date.UTC(startPeriod.getUTCFullYear(), startPeriod.getUTCMonth(), 1),
+        );
+
+        // Past invoices window: from selected month start THROUGH today (inclusive).
+        // Invoices generated today by the engine must appear as INVOICED, not as projections.
+        var pastNeeded = startPeriod <= today;
+        var pastPromise = pastNeeded
+          ? fetchExistingInvoices(startPeriod, today)
+          : Promise.resolve({ headers: {}, lines: {} });
+
+        pastPromise
+          .then(function (result) {
+            _invoiceMap = result.headers || {};
+            _invoiceLineMap = result.lines || {};
+            _invoiceOriginalMap = result.originalMap || {};
+            // Backfill lease info for any lease seen in past invoices that wasn't loaded
+            // during the initial active-RC lease fetch (e.g., leases whose RCs are all closed).
+            var missingLeaseIds = {};
+            Object.keys(_invoiceMap).forEach(function (k) {
+              var lid = _invoiceMap[k]._array_leaseagreement_value;
+              if (lid && !_leaseCodeMap[lid] && !_leaseNameMap[lid]) missingLeaseIds[lid] = 1;
+            });
+            var backfill = Object.keys(missingLeaseIds).length
+              ? fetchLeaseInfo(Object.keys(missingLeaseIds))
+              : Promise.resolve(null);
+            return backfill.then(function (extra) {
+              if (extra) {
+                Object.keys(extra.names || {}).forEach(function (id) {
+                  _leaseNameMap[id] = extra.names[id];
+                });
+                Object.keys(extra.codes || {}).forEach(function (id) {
+                  _leaseCodeMap[id] = extra.codes[id];
+                });
+                Object.keys(extra.terms || {}).forEach(function (id) {
+                  _leaseTermMap[id] = extra.terms[id];
+                });
+                Object.keys(extra.props || {}).forEach(function (id) {
+                  _leasePropertyMap[id] = extra.props[id];
+                });
+                Object.keys(extra.statuses || {}).forEach(function (id) {
+                  _leaseStatusMap[id] = extra.statuses[id];
+                });
+              }
+              return result;
+            });
+          })
+          .then(function (result) {
+            // Build groups from actual invoices, then apply the same filters
+            var allPastGroups = buildActualInvoiceGroups(
+              _invoiceMap,
+              _invoiceLineMap,
+            );
+            _pastInvoiceGroups = allPastGroups.filter(function (g) {
+              // Skip invoices whose lease is now inactive/terminated/draft
+              if (g.leaseId && !isLeaseActive(g.leaseId)) return false;
+              if (propId && g.propertyId !== propId) return false;
+              if (tenantLabel && g.tenantName !== tenantLabel) return false;
+              if (leaseLabel) {
+                var gLeaseCode = _leaseCodeMap[g.leaseId] || g.leaseCode || "";
+                var gLeaseName = _leaseNameMap[g.leaseId] || g.leaseName || "";
+                var gLeaseLabel = gLeaseName ? gLeaseName + " — " + gLeaseCode : gLeaseCode;
+                if (gLeaseLabel !== leaseLabel) return false;
+              }
+              if (termFilter && g.leaseId) {
+                var term = (_leaseTermMap[g.leaseId] || "").toLowerCase();
+                var isMtM =
+                  term.indexOf("month") >= 0 ||
+                  term.indexOf("miesi") >= 0 ||
+                  term.indexOf("m2m") >= 0 ||
+                  term.indexOf("mtm") >= 0;
+                var isShort = term.indexOf("short") >= 0 || isMtM;
+                var isLong = !isShort;
+                if (termFilter === "long" && !isLong) return false;
+                if (termFilter === "short" && !isShort) return false;
+              }
+              return true;
+            });
+            // Past invoices may reveal leases/tenants not in the active RC set;
+            // refresh filter dropdowns to include them (without changing current selections).
+            populateFilters();
+            render();
+          })
+          .catch(function (err) {
+            console.warn("Past invoice load failed:", err);
+            _pastInvoiceGroups = [];
+            populateFilters();
+            render();
+          });
+      }
+
+      function render() {
+        var hasFuture = _filtered.length > 0;
+        var hasPast = _pastInvoiceGroups.length > 0;
+        if (!hasFuture && !hasPast) {
+          document.getElementById("summary").style.display = "none";
+          document.getElementById("content").innerHTML =
+            '<div class="empty">No invoices in the selected range.</div>';
+          return;
+        }
+
+        // Group future projections by date
+        var byDate = {};
+        _filtered.forEach(function (p) {
+          var dk = ymd(p.invoiceDate);
+          if (!byDate[dk]) byDate[dk] = [];
+          byDate[dk].push(p);
+        });
+        // Also gather past-invoice groups by their invoice date
+        var pastByDate = {};
+        _pastInvoiceGroups.forEach(function (g) {
+          var dk = ymd(g.invoiceDate);
+          if (!pastByDate[dk]) pastByDate[dk] = [];
+          pastByDate[dk].push(g);
+        });
+
+        // Precompute lease→RC-count for the split-hint (only relevant to projections)
+        var leaseRCs = {};
+        _filtered.forEach(function (p) {
+          var lid = p.rc._array_leaseagreement_value;
+          if (!lid) return;
+          if (!leaseRCs[lid]) leaseRCs[lid] = {};
+          leaseRCs[lid][p.rc.array_recurringchargeid] = 1;
+        });
+        var leaseRCTotals = {};
+        Object.keys(leaseRCs).forEach(function (lid) {
+          leaseRCTotals[lid] = Object.keys(leaseRCs[lid]).length;
+        });
+        window._leaseRCTotals = leaseRCTotals;
+
+        // Union of dates: past + future
+        var dateSet = {};
+        Object.keys(byDate).forEach(function (d) {
+          dateSet[d] = 1;
+        });
+        Object.keys(pastByDate).forEach(function (d) {
+          dateSet[d] = 1;
+        });
+        var dateKeys = Object.keys(dateSet).sort();
+
+        var totalInvoices = 0,
+          sumDiscPLN = 0,        // "Total Discount Net Amount" — discount in PLN
+          sumDiscPayPLN = 0,     // "Total Discount In Payment Currency" — native disc → PLN
+          sumNetPLN = 0,         // "Total Net Amount" — PRE-discount PLN line value
+          sumTaxPLN = 0,
+          sumGrossPLN = 0;
+        var sumNetEUR = 0,       // pre-discount native EUR (any EUR row)
+          sumPayPLN = 0,         // "Total Payment Amount" — native amount → PLN
+          sumPayEUR = 0,
+          sumDiscEUR = 0,        // discount in native EUR (any EUR row)
+          sumDiscPayEUR = 0,     // discount in payment ccy for EUR (mirror of sumDiscEUR)
+          sumTaxEUR = 0,
+          sumGrossEUR = 0;
+        var groupsByDate = {};
+        dateKeys.forEach(function (dk) {
+          var projGroups = byDate[dk]
+            ? groupProjectionsByInvoice(byDate[dk])
+            : [];
+          var pastGroups = pastByDate[dk] || [];
+          var groups = projGroups.concat(pastGroups);
+          // Keep dates that have any groups
+          if (groups.length === 0) return;
+          groupsByDate[dk] = groups;
+          totalInvoices += groups.length;
+          groups.forEach(function (g) {
+            g.rows.forEach(function (r) {
+              var isEurUAIC = r.isUAIC && isEurRow(r);
+              // PLN equivalent of native amount (for the payment-ccy cards, PLN column)
+              var natToPLN = 1;
+              if (r.nativeCurrencyId !== _plnCurrencyId && _fxRate && _fxRate.rate) {
+                natToPLN = _fxRate.rate;
+              }
+              var qty = r.qty || 1;
+              // EUR sub-value applies to every EUR row (UAIC and non-UAIC).
+              // Manager sees the raw EUR exposure per column.
+              if (isEurRow(r)) {
+                sumPayEUR += r.nativeAmount * qty;
+                sumDiscPayEUR += r.nativeDisc * qty;
+                sumNetEUR += r.nativeAmount * qty;
+                sumTaxEUR += r.nativeTax * qty;
+                sumDiscEUR += r.nativeDisc * qty;
+                sumGrossEUR += r.nativeGross * qty;
+              }
+              if (isEurUAIC) {
+                // EUR-UAIC: EUR is the INVOICE currency, so this row does not enter PLN buckets.
+              } else {
+                // PLN bucket — non-UAIC rows (including EUR-on-Common) contribute to PLN totals.
+                // For pure-PLN rows, EUR sub-values above weren't touched.
+                sumPayPLN += r.nativeAmount * qty * natToPLN;
+                sumDiscPayPLN += r.nativeDisc * qty * natToPLN;
+                sumDiscPLN += r.discount * qty;
+                sumTaxPLN += r.tax * qty;
+                sumNetPLN += r.nativeAmount * qty * natToPLN;   // Payment × Qty × rate
+                // Gross derived to keep Net−DiscNet+Tax=Gross identity across per-line qty
+                sumGrossPLN += (r.pricePerUnit - r.discount + r.tax) * qty;
+              }
+            });
+          });
+        });
+        // Refresh dateKeys to only those with groups
+        dateKeys = Object.keys(groupsByDate).sort();
+        document.getElementById("stInv").textContent = totalInvoices;
+        document.getElementById("stPay").textContent = fmtPLN(sumPayPLN);
+        document.getElementById("stPayEUR").textContent =
+          fmtAmt(sumPayEUR) + " €";
+        document.getElementById("stDiscPay").textContent = fmtPLN(sumDiscPayPLN);
+        document.getElementById("stDiscPayEUR").textContent =
+          fmtAmt(sumDiscPayEUR) + " €";
+        document.getElementById("stNet").textContent = fmtPLN(sumNetPLN);
+        document.getElementById("stNetEUR").textContent =
+          fmtAmt(sumNetEUR) + " €";
+        document.getElementById("stDisc").textContent = fmtPLN(sumDiscPLN);
+        document.getElementById("stDiscEUR").textContent =
+          fmtAmt(sumDiscEUR) + " €";
+        document.getElementById("stTax").textContent = fmtPLN(sumTaxPLN);
+        document.getElementById("stTaxEUR").textContent =
+          fmtAmt(sumTaxEUR) + " €";
+        document.getElementById("stGross").textContent = fmtPLN(sumGrossPLN);
+        document.getElementById("stGrossEUR").textContent =
+          fmtAmt(sumGrossEUR) + " €";
+        document.getElementById("summary").style.display = "block";
+
+        var html = "";
+        dateKeys.forEach(function (dk) {
+          var groups = groupsByDate[dk];
+          var dGrossPLN = 0;
+          groups.forEach(function (g) {
+            dGrossPLN += g.totalGrossPLN || 0;
+          });
+          html +=
+            '<div class="date-block collapsed" data-dk="' +
+            dk +
+            '">' +
+            '<div class="date-header" onclick="this.parentNode.classList.toggle(\'collapsed\')">' +
+            '<span class="d-date"><span class="d-chevron">▶</span><span class="d-label">Invoice Date</span><span class="d-value">' +
+            fmtDate(groups[0].invoiceDate) +
+            "</span></span>" +
+            '<span class="d-meta"><strong>' +
+            groups.length +
+            "</strong> invoice(s) · <strong>" +
+            fmtPLN(dGrossPLN) +
+            "</strong></span>" +
+            "</div>" +
+            '<div class="date-content">' +
+            renderGroupTable(groups) +
+            "</div>" +
+            "</div>";
+        });
+        document.getElementById("content").innerHTML = html;
+
+        // Invoice row expand -> products (scoped to its own table)
+        document.querySelectorAll("tr.group-row").forEach(function (tr) {
+          tr.addEventListener("click", function () {
+            var idx = tr.getAttribute("data-idx");
+            var tbl = tr.closest("table");
+            var open = tr.classList.toggle("open");
+            tbl
+              .querySelectorAll('tr.child-row[data-parent="' + idx + '"]')
+              .forEach(function (c) {
+                c.classList.toggle("visible", open);
+              });
+          });
+        });
+        document.getElementById("btnXlsx").disabled = false;
+      }
+
+      function groupProjectionsByInvoice(projections) {
+        var groups = {};
+        projections.forEach(function (p) {
+          var rc = p.rc;
+          // Engine grouping rules (per doc section 4.6.2 grouping switch):
+          //   1 = Common invoice (default). Multiple RCs on the same lease + invoice type share one
+          //       invoice in BASE currency (PLN). Foreign-currency RCs FX-convert at generation.
+          //   2 = Separate. array_invoiceseparately = true → own invoice in BASE currency.
+          //   3 = Use-As-Invoice-Currency. array_useasinvoicecurrency = true → own invoice in the
+          //       RC's own currency (no conversion).
+          var isSeparate = rc.array_invoiceseparately === true;
+          var isUAIC = rc.array_useasinvoicecurrency === true;
+          var invoiceCurrencyId = isUAIC
+            ? rc._transactioncurrencyid_value
+            : _plnCurrencyId;
+          var invoiceCurrencyLabel = isUAIC
+            ? rc[
+                "_transactioncurrencyid_value@OData.Community.Display.V1.FormattedValue"
+              ] || ""
+            : "Polish zloty";
+          var key;
+          if (isSeparate || isUAIC) {
+            // Each such RC forms its own invoice
+            key = "own|" + rc.array_recurringchargeid;
+          } else {
+            // Default Common invoice: group by lease + invoice type; currency is base (PLN)
+            key =
+              "common|" +
+              (rc._array_leaseagreement_value || "") +
+              "|" +
+              (rc._array_invoicetype_value || "");
+          }
+          if (!groups[key]) {
+            groups[key] = {
+              leaseId: rc._array_leaseagreement_value,
+              leaseCode:
+                _leaseCodeMap[rc._array_leaseagreement_value] ||
+                rc[
+                  "_array_leaseagreement_value@OData.Community.Display.V1.FormattedValue"
+                ] ||
+                "",
+              leaseName: _leaseNameMap[rc._array_leaseagreement_value] || "",
+              tenantName:
+                rc[
+                  "_array_tenant_value@OData.Community.Display.V1.FormattedValue"
+                ] || "",
+              tenantNIP: rc._array_tenant_value
+                ? _tenantNIPMap[rc._array_tenant_value] || ""
+                : "",
+              propertyName:
+                rc[
+                  "_array_property_value@OData.Community.Display.V1.FormattedValue"
+                ] || "",
+              propertyId: rc._array_property_value || "",
+              invoiceType:
+                rc[
+                  "_array_invoicetype_value@OData.Community.Display.V1.FormattedValue"
+                ] || "",
+              invoiceTypeId: rc._array_invoicetype_value || "",
+              invoicePrefix:
+                rc[
+                  "_array_invoiceprefix_value@OData.Community.Display.V1.FormattedValue"
+                ] || "",
+              // Invoice currency (destination), not the RC's native currency
+              currency: invoiceCurrencyLabel,
+              currencyId: invoiceCurrencyId,
+              // Bank account: property (from lease) + RC's currency ISO code (PLN/EUR/...).
+              // Custom array_currency lookup on bank account uses different GUIDs than
+              // OOB transactioncurrencyid, so we match by normalized ISO code.
+              bankAccount:
+                _bankAccountMap[
+                  (_leasePropertyMap[rc._array_leaseagreement_value] ||
+                    rc._array_property_value ||
+                    "") +
+                    "|" +
+                    ccyCode(
+                      rc[
+                        "_transactioncurrencyid_value@OData.Community.Display.V1.FormattedValue"
+                      ] || ""
+                    )
+                ] || "",
+              groupMode: isUAIC ? "UAIC" : isSeparate ? "SEP" : "COMMON",
+              term: _leaseTermMap[rc._array_leaseagreement_value] || "",
+              invoiceDate: p.invoiceDate,
+              dueDate: p.dueDate,
+              rows: [],
+              totalNet: 0,
+              totalDisc: 0,
+              totalTax: 0,
+              totalGross: 0,
+              totalGrossPLN: 0,
+              totalNetPLN: 0,
+              totalTaxPLN: 0,
+              totalDiscPLN: 0,
+            };
+          }
+          var g = groups[key];
+          var storedAmount = rc.array_amount || 0;
+          // VAT resolution order (most reliable first):
+          // 1) The RC's own array_vat lookup formatted value — usually "23", "8", "0%" etc.
+          //    (D365 renders the target's primary field, which per docs is set to the rate text.)
+          // 2) Our separate fetch into _vatMap (fills only if #1 didn't yield a number).
+          var vat = 0;
+          var vatFmt =
+            rc["_array_vat_value@OData.Community.Display.V1.FormattedValue"];
+          if (vatFmt) {
+            var m = String(vatFmt).match(/(-?\d+(?:[.,]\d+)?)/);
+            if (m) vat = Number(m[1].replace(",", "."));
+          }
+          if (
+            !vat &&
+            rc._array_vat_value &&
+            _vatMap[rc._array_vat_value] != null
+          ) {
+            vat = _vatMap[rc._array_vat_value];
+          }
+          // Tax-inclusive handling (docs §3.8 + §4.3.9): if array_taxincluded = true, the stored amount
+          // is GROSS — strip tax first so discount applies to the NET, then re-add tax.
+          var amt;
+          if (rc.array_taxincluded === true && vat > 0) {
+            amt = storedAmount / (1 + vat / 100); // strip embedded tax → net
+          } else {
+            amt = storedAmount; // stored amount is already net
+          }
+          var disc = resolveDiscount(rc, p.invoiceDate, amt);
+          var discNet = disc ? disc.net : 0;
+          if (discNet < 0) discNet = 0;
+          if (discNet > amt) discNet = amt;
+          var afterDisc = amt - discNet;
+          var tax = (afterDisc * vat) / 100;
+          var gross = afterDisc + tax;
+          var isRCPln =
+            _plnCurrencyId &&
+            rc._transactioncurrencyid_value === _plnCurrencyId;
+          // For display: convert this RC's numbers to the INVOICE currency (which is PLN unless UAIC).
+          // If invoice currency = RC currency, no conversion. If different and we have an FX rate, convert.
+          var invoiceGross = gross,
+            invoiceNet = afterDisc,
+            invoiceTax = tax,
+            invoiceDisc = discNet;
+          if (
+            invoiceCurrencyId !== rc._transactioncurrencyid_value &&
+            _fxRate &&
+            _fxRate.rate &&
+            !isRCPln
+          ) {
+            // RC is foreign, invoice is PLN (or the other way — very rare)
+            invoiceGross = gross * _fxRate.rate;
+            invoiceNet = afterDisc * _fxRate.rate;
+            invoiceTax = tax * _fxRate.rate;
+            invoiceDisc = discNet * _fxRate.rate;
+          }
+          // Group totals are always kept in the invoice currency AND as PLN for the summary bar
+          g.totalNet += invoiceNet;
+          g.totalDisc += invoiceDisc;
+          g.totalTax += invoiceTax;
+          g.totalGross += invoiceGross;
+          // PLN totals for the top summary (always PLN, even for UAIC-EUR invoices)
+          var toPLN = 1;
+          if (invoiceCurrencyId !== _plnCurrencyId && _fxRate && _fxRate.rate)
+            toPLN = _fxRate.rate;
+          g.totalGrossPLN += invoiceGross * toPLN;
+          g.totalNetPLN += invoiceNet * toPLN;
+          g.totalTaxPLN += invoiceTax * toPLN;
+          g.totalDiscPLN += invoiceDisc * toPLN;
+          if (p.invoiceDate < g.invoiceDate) g.invoiceDate = p.invoiceDate;
+          if (p.dueDate && (!g.dueDate || p.dueDate < g.dueDate))
+            g.dueDate = p.dueDate;
+          var ct = _chargeTypeMap[rc._array_chargetype_value] || {};
+          g.rows.push({
+            rcId: rc.array_recurringchargeid,
+            chargeName: rc.array_chargename || "",
+            chargeId: rc.array_chargeid || "",
+            chargeType:
+              ct.name ||
+              rc[
+                "_array_chargetype_value@OData.Community.Display.V1.FormattedValue"
+              ] ||
+              "",
+            productName: ct.invoiceLineName || ct.name || "",
+            unit:
+              rc[
+                "_array_unit_value@OData.Community.Display.V1.FormattedValue"
+              ] || "",
+            // Native currency of the RC (for display)
+            nativeCurrency:
+              rc[
+                "_transactioncurrencyid_value@OData.Community.Display.V1.FormattedValue"
+              ] || "",
+            nativeCurrencyId: rc._transactioncurrencyid_value,
+            invoiceDate: p.invoiceDate,
+            dueDate: p.dueDate,
+            freqStart: p.freqStart,
+            freqEnd: p.freqEnd,
+            rcStartDate: rc.array_startdate,
+            rcEndDate: rc.array_enddate,
+            cycleIndex: p.cycleIndex,
+            // Line amounts in the INVOICE currency (post-FX for Common invoices)
+            amount: invoiceNet + invoiceDisc,
+            qty: 1,
+            pricePerUnit: invoiceNet + invoiceDisc,
+            discount: invoiceDisc,
+            discountLabel: disc ? disc.label : "",
+            netAfterDisc: invoiceNet,
+            vat: vat,
+            tax: invoiceTax,
+            gross: invoiceGross,
+            // PLN-normalised gross (for summary)
+            grossPLN: invoiceGross * toPLN,
+            isPLN: invoiceCurrencyId === _plnCurrencyId,
+            // Original native (RC currency) amounts for dual-currency display
+            nativeAmount: amt,
+            nativeGross: gross,
+            nativeDisc: discNet,
+            nativeNet: afterDisc,
+            nativeTax: tax,
+            isDifferentCurrency:
+              invoiceCurrencyId !== rc._transactioncurrencyid_value,
+            frequency:
+              rc["array_frequency@OData.Community.Display.V1.FormattedValue"] ||
+              "",
+            isOneTime: rc.array_frequency === 126330002,
+            hasClause: !!rc._array_leaseclause_value,
+            clauseType:
+              rc._array_leaseclause_value &&
+              _clauseMap[rc._array_leaseclause_value]
+                ? _clauseMap[rc._array_leaseclause_value].type
+                : "",
+            proration: rc.array_prorationenabled,
+            preFrequencyOffset: rc.array_prefrequencyoffset === true,
+            billableArea: rc.array_billablearea != null ? rc.array_billablearea : null,
+            unitArea: rc._array_unit_value
+              ? _unitAreaMap[rc._array_unit_value]
+              : null,
+            // Flags for badges
+            isSeparate: isSeparate,
+            isUAIC: isUAIC,
+          });
+        });
+        return Object.keys(groups)
+          .map(function (k) {
+            return groups[k];
+          })
+          .sort(function (a, b) {
+            return a.invoiceDate - b.invoiceDate;
+          });
+      }
+
+      // Build group objects directly from real invoices (used for PAST dates only).
+      // Returns an array of groups shaped identically to what groupProjectionsByInvoice produces,
+      // so the render code can treat them the same way.
+      function buildActualInvoiceGroups(invoiceMap, lineMap) {
+        // Build a one-off RC lookup so past-invoice lines can resolve billableArea
+        // via the invoicedetail's _array_recurringcharge_value.
+        var rcById = {};
+        _allRCs.forEach(function (rc) {
+          if (rc.array_recurringchargeid) rcById[rc.array_recurringchargeid] = rc;
+        });
+        var groups = [];
+        Object.keys(invoiceMap || {}).forEach(function (k) {
+          var inv = invoiceMap[k];
+          if (!inv) return;
+          var invCurrencyId = inv._transactioncurrencyid_value;
+          var invCurrencyLabel =
+            inv[
+              "_transactioncurrencyid_value@OData.Community.Display.V1.FormattedValue"
+            ] || "Polish zloty";
+          var isPLNInvoice = invCurrencyId === _plnCurrencyId;
+          var toPLN = isPLNInvoice
+            ? 1
+            : _fxRate && _fxRate.rate
+              ? _fxRate.rate
+              : 1;
+          var totalGross = inv.totalamount || 0;
+          var totalTax = inv.totaltax || 0;
+          var totalNet = totalGross - totalTax;
+          var leaseId = inv._array_leaseagreement_value;
+          var lines =
+            lineMap && lineMap[inv.invoiceid] ? lineMap[inv.invoiceid] : [];
+          // Corrective invoices sometimes carry no lines on themselves; their
+          // invoicedetails live on the ORIGINAL invoice. Fall back to the original's lines.
+          var isCorrective = inv.array_invoicemode === 2;
+          if (lines.length === 0 && isCorrective) {
+            var origId = _invoiceOriginalMap[inv.invoiceid] || inv._array_originalinvoice_value;
+            if (origId && lineMap[origId]) {
+              lines = lineMap[origId];
+            }
+          }
+          // Last-resort fallback: if the invoice has a header total but no line detail
+          // available (rare — happens on some corrections or partial data loads),
+          // synthesize a single stub row from the header so the row doesn't misleadingly
+          // show 0 lines / 0 zł. Discounts default to 0 since the header doesn't split them.
+          if (lines.length === 0 && totalGross !== 0) {
+            var syntheticVat = totalNet !== 0 ? (totalTax / totalNet) * 100 : 0;
+            lines = [
+              {
+                invoicedetailid: null,
+                _invoiceid_value: inv.invoiceid,
+                productdescription: isCorrective
+                  ? "Correction (aggregated from invoice header)"
+                  : "Invoice line (aggregated from header)",
+                quantity: 1,
+                priceperunit: totalNet,
+                tax: totalTax,
+                extendedamount: totalGross,
+                manualdiscountamount: 0,
+                array_paymentamount: totalNet,
+                array_currentexchangerate: null,
+                msdyn_lineorder: 1,
+                _array_chargetype_value: null,
+                _array_recurringcharge_value: null,
+                _isSynthetic: true,
+                _syntheticVat: syntheticVat,
+              },
+            ];
+          }
+
+          // Due date: prefer what the invoice actually stores.
+          // If the invoice has no due date (some engine paths write null when the
+          // "Receipt of sales document" rule and Due In Days=0 yield same-day),
+          // fall back to computing from any line's source RC using the projection rule.
+          var invDueDate = inv.duedate ? new Date(inv.duedate) : null;
+          if (!invDueDate) {
+            for (var _li = 0; _li < lines.length; _li++) {
+              var _ln = lines[_li];
+              var _srcRc = rcById[_ln._array_recurringcharge_value];
+              if (_srcRc && _srcRc.array_duedaterule != null) {
+                invDueDate = computeDueDate(
+                  new Date(inv.msdyn_invoicedate),
+                  _srcRc.array_duedaterule,
+                  _srcRc.array_dueindays,
+                );
+                if (invDueDate) break;
+              }
+            }
+          }
+          var g = {
+            leaseId: leaseId,
+            leaseCode:
+              _leaseCodeMap[leaseId] ||
+              inv[
+                "_array_leaseagreement_value@OData.Community.Display.V1.FormattedValue"
+              ] ||
+              "",
+            leaseName: _leaseNameMap[leaseId] || "",
+            tenantName:
+              inv[
+                "_customerid_value@OData.Community.Display.V1.FormattedValue"
+              ] || "",
+            tenantNIP: inv._customerid_value
+              ? _tenantNIPMap[inv._customerid_value] || ""
+              : "",
+            propertyName:
+              inv[
+                "_array_property_value@OData.Community.Display.V1.FormattedValue"
+              ] || "",
+            propertyId: inv._array_property_value || "",
+            tenantId: inv._customerid_value || "",
+            invoiceType:
+              inv[
+                "_array_invoicetype_value@OData.Community.Display.V1.FormattedValue"
+              ] || "",
+            invoiceTypeId: inv._array_invoicetype_value || "",
+            invoicePrefix:
+              inv[
+                "_array_invoiceprefix_value@OData.Community.Display.V1.FormattedValue"
+              ] || "",
+            currency: invCurrencyLabel,
+            currencyId: invCurrencyId,
+            // Bank account: property (from lease) + invoice currency ISO code.
+            bankAccount:
+              _bankAccountMap[
+                (_leasePropertyMap[leaseId] ||
+                  inv._array_property_value ||
+                  "") +
+                  "|" +
+                  ccyCode(invCurrencyLabel || "")
+              ] || "",
+            groupMode: "ACTUAL",
+            term: _leaseTermMap[leaseId] || "",
+            invoiceDate: new Date(inv.msdyn_invoicedate),
+            dueDate: invDueDate,
+            rows: [],
+            totalNet: totalNet,
+            totalDisc: 0,
+            totalTax: totalTax,
+            totalGross: totalGross,
+            totalGrossPLN: totalGross * toPLN,
+            totalNetPLN: totalNet * toPLN,
+            totalTaxPLN: totalTax * toPLN,
+            totalDiscPLN: 0,
+          };
+
+          g.rows = lines.map(function (l) {
+            var lineGross = l.extendedamount || 0;
+            var lineTax = l.tax || 0;
+            var lineNet = lineGross - lineTax;
+            var lineDisc = l.manualdiscountamount || 0;
+            var qty = l.quantity || 1;
+            var pricePerUnit = l.priceperunit || 0;
+            var vatPct =
+              lineNet > 0
+                ? Math.round((lineTax / lineNet) * 100 * 100) / 100
+                : 0;
+            g.totalDisc += lineDisc;
+            g.totalDiscPLN += lineDisc * toPLN;
+            // Parse period from productdescription: "{name} od dd-MM-yyyy do dd-MM-yyyy"
+            // Tolerant of hyphen or slash separators. Falls back to null when absent.
+            var _pastFS = null, _pastFE = null;
+            var _pdesc = l.productdescription || "";
+            var _pm = _pdesc.match(/\bod\s+(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})\s+do\s+(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/i);
+            if (_pm) {
+              _pastFS = new Date(Date.UTC(+_pm[3], +_pm[2] - 1, +_pm[1]));
+              _pastFE = new Date(Date.UTC(+_pm[6], +_pm[5] - 1, +_pm[4]));
+              if (isNaN(_pastFS)) _pastFS = null;
+              if (isNaN(_pastFE)) _pastFE = null;
+            }
+            // Resolve product name via the source RC's charge type (mirror projected rows):
+            //   productName = chargeType.array_invoicelinename (English) — falls back gracefully.
+            //   chargeName  = RC's array_chargename.
+            //   chargeId    = RC's array_chargeid.
+            // If the source RC isn't in scope, fall back to what the invoicedetail carries.
+            var _srcRc = rcById[l._array_recurringcharge_value] || null;
+            var _srcCt = _srcRc && _srcRc._array_chargetype_value
+              ? _chargeTypeMap[_srcRc._array_chargetype_value]
+              : null;
+            var _prodName = (_srcCt && (_srcCt.invoiceLineName || _srcCt.name))
+              || l.productdescription
+              || "";
+            var _chargeNm = (_srcRc && _srcRc.array_chargename)
+              || (_srcCt && _srcCt.name)
+              || "";
+            var _chargeId = (_srcRc && _srcRc.array_chargeid) || "";
+            return {
+              rcId: l._array_recurringcharge_value || "",
+              chargeName: _chargeNm,
+              chargeId: _chargeId,
+              chargeType:
+                (_srcCt && _srcCt.name) ||
+                l[
+                  "_array_chargetype_value@OData.Community.Display.V1.FormattedValue"
+                ] || "",
+              productName: _prodName,
+              invoiceDetailId: l.invoicedetailid || "",
+              unit: "",
+              nativeCurrency: invCurrencyLabel,
+              nativeCurrencyId: invCurrencyId,
+              invoiceDate: g.invoiceDate,
+              dueDate: g.dueDate,
+              freqStart: _pastFS,
+              freqEnd: _pastFE,
+              cycleIndex: 0,
+              amount: lineNet + lineDisc,
+              qty: qty,
+              pricePerUnit: pricePerUnit,
+              discount: lineDisc,
+              discountLabel: "",
+              netAfterDisc: lineNet,
+              vat: vatPct,
+              tax: lineTax,
+              gross: lineGross,
+              grossPLN: lineGross * toPLN,
+              isPLN: isPLNInvoice,
+              nativeAmount: lineNet + lineDisc,
+              nativeGross: lineGross,
+              nativeDisc: lineDisc,
+              nativeNet: lineNet,
+              nativeTax: lineTax,
+              isDifferentCurrency: false,
+              frequency: "",
+              isOneTime: false,
+              hasClause: false,
+              clauseType: "",
+              proration: false,
+              preFrequencyOffset: false,
+              unitArea: null,
+              billableArea: (function () {
+                var srcRc = rcById[l._array_recurringcharge_value];
+                return srcRc && srcRc.array_billablearea != null
+                  ? srcRc.array_billablearea
+                  : null;
+              })(),
+              rcStartDate: null,
+              rcEndDate: null,
+              isSeparate: false,
+              isUAIC: !isPLNInvoice,
+            };
+          });
+
+          g.isPastInvoice = true;
+          groups.push(g);
+        });
+        return groups;
+      }
+
+      function renderGroupTable(groups) {
+        var html =
+          "<table><thead><tr>" +
+          '<th style="width:30px;"></th>' +
+          "<th>Due Date</th>" +
+          "<th>Lease Name</th>" +
+          "<th>Lease ID</th>" +
+          "<th>Tenant</th>" +
+          "<th>Property</th>" +
+          "<th>Invoice Type</th>" +
+          "<th>Prefix</th>" +
+          '<th title="' +
+          (window._bankDebug
+            ? (window._bankDebug.error
+                ? "Fetch error: " + window._bankDebug.error
+                : window._bankDebug.problem ||
+                  window._bankDebug.count + " bank account(s) loaded")
+            : "Bank account lookup") +
+          '">Bank Account</th>' +
+          '<th style="text-align:right;">Lines</th>' +
+          '<th style="text-align:right;">Disc Net (PLN)</th>' +
+          '<th style="text-align:right;">Net Amount (PLN)</th>' +
+          '<th style="text-align:right;">Gross Amount (PLN)</th>' +
+          "</tr></thead><tbody>";
+
+        groups.forEach(function (g, gi) {
+          var flags = "";
+          var hasPror = g.rows.some(function (r) {
+            return r.proration;
+          });
+          var hasOneTime = g.rows.some(function (r) {
+            return r.isOneTime;
+          });
+          if (g.isPastInvoice)
+            flags +=
+              '<span class="badge badge-success" title="Invoice already generated">INVOICED</span>';
+          if (hasPror)
+            flags +=
+              '<span class="badge badge-warn" title="Proration enabled">PRORATA</span>';
+          if (hasOneTime)
+            flags +=
+              '<span class="badge badge-warn" title="One-time charge">ONE-TIME</span>';
+          if (g.term)
+            flags +=
+              '<span class="badge badge-term">' + esc(g.term) + "</span>";
+
+          var leaseLink = g.leaseId
+            ? '<a href="javascript:void(0)" class="link-icon" title="Open Lease" onclick="event.stopPropagation();openRecord(\'array_leaseagreement\',\'' +
+              g.leaseId +
+              "')\">↗</a>"
+            : "";
+          var eurCell =
+            g.currencyId !== _plnCurrencyId && g.currency
+              ? fmtCcy(g.totalGross, g.currency)
+              : "";
+          var discCell =
+            g.totalDiscPLN > 0
+              ? '<span style="color:var(--ar-amber);">' +
+                fmtPLN(g.totalDiscPLN) +
+                "</span>"
+              : '<span style="color:var(--ar-g6);">0,00 zł</span>';
+          // Net Amount (pre-discount PLN) & Gross Amount (=Net−DiscNet+Tax) computed from rows
+          // to keep the invoice product identity intact.
+          var grpNetPLN = 0, grpGrossPLN = 0;
+          g.rows.forEach(function (r) {
+            var qty = r.qty || 1;
+            var natToPLN = 1;
+            if (r.nativeCurrencyId !== _plnCurrencyId && _fxRate && _fxRate.rate) natToPLN = _fxRate.rate;
+            grpNetPLN += r.nativeAmount * qty * natToPLN;
+            grpGrossPLN += (r.pricePerUnit - r.discount + r.tax) * qty;
+          });
+
+          html +=
+            '<tr class="group-row" data-idx="' +
+            gi +
+            '">' +
+            '<td><span class="toggle-icon">▶</span></td>' +
+            "<td>" +
+            fmtDate(g.dueDate) +
+            "</td>" +
+            "<td>" +
+            esc(g.leaseName) +
+            leaseLink +
+            " " +
+            flags +
+            "</td>" +
+            '<td><span style="color:var(--ar-g6);font-size:11px;">' +
+            esc(g.leaseCode) +
+            "</span></td>" +
+            "<td>" +
+            esc(g.tenantName) +
+            (g.tenantNIP
+              ? '<div style="color:var(--ar-g6);font-size:11px;margin-top:2px;">NIP: ' +
+                esc(g.tenantNIP) +
+                "</div>"
+              : "") +
+            "</td>" +
+            "<td>" +
+            esc(g.propertyName) +
+            "</td>" +
+            "<td>" +
+            esc(g.invoiceType) +
+            "</td>" +
+            "<td>" +
+            esc(g.invoicePrefix) +
+            "</td>" +
+            '<td style="font-family:monospace;font-size:11px;color:var(--ar-g7);white-space:nowrap;">' +
+            (g.bankAccount
+              ? esc(g.bankAccount)
+              : '<span style="color:var(--ar-g5);">—</span>') +
+            "</td>" +
+            '<td class="amt">' +
+            g.rows.length +
+            "</td>" +
+            '<td class="amt">' +
+            discCell +
+            "</td>" +
+            '<td class="amt amt-pln"><strong>' +
+            fmtPLN(grpNetPLN) +
+            "</strong></td>" +
+            '<td class="amt amt-pln"><strong>' +
+            fmtPLN(grpGrossPLN) +
+            "</strong></td>" +
+            "</tr>";
+
+          var leaseTotal =
+            window._leaseRCTotals && g.leaseId
+              ? window._leaseRCTotals[g.leaseId]
+              : g.rows.length;
+          var otherCount = Math.max(0, leaseTotal - g.rows.length);
+          var splitHint =
+            otherCount > 0
+              ? '<div class="split-hint" style="padding:8px 14px;background:#fff8e6;border-left:3px solid #ff9f0a;color:#7a4c00;font-size:11.5px;margin-bottom:6px;">This lease has <strong>' +
+                otherCount +
+                " other charge(s)</strong> billed on a separate invoice (Invoice Separately or Use-As-Invoice-Currency flag set). Look for another row in the view.</div>"
+              : "";
+          html +=
+            '<tr class="child-row" data-parent="' +
+            gi +
+            '"><td colspan="13">' +
+            '<div class="detail-wrap">' +
+            splitHint +
+            '<div class="detail-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>Invoice products (' +
+            g.rows.length +
+            ")</div>" +
+            '<table class="subtable"><thead><tr>' +
+            '<th style="padding-left:40px;width:20%;">Product Name</th>' +
+            "<th>Charge Type</th>" +
+            "<th>Period</th>" +
+            '<th style="text-align:right;">Area (m²)</th>' +
+            '<th style="text-align:right;">Qty</th>' +
+            '<th style="text-align:right;">Payment Amount</th>' +
+            '<th style="text-align:right;">Net Amount</th>' +
+            '<th style="text-align:right;">Discount Net Amount</th>' +
+            '<th style="text-align:right;">VAT %</th>' +
+            '<th style="text-align:right;">Tax</th>' +
+            '<th style="text-align:right;">Gross Amount</th>' +
+            "</tr></thead><tbody>";
+          g.rows.forEach(function (r) {
+            var rcLink;
+            if (g.isPastInvoice && r.invoiceDetailId) {
+              rcLink =
+                '<a href="javascript:void(0)" class="link-icon" title="Open Invoice Product" onclick="event.stopPropagation();openRecord(\'invoicedetail\',\'' +
+                r.invoiceDetailId +
+                "')\">↗</a>";
+            } else if (r.rcId) {
+              rcLink =
+                '<a href="javascript:void(0)" class="link-icon" title="Open Recurring Charge" onclick="event.stopPropagation();openRecord(\'array_recurringcharge\',\'' +
+                r.rcId +
+                "')\">↗</a>";
+            } else {
+              rcLink = "";
+            }
+            var clauseBadge = "";
+            var nativeCcy = ccySym(r.nativeCurrency) || "zł";
+            var showDual = r.isDifferentCurrency; // true when native ≠ invoice currency
+            // Cell renderer for native+PLN pair: native on top with symbol, PLN gray sub if different
+            function nativePlusPLN(nativeVal, plnVal, color) {
+              var top =
+                "<div" + (color ? ' style="color:' + color + ';"' : "") + ">" +
+                fmtAmt(nativeVal) +
+                ' <span style="color:var(--ar-g6);font-weight:400;">' +
+                esc(nativeCcy) +
+                "</span></div>";
+              if (!showDual) return top;
+              return top +
+                '<div style="color:var(--ar-g6);font-size:11px;font-weight:400;">' +
+                fmtAmt(plnVal) +
+                " zł</div>";
+            }
+            // PLN-primary + native-currency gray sub (for the PLN-computed columns: Net/DiscNet/Tax/Gross).
+            // Only shows the sub-value when the row is in a foreign currency.
+            function plnPlusNative(plnVal, nativeVal, opts) {
+              opts = opts || {};
+              var bold = opts.bold ? "<strong>" : "";
+              var bolde = opts.bold ? "</strong>" : "";
+              var color = opts.color;
+              var top =
+                "<div" + (color ? ' style="color:' + color + ';"' : "") + ">" +
+                bold + fmtPLN(plnVal) + bolde +
+                "</div>";
+              if (!showDual) return top;
+              return top +
+                '<div style="color:var(--ar-g6);font-size:11px;font-weight:400;">' +
+                fmtAmt(nativeVal) + ' ' + esc(nativeCcy) +
+                "</div>";
+            }
+            // Line-total math: everything scales by quantity (matches invoicedetail.extendedamount = priceperunit × qty)
+            var qty = r.qty || 1;
+            var lineNetPLN     = r.pricePerUnit * qty;         // Payment × qty × rate
+            var lineNetNative  = r.nativeAmount * qty;
+            var lineDiscPLN    = r.discount * qty;
+            var lineDiscNative = r.nativeDisc * qty;
+            var lineTaxPLN     = r.tax * qty;
+            var lineTaxNative  = r.nativeTax * qty;
+            var lineGrossPLN   = lineNetPLN - lineDiscPLN + lineTaxPLN;
+            var lineGrossNative = r.nativeGross * qty;
+            // ---- Column values, mirroring invoice product record ----
+            // Payment Amount: per-unit native (+ per-unit PLN if different) — matches Payment Amount field
+            var payCell = nativePlusPLN(r.nativeAmount, r.pricePerUnit);
+            // Net Amount = Payment Amount × Qty (PLN primary, native sub if foreign)
+            var netCell = plnPlusNative(lineNetPLN, lineNetNative, { bold: true });
+            // Discount Net Amount = discount × Qty
+            var discNetCell = lineDiscPLN > 0
+              ? plnPlusNative(lineDiscPLN, lineDiscNative, { color: "var(--ar-amber)" })
+              : '<span style="color:var(--ar-g6);">0,00 zł</span>';
+            // Tax scales by qty too
+            var taxCell = plnPlusNative(lineTaxPLN, lineTaxNative);
+            // Gross Amount = Net − Discount Net + Tax
+            var grossCell = plnPlusNative(lineGrossPLN, lineGrossNative, { bold: true });
+            // Period cell: fall back to RC's own start/end when freqStart/freqEnd null,
+            // per-side so a missing single date shows "?" instead of a blank arrow.
+            var _pStart = r.freqStart || r.rcStartDate;
+            var _pEnd = r.freqEnd || r.rcEndDate;
+            var _sTxt = fmtDate(_pStart);
+            var _eTxt = fmtDate(_pEnd);
+            var _periodDates =
+              _sTxt || _eTxt
+                ? (_sTxt || "?") + " → " + (_eTxt || "?")
+                : "—";
+            var _flags = "";
+            if (r.proration)
+              _flags +=
+                '<span class="badge badge-warn" title="Proration enabled">PRORATED</span>';
+            if (r.preFrequencyOffset)
+              _flags +=
+                '<span class="badge badge-info" title="Pre-frequency offset enabled">PRE-FREQ</span>';
+            html +=
+              "<tr>" +
+              '<td style="padding-left:40px;"><div class="product-name">' +
+              esc(r.productName || r.chargeName) +
+              rcLink +
+              clauseBadge +
+              "</div>" +
+              (function () {
+                var nm = (r.chargeName || "").trim();
+                var id = (r.chargeId || "").trim();
+                if (!nm && !id) return "";
+                var sub = nm && id ? nm + " (" + id + ")" : (nm || id);
+                return '<div class="product-sub">' + esc(sub) + "</div>";
+              })() +
+              "</td>" +
+              "<td>" +
+              esc(r.chargeType) +
+              "</td>" +
+              '<td class="period-cell">' +
+              _periodDates +
+              '<div class="period-freq">' +
+              esc(r.frequency) +
+              (r.isOneTime ? " · one-time" : "") +
+              "</div>" +
+              (_flags ? '<div style="margin-top:3px;">' + _flags + "</div>" : "") +
+              "</td>" +
+              '<td class="amt">' +
+              (r.billableArea != null
+                ? fmtArea(r.billableArea)
+                : '<span style="color:var(--ar-g5);">—</span>') +
+              "</td>" +
+              '<td class="amt">' + r.qty + "</td>" +
+              '<td class="amt">' + payCell + "</td>" +
+              '<td class="amt amt-pln">' + netCell + "</td>" +
+              '<td class="amt">' + discNetCell + "</td>" +
+              '<td class="amt">' + r.vat + "%</td>" +
+              '<td class="amt">' + taxCell + "</td>" +
+              '<td class="amt amt-pln">' + grossCell + "</td>" +
+              "</tr>";
+          });
+          // ---- Footer totals: sum from rows so Net−DiscNet+Tax=Gross holds ----
+          var tPayPLN = 0, tPayEUR = 0, tPayHasPLN = false;
+          var tDiscPayPLN = 0, tDiscPayEUR = 0;
+          var tNetPLN = 0, tDiscNetPLN = 0, tTaxPLN = 0, tGrossPLN = 0;
+          g.rows.forEach(function (r) {
+            var qty = r.qty || 1;
+            var natToPLN = 1;
+            if (r.nativeCurrencyId !== _plnCurrencyId && _fxRate && _fxRate.rate) natToPLN = _fxRate.rate;
+            if (r.nativeCurrencyId === _plnCurrencyId) tPayHasPLN = true;
+            tPayPLN += r.nativeAmount * qty * natToPLN;
+            tDiscPayPLN += r.nativeDisc * qty * natToPLN;
+            if (isEurRow(r)) { tPayEUR += r.nativeAmount * qty; tDiscPayEUR += r.nativeDisc * qty; }
+            tNetPLN += r.pricePerUnit * qty;
+            tDiscNetPLN += r.discount * qty;
+            tTaxPLN += r.tax * qty;
+            tGrossPLN += (r.pricePerUnit - r.discount + r.tax) * qty;
+          });
+          // Payment cell: prefer native currency when single-currency group; PLN otherwise
+          var footPay = (!tPayHasPLN && tPayEUR > 0)
+            ? fmtAmt(tPayEUR) + ' <span style="color:var(--ar-g6);font-weight:400;">€</span>'
+            : fmtAmt(tPayPLN) + ' <span style="color:var(--ar-g6);font-weight:400;">zł</span>';
+          html +=
+            '</tbody><tfoot><tr style="background:linear-gradient(180deg, rgba(0,113,227,0.04), rgba(0,113,227,0.02));">' +
+            '<td colspan="5" style="padding-left:40px;"></td>' +
+            '<td class="amt" style="font-weight:600;">' + footPay + "</td>" +
+            '<td class="amt amt-pln" style="font-weight:700;">' + fmtPLN(tNetPLN) + "</td>" +
+            '<td class="amt" style="font-weight:600;">' +
+              (tDiscNetPLN > 0
+                ? '<span style="color:var(--ar-amber);">' + fmtPLN(tDiscNetPLN) + '</span>'
+                : '0,00 zł') + "</td>" +
+            '<td class="amt"></td>' +
+            '<td class="amt" style="font-weight:600;">' + fmtPLN(tTaxPLN) + "</td>" +
+            '<td class="amt amt-pln" style="font-weight:700;">' + fmtPLN(tGrossPLN) + "</td>" +
+            "</tr></tfoot></table></div></td></tr>";
+        });
+        html += "</tbody></table>";
+        return html;
+      }
+
+      function showError(msg) {
+        document.getElementById("content").innerHTML =
+          '<div class="err">' + esc(msg) + "</div>";
+      }
+
+      // ---------- Export ----------
+      // CSV export — Polish-Excel-safe (BOM + semicolon delimiter + Polish decimals)
+      // Opens cleanly in pl-PL Excel: numbers with comma decimals, dates as text, UTF-8 characters intact.
+      function csvNum(n) {
+        if (n == null || isNaN(n)) return "";
+        // Polish decimal (comma), no thousand separator to keep CSV clean
+        return Number(n).toFixed(2).replace(".", ",");
+      }
+      function csvCell(v) {
+        if (v == null) return "";
+        var s = String(v);
+        // Quote if contains delimiter, quote, CR or LF; escape internal quotes by doubling
+        if (
+          s.indexOf(";") >= 0 ||
+          s.indexOf('"') >= 0 ||
+          s.indexOf("\n") >= 0 ||
+          s.indexOf("\r") >= 0
+        ) {
+          return '"' + s.replace(/"/g, '""') + '"';
+        }
+        return s;
+      }
+      function rowsToCSV(rows) {
+        return rows
+          .map(function (r) {
+            return r.map(csvCell).join(";");
+          })
+          .join("\r\n");
+      }
+      function exportXlsx() {
+        try {
+          if (!_filtered || _filtered.length === 0) {
+            alert("No data to export. Adjust filters and try again.");
+            return;
+          }
+          var summary = [
+            [{ t: "s", v: "Automated Invoice Forecast", __ttl: true }],
+            [
+              { t: "s", v: "Month", __lbl: true },
+              { t: "s", v: document.getElementById("fltMonth").value },
+            ],
+            [
+              { t: "s", v: "Generated", __lbl: true },
+              { t: "s", v: new Date().toLocaleString("pl-PL") },
+            ],
+            [
+              { t: "s", v: "FX Rate", __lbl: true },
+              {
+                t: "s",
+                v: _fxRate
+                  ? _fxRate.currency +
+                    " = " +
+                    Number(_fxRate.rate).toFixed(4) +
+                    " PLN (dated " +
+                    fmtDate(_fxRate.date) +
+                    ")"
+                  : "unavailable",
+              },
+            ],
+            [{ t: "s", v: "" }],
+          ];
+          var headers = [
+            "Month",
+            "Invoice Date",
+            "Due Date",
+            "Lease Name",
+            "Lease ID",
+            "Term",
+            "Tenant",
+            "NIP",
+            "Property",
+            "Invoice Type",
+            "Prefix",
+            "Bank Account",
+            "Product Name",
+            "Charge ID",
+            "Charge Name",
+            "Charge Type",
+            "Unit",
+            "Frequency",
+            "Period Start",
+            "Period End",
+            "Qty",
+            "Payment Amount",
+            "Payment Currency",
+            "Disc in Payment Currency",
+            "Discount Basis",
+            "Net Amount (PLN)",
+            "Discount Net Amount (PLN)",
+            "VAT %",
+            "Tax (PLN)",
+            "Gross Amount (PLN)",
+          ];
+          var dataRows = [
+            headers.map(function (h) {
+              return { t: "s", v: h, __hdr: true };
+            }),
+          ];
+
+          var byDate = {};
+          _filtered.forEach(function (p) {
+            var dk = ymd(p.invoiceDate);
+            if (!byDate[dk]) byDate[dk] = [];
+            byDate[dk].push(p);
+          });
+          Object.keys(byDate)
+            .sort()
+            .forEach(function (dk) {
+              var groups = groupProjectionsByInvoice(byDate[dk]);
+              groups.forEach(function (g) {
+                g.rows.forEach(function (r) {
+                  dataRows.push([
+                    { t: "s", v: monthLabel(yMonth(r.invoiceDate)) },
+                    { t: "s", v: fmtDate(r.invoiceDate) },
+                    { t: "s", v: fmtDate(r.dueDate) },
+                    { t: "s", v: g.leaseName || "" },
+                    { t: "s", v: g.leaseCode || "" },
+                    { t: "s", v: g.term || "" },
+                    { t: "s", v: g.tenantName || "" },
+                    { t: "s", v: g.tenantNIP || "" },
+                    { t: "s", v: g.propertyName || "" },
+                    { t: "s", v: g.invoiceType || "" },
+                    { t: "s", v: g.invoicePrefix || "" },
+                    { t: "s", v: g.bankAccount || "" },
+                    { t: "s", v: r.productName || "" },
+                    { t: "s", v: r.chargeId || "" },
+                    { t: "s", v: r.chargeName || "" },
+                    { t: "s", v: r.chargeType || "" },
+                    { t: "s", v: r.unit || "" },
+                    { t: "s", v: r.frequency || "" },
+                    { t: "s", v: fmtDate(r.freqStart) },
+                    { t: "s", v: fmtDate(r.freqEnd) },
+                    { t: "n", v: r.qty },
+                    { t: "n", v: num(r.nativeAmount) },
+                    { t: "s", v: r.nativeCurrency || "" },
+                    { t: "n", v: num(r.nativeDisc * (r.qty || 1)) },
+                    { t: "s", v: r.discountLabel || "" },
+                    { t: "n", v: num(r.pricePerUnit * (r.qty || 1)) },
+                    { t: "n", v: num(r.discount * (r.qty || 1)) },
+                    { t: "n", v: num(r.vat) },
+                    { t: "n", v: num(r.tax * (r.qty || 1)) },
+                    { t: "n", v: num((r.pricePerUnit - r.discount + r.tax) * (r.qty || 1)) },
+                  ]);
+                });
+              });
+            });
+
+          var allRows = summary.concat([[{ t: "s", v: "" }]]).concat(dataRows);
+          var blob = buildXlsxBlob(allRows, "Automated Invoice Forecast");
+          var filename =
+            "AutomatedInvoiceForecast_" +
+            document.getElementById("fltMonth").value +
+            ".xlsx";
+          downloadBlob(blob, filename);
+        } catch (err) {
+          console.error("Export failed:", err);
+          alert(
+            "Export failed: " +
+              (err && err.message ? err.message : String(err)) +
+              "\n\nCheck the browser console (F12) for details.",
+          );
+        }
+      }
+
+      function num(v) {
+        var n = Number(v);
+        return isNaN(n) ? 0 : n;
+      }
+      function xmlEsc(s) {
+        return String(s == null ? "" : s)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&apos;");
+      }
+
+      // ============================================================================
+      // Minimal .xlsx (Office Open XML) builder — no libraries.
+      // Generates a proper ZIP-based .xlsx that Excel opens without any warning.
+      // ============================================================================
+
+      // Convert 1-based column index to A, B, ..., Z, AA, AB, ...
+      function colLetter(n) {
+        var s = "";
+        while (n > 0) {
+          var r = (n - 1) % 26;
+          s = String.fromCharCode(65 + r) + s;
+          n = Math.floor((n - 1) / 26);
+        }
+        return s;
+      }
+
+      function buildSheetXML(rows) {
+        var xml =
+          '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n' +
+          '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+          "<sheetData>";
+        rows.forEach(function (row, rIdx) {
+          var rN = rIdx + 1;
+          xml += '<row r="' + rN + '">';
+          row.forEach(function (cell, cIdx) {
+            var ref = colLetter(cIdx + 1) + rN;
+            var styleId = 0;
+            if (cell.__ttl) styleId = 3;
+            else if (cell.__hdr) styleId = 1;
+            else if (cell.__lbl) styleId = 4;
+            else if (cell.t === "n") styleId = 2;
+            var sAttr = styleId ? ' s="' + styleId + '"' : "";
+            if (cell.t === "n") {
+              xml +=
+                '<c r="' + ref + '"' + sAttr + "><v>" + cell.v + "</v></c>";
+            } else {
+              // inlineStr keeps things simple (no sharedStrings.xml needed)
+              xml +=
+                '<c r="' +
+                ref +
+                '"' +
+                sAttr +
+                ' t="inlineStr"><is><t xml:space="preserve">' +
+                xmlEsc(cell.v) +
+                "</t></is></c>";
+            }
+          });
+          xml += "</row>";
+        });
+        xml += "</sheetData></worksheet>";
+        return xml;
+      }
+
+      function buildStylesXML() {
+        return (
+          '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n' +
+          '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+          '<numFmts count="1"><numFmt numFmtId="164" formatCode="#,##0.00"/></numFmts>' +
+          '<fonts count="3">' +
+          '<font><sz val="11"/><name val="Calibri"/></font>' +
+          '<font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>' +
+          '<font><b/><sz val="14"/><name val="Calibri"/></font>' +
+          "</fonts>" +
+          '<fills count="3">' +
+          '<fill><patternFill patternType="none"/></fill>' +
+          '<fill><patternFill patternType="gray125"/></fill>' +
+          '<fill><patternFill patternType="solid"><fgColor rgb="FF0071E3"/></patternFill></fill>' +
+          "</fills>" +
+          '<borders count="1"><border/></borders>' +
+          '<cellStyleXfs count="1"><xf/></cellStyleXfs>' +
+          '<cellXfs count="5">' +
+          "<xf/>" /* 0 default */ +
+          '<xf fontId="1" fillId="2" applyFont="1" applyFill="1"/>' /* 1 header  */ +
+          '<xf numFmtId="164" applyNumberFormat="1"/>' /* 2 number  */ +
+          '<xf fontId="2" applyFont="1"/>' /* 3 title   */ +
+          '<xf fontId="1" applyFont="1"/>' /* 4 label (bold black on white) — reuse fontId 1 but no fill */ +
+          "</cellXfs>" +
+          "</styleSheet>"
+        );
+      }
+
+      function buildXlsxBlob(rows, sheetName) {
+        var files = {
+          "[Content_Types].xml":
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n' +
+            '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+            '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+            '<Default Extension="xml" ContentType="application/xml"/>' +
+            '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
+            '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>' +
+            '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' +
+            "</Types>",
+          "_rels/.rels":
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n' +
+            '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+            '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>' +
+            "</Relationships>",
+          "xl/_rels/workbook.xml.rels":
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n' +
+            '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+            '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>' +
+            '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
+            "</Relationships>",
+          "xl/workbook.xml":
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n' +
+            '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+            '<sheets><sheet name="' +
+            xmlEsc((sheetName || "Sheet1").substring(0, 31)) +
+            '" sheetId="1" r:id="rId1"/></sheets>' +
+            "</workbook>",
+          "xl/styles.xml": buildStylesXML(),
+          "xl/worksheets/sheet1.xml": buildSheetXML(rows),
+        };
+        var order = [
+          "[Content_Types].xml",
+          "_rels/.rels",
+          "xl/_rels/workbook.xml.rels",
+          "xl/workbook.xml",
+          "xl/styles.xml",
+          "xl/worksheets/sheet1.xml",
+        ];
+        return zipStore(
+          order.map(function (n) {
+            return { name: n, content: files[n] };
+          }),
+        );
+      }
+
+      // Build a ZIP file (store method, no compression) as a Blob.
+      // Uses standard PKZIP file format so any Excel/OpenXML consumer can read it.
+      function zipStore(entries) {
+        var CRC_TABLE = zipStore._t;
+        if (!CRC_TABLE) {
+          CRC_TABLE = new Array(256);
+          for (var i = 0; i < 256; i++) {
+            var c = i;
+            for (var k = 0; k < 8; k++)
+              c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+            CRC_TABLE[i] = c >>> 0;
+          }
+          zipStore._t = CRC_TABLE;
+        }
+        function crc32(bytes) {
+          var c = 0xffffffff;
+          for (var i = 0; i < bytes.length; i++)
+            c = (CRC_TABLE[(c ^ bytes[i]) & 0xff] ^ (c >>> 8)) >>> 0;
+          return (c ^ 0xffffffff) >>> 0;
+        }
+        var enc = new TextEncoder();
+        var localParts = [];
+        var centralParts = [];
+        var offset = 0;
+        var centralSize = 0;
+
+        entries.forEach(function (e) {
+          var nameBytes = enc.encode(e.name);
+          var dataBytes = enc.encode(e.content);
+          var crc = crc32(dataBytes);
+          var size = dataBytes.length;
+
+          // Local file header (30 bytes) + name + data
+          var lh = new ArrayBuffer(30);
+          var dv = new DataView(lh);
+          dv.setUint32(0, 0x04034b50, true); // signature
+          dv.setUint16(4, 20, true); // version
+          dv.setUint16(6, 0, true); // flags
+          dv.setUint16(8, 0, true); // method 0 = store
+          dv.setUint16(10, 0, true); // mod time
+          dv.setUint16(12, 0, true); // mod date
+          dv.setUint32(14, crc, true); // crc32
+          dv.setUint32(18, size, true); // compressed size
+          dv.setUint32(22, size, true); // uncompressed size
+          dv.setUint16(26, nameBytes.length, true);
+          dv.setUint16(28, 0, true); // extra field length
+          localParts.push(new Uint8Array(lh), nameBytes, dataBytes);
+          var localLen = 30 + nameBytes.length + size;
+
+          // Central directory record (46 bytes) + name
+          var ch = new ArrayBuffer(46);
+          var cv = new DataView(ch);
+          cv.setUint32(0, 0x02014b50, true);
+          cv.setUint16(4, 20, true); // version made by
+          cv.setUint16(6, 20, true); // version needed
+          cv.setUint16(8, 0, true);
+          cv.setUint16(10, 0, true);
+          cv.setUint16(12, 0, true);
+          cv.setUint16(14, 0, true);
+          cv.setUint32(16, crc, true);
+          cv.setUint32(20, size, true);
+          cv.setUint32(24, size, true);
+          cv.setUint16(28, nameBytes.length, true);
+          cv.setUint16(30, 0, true); // extra
+          cv.setUint16(32, 0, true); // comment
+          cv.setUint16(34, 0, true); // disk #
+          cv.setUint16(36, 0, true); // internal attrs
+          cv.setUint32(38, 0, true); // external attrs
+          cv.setUint32(42, offset, true); // local header offset
+          centralParts.push(new Uint8Array(ch), nameBytes);
+          centralSize += 46 + nameBytes.length;
+          offset += localLen;
+        });
+
+        // End of central directory
+        var eocd = new ArrayBuffer(22);
+        var ev = new DataView(eocd);
+        ev.setUint32(0, 0x06054b50, true);
+        ev.setUint16(4, 0, true);
+        ev.setUint16(6, 0, true);
+        ev.setUint16(8, entries.length, true);
+        ev.setUint16(10, entries.length, true);
+        ev.setUint32(12, centralSize, true);
+        ev.setUint32(16, offset, true);
+        ev.setUint16(20, 0, true);
+
+        var all = localParts
+          .concat(centralParts)
+          .concat([new Uint8Array(eocd)]);
+        return new Blob(all, {
+          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        });
+      }
+
+      // Download that works inside a D365 web-resource iframe (where a plain anchor click
+      // can be silently blocked). Tries msSaveBlob, then anchor download, then a new tab.
+      function downloadBlob(blob, filename) {
+        try {
+          if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+            window.navigator.msSaveOrOpenBlob(blob, filename);
+            return;
+          }
+        } catch (e) {}
+        var url = URL.createObjectURL(blob);
+        try {
+          var a = document.createElement("a");
+          if ("download" in a) {
+            a.href = url;
+            a.download = filename;
+            a.rel = "noopener";
+            a.style.display = "none";
+            (document.body || document.documentElement).appendChild(a);
+            a.click();
+            a.remove();
+          } else {
+            (window.top || window).open(url, "_blank");
+          }
+        } catch (e) {
+          try {
+            (window.top || window).open(url, "_blank");
+          } catch (e2) {}
+        }
+        setTimeout(function () {
+          URL.revokeObjectURL(url);
+        }, 2000);
+      }
+
+      if (document.readyState === "loading")
+        document.addEventListener("DOMContentLoaded", init);
+      else init();
+    </script>
+  
+</body></html>
