@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grant portal access</title>
+<style>
+  :root {
+    /* Palette sampled from the GMP lease dialog */
+    --primary: #386ad1;
+    --primary-hover: #2c58b3;
+    --primary-tint: #ecf3fe;
+    --primary-tint-border: #c0dafe;
+    --canvas: #f3f5f9;
+    --surface: #ffffff;
+    --text: #1d1e20;
+    --label: #4d5562;
+    --muted: #8a909c;
+    --line: #e3e6ec;
+    --input-line: #d3d6de;
+    --badge-bg: #fef8ed;
+    --badge-line: #fec262;
+    --badge-text: #765015;
+    --danger: #b42318;
+    --danger-tint: #fef3f2;
+    --danger-line: #fecdca;
+    --success: #1f7a45;
+    --success-tint: #ecf8f0;
+    --success-line: #abe2bf;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif;
+    font-size: 14px; color: var(--text); background: var(--canvas);
+    display: flex; flex-direction: column;
+  }
+
+  /* Header */
+  header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 20px; background: var(--surface); border-bottom: 1px solid var(--line);
+  }
+  .icon-tile {
+    width: 32px; height: 32px; border-radius: 6px; flex: none;
+    background: var(--primary); color: #fff; display: grid; place-items: center;
+  }
+  .icon-tile svg { width: 16px; height: 16px; }
+  header .title { font-weight: 700; font-size: 15px; }
+  header .ctx { min-width: 0; }
+  header .title, header .sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  header .sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
+  .badge {
+    margin-left: auto; font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 999px;
+    background: var(--badge-bg); color: var(--badge-text); border: 1px solid var(--badge-line);
+  }
+
+  /* Body */
+  main { flex: 1; overflow-y: auto; padding: 16px 20px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px;
+  }
+  .card + .card { margin-top: 14px; }
+  h2 { font-size: 14px; font-weight: 700; margin: 0; }
+  .hint { color: var(--muted); font-size: 12px; margin: 2px 0 12px; }
+  label.field {
+    display: block; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+    color: var(--label); margin: 12px 0 6px;
+  }
+  label.field .req { color: var(--danger); }
+  input[type=text], input[type=email], select {
+    width: 100%; height: 34px; padding: 0 10px; font: inherit; color: var(--text);
+    border: 1px solid var(--input-line); border-radius: 6px; background: var(--surface);
+  }
+  input::placeholder { color: var(--muted); }
+  input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-tint); }
+
+  /* Contact list */
+  .search-wrap { position: relative; margin-bottom: 10px; }
+  .search-wrap svg { position: absolute; right: 10px; top: 9px; width: 16px; height: 16px; color: var(--muted); }
+  .list { border: 1px solid var(--line); border-radius: 6px; max-height: 230px; overflow-y: auto; }
+  .row {
+    display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+    border-bottom: 1px solid var(--line); border-left: 3px solid transparent; cursor: pointer;
+  }
+  .row:last-child { border-bottom: 0; }
+  .row:hover { background: var(--canvas); }
+  .row.selected { background: var(--primary-tint); border-left-color: var(--primary); }
+  .row.disabled { cursor: not-allowed; opacity: .5; }
+  .row input { margin: 0; width: 16px; height: 16px; accent-color: var(--primary); flex: none; }
+  .avatar {
+    width: 30px; height: 30px; border-radius: 50%; flex: none;
+    display: grid; place-items: center; font-size: 12px; font-weight: 700;
+  }
+  .row .name { font-weight: 600; }
+  .row .email { color: var(--muted); font-size: 12px; }
+  .empty { padding: 16px 12px; color: var(--muted); }
+  .selected-count { font-size: 12px; color: var(--label); margin-top: 8px; }
+  .selected-count strong { color: var(--primary); }
+
+  /* Create contact (styled like the upload zone) */
+  .create-zone {
+    margin-top: 12px; border: 1px dashed var(--primary-tint-border); border-radius: 8px;
+    background: var(--primary-tint); padding: 12px;
+  }
+  .create-trigger {
+    display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+    background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer;
+  }
+  .create-trigger .t { color: var(--primary); font-weight: 600; }
+  .create-trigger .s { color: var(--label); font-size: 12px; }
+  .create-panel[hidden], .create-trigger[hidden] { display: none; }
+  .create-panel { padding: 4px 2px; }
+  .create-panel .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .create-panel label.field { margin-top: 0; }
+  .create-panel .account-pick:not([hidden]) + .grid { margin-top: 16px; }
+  .create-actions { display: flex; gap: 8px; margin-top: 20px; }
+
+  /* User type row */
+  .type-row { display: flex; align-items: center; gap: 10px; }
+
+  /* ===== Modern dropdown ===== */
+  .dd { position: relative; width: 100%; }
+  .dd-trigger {
+    width: 100%; height: 34px; display: flex; align-items: center; gap: 8px; padding: 0 10px 0 12px;
+    font: inherit; color: var(--text); text-align: left; cursor: pointer;
+    background: var(--surface); border: 1px solid var(--input-line); border-radius: 6px;
+    transition: border-color .12s, box-shadow .12s, background .12s;
+  }
+  .dd-trigger:hover { border-color: #b9bdc7; }
+  .dd-trigger:focus-visible, .dd-trigger[aria-expanded="true"] {
+    outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-tint);
+  }
+  .dd-label { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dd-trigger.is-empty .dd-label { color: var(--muted); font-weight: 400; }
+  .dd-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--input-line); }
+  .dd-dot[hidden] { display: none; }
+  .dd-chev { width: 14px; height: 14px; flex: none; color: var(--muted); transition: transform .15s; }
+  .dd-trigger[aria-expanded="true"] .dd-chev { transform: rotate(180deg); }
+  .dd-trigger.invalid { border-color: var(--danger); background: var(--danger-tint); }
+  .dd-trigger.invalid .dd-label { color: var(--danger); }
+  .dd-compact { width: auto; min-width: 170px; }
+  .dd-clear {
+    position: absolute; right: 30px; top: 50%; transform: translateY(-50%);
+    width: 20px; height: 20px; padding: 0; border: 0; border-radius: 4px; background: transparent;
+    color: var(--muted); display: grid; place-items: center; cursor: pointer;
+  }
+  .dd-clear[hidden] { display: none; }
+  .dd-clear:hover { background: var(--canvas); color: var(--text); }
+  .dd-clear:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+  .dd-clear svg { width: 12px; height: 12px; }
+  .dd.has-clear .dd-label { margin-right: 22px; }
+  .dd-compact .dd-clear { right: 26px; width: 18px; height: 18px; }
+  .dd-compact .dd-trigger { height: 28px; font-size: 12px; font-weight: 600; padding: 0 8px 0 10px; gap: 6px; }
+
+  .dd-menu {
+    position: fixed; z-index: 1000; padding: 4px; max-height: 260px; overflow-y: auto; font-size: 13px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+    box-shadow: 0 10px 28px rgba(29, 30, 32, .14), 0 2px 6px rgba(29, 30, 32, .06);
+    animation: ddDown .12s ease-out;
+  }
+  .dd-menu.up { animation-name: ddUp; }
+  @keyframes ddDown { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+  @keyframes ddUp { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .dd-menu { animation: none; } .dd-chev { transition: none; } }
+  .dd-option {
+    display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 6px;
+    cursor: pointer; color: var(--text); white-space: nowrap;
+  }
+  .dd-option.active { background: var(--canvas); }
+  .dd-option[aria-selected="true"] { font-weight: 600; }
+  .dd-option .dd-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .dd-tag {
+    font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+    color: var(--primary); background: var(--primary-tint); padding: 1px 6px; border-radius: 4px;
+  }
+  .dd-check { width: 14px; height: 14px; flex: none; color: var(--primary); visibility: hidden; }
+  .dd-option[aria-selected="true"] .dd-check { visibility: visible; }
+
+  /* Per-contact user type */
+  .row-type { margin-left: auto; flex: none; display: block; padding: 0; }
+  .row-type[hidden] { display: none; }
+  .row-type.custom .dd-trigger { border-color: var(--primary); background: var(--primary-tint); }
+
+  /* Buttons */
+  button.primary, button.secondary {
+    height: 34px; padding: 0 16px; font: inherit; font-weight: 600; border-radius: 6px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  button.primary { background: var(--primary); color: #fff; border: 1px solid var(--primary); }
+  button.primary:hover:not(:disabled) { background: var(--primary-hover); border-color: var(--primary-hover); }
+  button.secondary { background: var(--surface); color: var(--text); border: 1px solid var(--input-line); }
+  button.secondary:hover { background: var(--canvas); }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  button:focus-visible, .create-trigger:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+  /* Messages */
+  .msg { margin-top: 12px; padding: 10px 12px; border-radius: 6px; font-size: 13px; border: 1px solid; }
+  .msg[hidden] { display: none; }
+  .msg.error { background: var(--danger-tint); color: var(--danger); border-color: var(--danger-line); }
+  .msg.success { background: var(--success-tint); color: var(--success); border-color: var(--success-line); }
+
+  /* Footer */
+  footer {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 12px 20px; border-top: 1px solid var(--line); background: var(--surface);
+  }
+  footer .summary { font-size: 12px; color: var(--muted); }
+
+  /* Groups & validation */
+  .group-head {
+    position: sticky; top: 0; z-index: 1;
+    padding: 6px 12px; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+    color: var(--label); background: var(--canvas); border-bottom: 1px solid var(--line);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .reason {
+    margin-left: auto; font-size: 11px; font-weight: 600; white-space: nowrap;
+    color: var(--danger); background: var(--danger-tint); border: 1px solid var(--danger-line);
+    padding: 1px 8px; border-radius: 999px;
+  }
+  .list-tools { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+  .link-btn { background: none; border: 0; padding: 0; font: inherit; font-size: 12px; color: var(--primary); cursor: pointer; }
+  .link-btn:hover { text-decoration: underline; }
+  .create-panel .account-pick[hidden] { display: none; }
+  input.invalid, select.invalid { border-color: var(--danger); background: var(--danger-tint); }
+  .create-zone[hidden] { display: none; }
+  .reason.ok { color: var(--success); background: var(--success-tint); border-color: var(--success-line); }
+  .row.enabled { opacity: .75; cursor: default; }
+  .msg.info { background: var(--primary-tint); color: var(--primary-hover); border-color: var(--primary-tint-border); }
+  .msg.warn { background: var(--badge-bg); color: var(--badge-text); border-color: var(--badge-line); }
+  .msg .msg-title { font-weight: 700; }
+  .msg ul { margin: 6px 0 0; padding-left: 18px; }
+  .msg li { margin-top: 2px; }
+  .msg .run-id { margin-top: 6px; font-size: 12px; opacity: .85; }
+  .msg .run-id code { font-family: Consolas, "Courier New", monospace; user-select: all; }
+  .reason.fail { cursor: help; }
+
+  /* Processing overlay */
+  .busy {
+    position: fixed; inset: 0; z-index: 900; display: grid; place-items: center;
+    background: rgba(243, 245, 249, .72); backdrop-filter: blur(1px);
+  }
+  .busy[hidden] { display: none; }
+  .busy-card {
+    display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center;
+    padding: 22px 28px; min-width: 240px; background: var(--surface);
+    border: 1px solid var(--line); border-radius: 10px;
+    box-shadow: 0 10px 28px rgba(29, 30, 32, .12);
+  }
+  .busy-text { font-weight: 600; }
+  .busy-sub { font-size: 12px; color: var(--muted); }
+  .spinner {
+    width: 28px; height: 28px; border-radius: 50%;
+    border: 3px solid var(--primary-tint); border-top-color: var(--primary);
+    animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Toast */
+  .toast {
+    position: fixed; left: 50%; bottom: 72px; transform: translateX(-50%); z-index: 950;
+    display: flex; align-items: center; gap: 10px; max-width: calc(100% - 40px);
+    padding: 10px 10px 10px 14px; border-radius: 8px; font-size: 13px; font-weight: 600;
+    background: var(--text); color: #fff; box-shadow: 0 10px 28px rgba(29, 30, 32, .22);
+    animation: toastIn .18s ease-out;
+  }
+  .toast[hidden] { display: none; }
+  .toast .t-icon { width: 18px; height: 18px; flex: none; color: #6fd29a; }
+  .toast button {
+    width: 24px; height: 24px; padding: 0; border: 0; border-radius: 4px; flex: none;
+    background: transparent; color: #c9ccd3; cursor: pointer; display: grid; place-items: center;
+  }
+  .toast button:hover { background: rgba(255, 255, 255, .12); color: #fff; }
+  .toast button:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
+  @keyframes toastIn { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }
+  @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2s; } .toast { animation: none; } }
+  .reason.fail + .row-type { margin-left: 8px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="icon-tile" aria-hidden="true">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="5.5" r="2.5"/><path d="M1.5 14c0-2.5 2-4.2 4.5-4.2s4.5 1.7 4.5 4.2"/><path d="M12.5 5.5v4M10.5 7.5h4"/></svg>
+  </div>
+  <div class="ctx">
+    <div class="title" id="contextTitle">Loading…</div>
+    <div class="sub">Select contacts and user types</div>
+  </div>
+  <span class="badge">Tenant portal</span>
+</header>
+
+<main>
+  <div class="card">
+    <h2>Contacts</h2>
+    <p class="hint" id="contactsHint">Choose one or more contacts. Contacts with a blank name or email can't be selected.</p>
+
+    <div class="search-wrap">
+      <input type="text" id="search" placeholder="Search by name, email or account" aria-label="Search contacts">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5 14 14"/></svg>
+    </div>
+    <div id="contactList" class="list" role="group" aria-label="Contacts"><div class="empty">Loading contacts…</div></div>
+    <div class="list-tools">
+      <div id="selectedCount" class="selected-count" style="margin-top:0;"><strong>0</strong> selected</div>
+      <div>
+        <button type="button" id="selectAll" class="link-btn">Select all eligible</button>
+        &nbsp;·&nbsp;
+        <button type="button" id="clearAll" class="link-btn">Clear</button>
+      </div>
+    </div>
+
+    <div class="create-zone" id="createZone" hidden>
+      <button type="button" id="toggleCreate" class="create-trigger">
+        <span class="icon-tile" aria-hidden="true">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>
+        </span>
+        <span>
+          <span class="t">Create a new contact</span><br>
+          <span class="s">Add a name and email. The contact is linked to the account and selected automatically.</span>
+        </span>
+      </button>
+
+      <div id="createPanel" class="create-panel" hidden>
+        <div class="account-pick" id="accountPickWrap" hidden>
+          <label class="field" for="newAccount" style="margin-top:0;">Account <span class="req">*</span></label>
+          <select id="newAccount" aria-label="Account"></select>
+        </div>
+        <div class="grid">
+          <div>
+            <label class="field" for="newName">Full name <span class="req">*</span></label>
+            <input type="text" id="newName" autocomplete="off" placeholder="e.g. Anna Kowalska">
+          </div>
+          <div>
+            <label class="field" for="newEmail">Email <span class="req">*</span></label>
+            <input type="email" id="newEmail" autocomplete="off" placeholder="name@example.com">
+          </div>
+        </div>
+        <div class="create-actions">
+          <button type="button" id="createBtn" class="primary">Create contact</button>
+          <button type="button" id="cancelCreate" class="secondary">Cancel</button>
+        </div>
+        <div id="createMsg" class="msg" hidden></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Access</h2>
+    <p class="hint" id="accessHint">The user type decides what the contacts can see and do in the portal.</p>
+    <label class="field" for="userType" id="userTypeLabel">User type <span class="req">*</span></label>
+    <div class="type-row">
+      <select id="userType" aria-label="User type">
+        <option value="">Select a user type</option>
+        <option>Manager</option>
+        <option>Maintenance User</option>
+        <option>Finance User</option>
+        <option>Residential User</option>
+      </select>
+    </div>
+  </div>
+
+  <div id="mainMsg" class="msg" hidden></div>
+</main>
+
+<div id="busy" class="busy" hidden role="status" aria-live="polite">
+  <div class="busy-card">
+    <span class="spinner" aria-hidden="true"></span>
+    <div class="busy-text" id="busyText">Working…</div>
+    <div class="busy-sub">Please keep this dialog open.</div>
+  </div>
+</div>
+
+<div id="toast" class="toast" hidden role="status" aria-live="polite">
+  <svg class="t-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="6.5"/><path d="M5.3 8.3l1.8 1.8 3.6-4"/></svg>
+  <span id="toastText"></span>
+  <button type="button" id="toastClose" aria-label="Dismiss notification">
+    <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+  </button>
+</div>
+
+<footer>
+  <span class="summary" id="footerSummary">Select contacts and a user type</span>
+  <button type="button" id="submitBtn" class="primary" disabled>
+    Grant access
+    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+  </button>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  // ===== Configuration =====
+  // Flow URL is read from a Dataverse environment variable so Dev/Test/Prod each call their own flow.
+  var FLOW_URL_ENV_VAR = "array_PortalAccessFlowUrl"; // update to your environment variable schema name
+  var flowUrlCache = null;
+  var MAX_RECORDS = 50;
+  var NO_ACCOUNT = "__none__";
+
+  var TYPE_COLORS = {
+    "Manager":          { bg: "#ecf3fe", fg: "#2c58b3", line: "#c0dafe" },
+    "Maintenance User": { bg: "#fef8ed", fg: "#765015", line: "#fec262" },
+    "Finance User":     { bg: "#ecf8f0", fg: "#1f7a45", line: "#abe2bf" },
+    "Residential User": { bg: "#f4f0fd", fg: "#5b3cb0", line: "#d4c7f7" }
+  };
+  var AVATAR_COLORS = [
+    { bg: "#ecf3fe", fg: "#2c58b3" },
+    { bg: "#fef8ed", fg: "#765015" },
+    { bg: "#ecf8f0", fg: "#1f7a45" },
+    { bg: "#f4f0fd", fg: "#5b3cb0" },
+    { bg: "#fdf0f3", fg: "#a8325a" }
+  ];
+
+  var Xrm = window.parent && window.parent.Xrm ? window.parent.Xrm : window.Xrm;
+  var mode = null;              // "account" | "contact"
+  var ids = [];                 // record ids passed from the ribbon
+  var accounts = [];            // { id, name } (account mode)
+  var contacts = [];            // { id, name, email, accountId, accountName }
+  var selected = {};            // contactId -> true
+  var overrides = {};           // contactId -> user type (per-contact override of the default)
+  var showTypeErrors = false;  // set after a submit attempt with missing types
+  var rowEls = {};              // contactId -> { row, typeHost } for rendered rows
+  var allDone = false;          // last run granted/skipped everything: footer button becomes Close
+  var closeMode = false;
+  var toastTimer = null;
+  var lastResults = null;       // contactId -> { status, step, message } from the latest flow run
+  var FLOW_TIMEOUT_MS = 130000; // Power Automate request triggers time out at about 2 minutes
+  var USER_TYPES = ["Manager", "Maintenance User", "Finance User", "Residential User"];
+  var userTypeDD = null, accountDD = null;
+
+  var $ = function (id) { return document.getElementById(id); };
+  var GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+  // ===== Modern dropdown (wraps a hidden native <select>, so .value / change still work) =====
+  var openDropdown = null;
+  var ddSeq = 0;
+  var CHEV = '<svg class="dd-chev" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg>';
+  var CHECK = '<svg class="dd-check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7"/></svg>';
+
+  function Dropdown(select, o) {
+    o = o || {};
+    var uid = "dd" + (++ddSeq);
+    var wrap = document.createElement("div");
+    wrap.className = "dd" + (o.compact ? " dd-compact" : "");
+
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "dd-trigger";
+    btn.id = uid + "-btn";
+    btn.setAttribute("aria-haspopup", "listbox");
+    btn.setAttribute("aria-expanded", "false");
+    if (select.getAttribute("aria-label")) btn.setAttribute("aria-label", select.getAttribute("aria-label"));
+    btn.innerHTML = '<span class="dd-dot" aria-hidden="true"></span><span class="dd-label"></span>' + CHEV;
+    var dot = btn.querySelector(".dd-dot");
+    var lbl = btn.querySelector(".dd-label");
+    dot.hidden = !o.dotColor;
+
+    if (select.id) {
+      var fieldLabel = document.querySelector('label[for="' + select.id + '"]');
+      if (fieldLabel) fieldLabel.setAttribute("for", btn.id);
+    }
+
+    var clearBtn = document.createElement("button");
+    clearBtn.type = "button";
+    clearBtn.className = "dd-clear";
+    clearBtn.hidden = true;
+    clearBtn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg>';
+    clearBtn.addEventListener("mousedown", function (e) { e.preventDefault(); e.stopPropagation(); });
+    clearBtn.addEventListener("click", function (e) {
+      e.preventDefault(); e.stopPropagation();   // don't open the menu or toggle a parent row
+      close();
+      select.value = "";
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+      sync();
+      if (document.body.contains(btn)) btn.focus();
+    });
+
+    select.hidden = true;
+    select.parentNode.insertBefore(wrap, select);
+    wrap.appendChild(btn);
+    wrap.appendChild(clearBtn);
+    wrap.appendChild(select);
+
+    var menu = null, items = [], active = -1;
+
+    function options() {
+      return Array.prototype.filter.call(select.options, function (op) { return op.value !== ""; });
+    }
+    function placeholder() {
+      var ph = Array.prototype.filter.call(select.options, function (op) { return op.value === ""; })[0];
+      return (ph && ph.textContent) || o.placeholder || "Select";
+    }
+    function textFor(op) { return o.labelFor ? o.labelFor(op.value) : op.textContent; }
+
+    function sync() {
+      var val = select.value;
+      var op = val ? options().filter(function (x) { return x.value === val; })[0] : null;
+      lbl.textContent = op ? textFor(op) : placeholder();
+      btn.classList.toggle("is-empty", !op);
+      btn.classList.toggle("invalid", select.classList.contains("invalid"));
+      if (o.dotColor) dot.style.background = (op && o.dotColor(op.value)) || "";
+      btn.title = op ? textFor(op) : "";
+      var clearText = op && o.clearable ? o.clearable(op.value) : "";
+      clearBtn.hidden = !clearText;
+      wrap.classList.toggle("has-clear", !!clearText);
+      if (clearText) { clearBtn.title = clearText; clearBtn.setAttribute("aria-label", clearText); }
+    }
+
+    function setActive(i) {
+      if (!items.length) return;
+      active = (i + items.length) % items.length;
+      items.forEach(function (el, idx) { el.classList.toggle("active", idx === active); });
+      btn.setAttribute("aria-activedescendant", items[active].id);
+      items[active].scrollIntoView({ block: "nearest" });
+    }
+
+    function position() {
+      var r = btn.getBoundingClientRect();
+      menu.style.minWidth = Math.max(r.width, o.compact ? 190 : 0) + "px";
+      menu.style.left = "0px"; menu.style.top = "0px";
+      var mh = menu.offsetHeight, mw = menu.offsetWidth;
+      var below = window.innerHeight - r.bottom - 8;
+      var up = below < mh && r.top > below;
+      menu.classList.toggle("up", up);
+      menu.style.top = (up ? Math.max(8, r.top - mh - 4) : r.bottom + 4) + "px";
+      menu.style.left = Math.max(8, Math.min(r.left, window.innerWidth - mw - 8)) + "px";
+    }
+
+    function onOutside(e) { if (menu && !menu.contains(e.target) && !btn.contains(e.target)) close(); }
+    function onScroll(e) { if (menu && !menu.contains(e.target)) close(); }
+
+    function open() {
+      if (openDropdown && openDropdown !== api) openDropdown.close();
+      menu = document.createElement("div");
+      menu.className = "dd-menu";
+      menu.id = uid + "-menu";
+      menu.setAttribute("role", "listbox");
+      if (btn.getAttribute("aria-label")) menu.setAttribute("aria-label", btn.getAttribute("aria-label"));
+
+      items = options().map(function (op, i) {
+        var el = document.createElement("div");
+        el.className = "dd-option";
+        el.id = uid + "-opt-" + i;
+        el.setAttribute("role", "option");
+        el.setAttribute("aria-selected", op.value === select.value ? "true" : "false");
+        var html = "";
+        if (o.dotColor) html += '<span class="dd-dot" style="background:' + (o.dotColor(op.value) || "") + '"></span>';
+        el.innerHTML = html;
+        var t = document.createElement("span"); t.className = "dd-text"; t.textContent = textFor(op); el.appendChild(t);
+        var tag = o.tagFor && o.tagFor(op.value);
+        if (tag) { var tg = document.createElement("span"); tg.className = "dd-tag"; tg.textContent = tag; el.appendChild(tg); }
+        el.insertAdjacentHTML("beforeend", CHECK);
+        el.addEventListener("mousedown", function (e) { e.preventDefault(); });
+        el.addEventListener("mouseenter", function () { setActive(i); });
+        el.addEventListener("click", function (e) { e.stopPropagation(); choose(op.value); });
+        menu.appendChild(el);
+        return el;
+      });
+
+      document.body.appendChild(menu);
+      btn.setAttribute("aria-expanded", "true");
+      btn.setAttribute("aria-controls", menu.id);
+      position();
+      var cur = options().map(function (op) { return op.value; }).indexOf(select.value);
+      setActive(cur > -1 ? cur : 0);
+      document.addEventListener("mousedown", onOutside, true);
+      window.addEventListener("scroll", onScroll, true);
+      window.addEventListener("resize", close);
+      openDropdown = api;
+    }
+
+    function close() {
+      if (!menu) return;
+      menu.remove(); menu = null; items = []; active = -1;
+      btn.setAttribute("aria-expanded", "false");
+      btn.removeAttribute("aria-activedescendant");
+      btn.removeAttribute("aria-controls");
+      document.removeEventListener("mousedown", onOutside, true);
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", close);
+      if (openDropdown === api) openDropdown = null;
+    }
+
+    function choose(value) {
+      close();
+      btn.focus();
+      if (select.value !== value) {
+        select.value = value;
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+      sync();
+    }
+
+    btn.addEventListener("click", function (e) {
+      e.preventDefault(); e.stopPropagation();   // also stops a parent <label> row from toggling
+      if (menu) close(); else open();
+    });
+    btn.addEventListener("keydown", function (e) {
+      var k = e.key;
+      if (!menu) {
+        if (k === "ArrowDown" || k === "ArrowUp" || k === "Enter" || k === " ") { e.preventDefault(); open(); }
+        return;
+      }
+      if (k === "ArrowDown") { e.preventDefault(); setActive(active + 1); }
+      else if (k === "ArrowUp") { e.preventDefault(); setActive(active - 1); }
+      else if (k === "Home") { e.preventDefault(); setActive(0); }
+      else if (k === "End") { e.preventDefault(); setActive(items.length - 1); }
+      else if (k === "Enter" || k === " ") { e.preventDefault(); if (active > -1) choose(options()[active].value); }
+      else if (k === "Escape") { e.preventDefault(); e.stopPropagation(); close(); }
+      else if (k === "Tab") { close(); }
+      else if (k.length === 1) {
+        var ops = options(), ch = k.toLowerCase();
+        for (var n = 1; n <= ops.length; n++) {
+          var idx = (active + n) % ops.length;
+          if (textFor(ops[idx]).toLowerCase().indexOf(ch) === 0) { setActive(idx); break; }
+        }
+      }
+    });
+    select.addEventListener("change", sync);
+
+    var api = { sync: sync, close: close, focus: function () { btn.focus(); } };
+    sync();
+    return api;
+  }
+
+  // ===== Helpers =====
+  function readParams() {
+    var raw = new URLSearchParams(window.location.search).get("data");
+    if (!raw) return null;
+    try {
+      var d = JSON.parse(raw);
+      if (d.accountId && !d.ids) { d.mode = "account"; d.ids = [d.accountId]; } // backward compatible
+      d.ids = (d.ids || []).map(function (x) { return String(x).replace(/[{}]/g, "").toLowerCase(); })
+                           .filter(function (x) { return GUID.test(x); });
+      return d;
+    } catch (e) { return null; }
+  }
+  function showMsg(el, type, text) { el.className = "msg " + type; el.textContent = text; el.hidden = false; }
+  function hideMsg(el) { el.hidden = true; }
+  function isBlank(v) { return !v || !String(v).trim(); }
+  function invalidReason(c) {
+    if (isBlank(c.name) && isBlank(c.email)) return "Missing name and email";
+    if (isBlank(c.name)) return "Missing name";
+    if (isBlank(c.email)) return "Missing email";
+    return "";
+  }
+  function isEligible(c) { return !invalidReason(c) && !c.enabled; }
+  function typeDot(t) { return TYPE_COLORS[t] ? TYPE_COLORS[t].fg : ""; }
+
+  function initials(name) {
+    var p = (name || "?").trim().split(/\s+/);
+    return ((p[0] || "?").charAt(0) + (p.length > 1 ? p[p.length - 1].charAt(0) : "")).toUpperCase();
+  }
+  function avatarColor(seed) {
+    var h = 0;
+    for (var i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+    return AVATAR_COLORS[h % AVATAR_COLORS.length];
+  }
+  function fetchQuery(xml) { return "?fetchXml=" + encodeURIComponent(xml); }
+  function inValues(list) { return list.map(function (id) { return "<value>" + id + "</value>"; }).join(""); }
+
+  function mapContact(c) {
+    var isAccount = c["_parentcustomerid_value@Microsoft.Dynamics.CRM.lookuplogicalname"] === "account";
+    return {
+      id: c.contactid,
+      name: (c.fullname || "").trim(),
+      email: (c.emailaddress1 || "").trim(),
+      accountId: isAccount ? c._parentcustomerid_value : "",
+      accountName: isAccount ? (c["_parentcustomerid_value@OData.Community.Display.V1.FormattedValue"] || "") : "",
+      // Portal access is already set up when logon is enabled and a username exists
+      enabled: c.adx_identity_logonenabled === true && !isBlank(c.adx_identity_username)
+    };
+  }
+
+  // ===== Data =====
+  function loadAccounts() {
+    var xml =
+      "<fetch><entity name='account'><attribute name='accountid'/><attribute name='name'/>" +
+      "<filter><condition attribute='accountid' operator='in'>" + inValues(ids) + "</condition></filter>" +
+      "<order attribute='name'/></entity></fetch>";
+    return Xrm.WebApi.retrieveMultipleRecords("account", fetchQuery(xml)).then(function (res) {
+      accounts = res.entities.map(function (a) { return { id: a.accountid, name: a.name || "(No name)" }; });
+    });
+  }
+
+  function loadContacts(selectId, initial) {
+    var filter = mode === "account"
+      ? "<condition attribute='parentcustomerid' operator='in'>" + inValues(accounts.map(function (a) { return a.id; })) + "</condition>" +
+        "<condition attribute='statecode' operator='eq' value='0'/>"
+      : "<condition attribute='contactid' operator='in'>" + inValues(ids) + "</condition>";
+    var xml =
+      "<fetch><entity name='contact'><attribute name='contactid'/><attribute name='fullname'/>" +
+      "<attribute name='emailaddress1'/><attribute name='parentcustomerid'/>" +
+      "<attribute name='adx_identity_logonenabled'/><attribute name='adx_identity_username'/>" +
+      "<filter>" + filter + "</filter><order attribute='fullname'/></entity></fetch>";
+
+    return Xrm.WebApi.retrieveMultipleRecords("contact", fetchQuery(xml)).then(function (res) {
+      contacts = res.entities.map(mapContact);
+      if (mode === "contact" && ids.length === 1 && contacts[0]) {
+        $("contextTitle").textContent = contacts[0].name || contacts[0].email || "1 contact";
+        $("contextTitle").title = $("contextTitle").textContent;
+      }
+      if (initial) {
+        // Pre-select every eligible contact
+        contacts.forEach(function (c) { if (isEligible(c)) selected[c.id] = true; });
+      }
+      // Drop selections that are no longer eligible (e.g. enabled meanwhile)
+      Object.keys(selected).forEach(function (id) {
+        var c = contacts.filter(function (x) { return x.id === id; })[0];
+        if (!c || !isEligible(c)) { delete selected[id]; delete overrides[id]; }
+      });
+      if (selectId) {
+        var nc = contacts.filter(function (x) { return x.id === selectId; })[0];
+        if (nc && isEligible(nc)) selected[selectId] = true;
+      }
+      renderList();
+      if (initial) showEligibilityNotice();
+    });
+  }
+
+  function showEligibilityNotice() {
+    var enabledCount = contacts.filter(function (c) { return c.enabled; }).length;
+    var eligible = contacts.filter(isEligible).length;
+    if (!contacts.length || eligible) return;
+    var text = enabledCount === contacts.length
+      ? (contacts.length === 1 ? "This contact already has portal access." : "All of these contacts already have portal access.")
+      : "None of these contacts can be given access. They already have portal access, or are missing a name or email.";
+    showMsg($("mainMsg"), "info", text);
+  }
+
+  // ===== Header / context =====
+  function setContext() {
+    var label;
+    if (mode === "account") {
+      label = accounts.length === 1 ? accounts[0].name : accounts.length + " accounts";
+      $("contactsHint").textContent = "Eligible contacts from the selected account" +
+        (accounts.length > 1 ? "s" : "") + " are selected. Untick any you don't want. Contacts that already have portal access, or have a blank name or email, can't be selected.";
+    } else {
+      label = ids.length === 1 ? "1 contact" : ids.length + " contacts";
+      if (ids.length === 1) {
+        // Single contact: nothing to search, select all or clear
+        $("search").parentElement.hidden = true;
+        $("selectAll").parentElement.hidden = true;
+      }
+      $("contactsHint").textContent = "Eligible contacts are selected. Untick any you don't want. Contacts that already have portal access, or have a blank name or email, can't be selected.";
+    }
+    $("contextTitle").textContent = label;
+    $("contextTitle").title = label;
+  }
+
+  // ===== Contact list =====
+  function renderList() {
+    var term = $("search").value.trim().toLowerCase();
+    if (openDropdown) openDropdown.close();
+    var list = $("contactList");
+    var scroll = list.scrollTop;
+    list.innerHTML = "";
+    rowEls = {};
+
+    var filtered = contacts.filter(function (c) {
+      return !term || [c.name, c.email, c.accountName].join(" ").toLowerCase().indexOf(term) > -1;
+    });
+
+    if (!filtered.length) {
+      var empty = document.createElement("div");
+      empty.className = "empty";
+      empty.textContent = contacts.length ? "No contacts match your search."
+        : mode === "account" ? "The selected account has no active contacts yet. Create one below." : "No contacts found.";
+      list.appendChild(empty);
+      updateState();
+      return;
+    }
+
+    // Group by account (account order first, then "No account")
+    var groups = {};
+    var order = [];
+    filtered.forEach(function (c) {
+      var key = c.accountId || NO_ACCOUNT;
+      if (!groups[key]) { groups[key] = { name: c.accountName || "No account", items: [] }; order.push(key); }
+      groups[key].items.push(c);
+    });
+    order.sort(function (a, b) {
+      if (a === NO_ACCOUNT) return 1;
+      if (b === NO_ACCOUNT) return -1;
+      return groups[a].name.localeCompare(groups[b].name);
+    });
+
+    var showHeads = order.length > 1 || mode === "contact";
+    order.forEach(function (key) {
+      if (showHeads) {
+        var head = document.createElement("div");
+        head.className = "group-head";
+        head.textContent = groups[key].name;
+        head.title = groups[key].name;
+        list.appendChild(head);
+      }
+      groups[key].items.forEach(function (c) { list.appendChild(buildRow(c)); });
+    });
+
+    list.scrollTop = scroll;
+    updateState();
+  }
+
+  function buildRow(c) {
+    var reason = invalidReason(c);
+    var locked = !!reason || c.enabled;
+    var row = document.createElement("label");
+    row.className = "row" + (reason ? " disabled" : "") + (c.enabled && !reason ? " enabled" : "") + (selected[c.id] ? " selected" : "");
+
+    var cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.checked = !!selected[c.id];
+    cb.disabled = locked;
+    cb.addEventListener("change", function () {
+      if (cb.checked) selected[c.id] = true; else delete selected[c.id];
+      row.classList.toggle("selected", cb.checked);
+      updateState();  // also refreshes every row's type chip
+    });
+
+    var col = avatarColor(c.id);
+    var av = document.createElement("span");
+    av.className = "avatar";
+    av.style.background = col.bg;
+    av.style.color = col.fg;
+    av.textContent = initials(c.name || c.email);
+    av.setAttribute("aria-hidden", "true");
+
+    var text = document.createElement("div");
+    var n = document.createElement("div"); n.className = "name"; n.textContent = c.name || "(No name)";
+    var e = document.createElement("div"); e.className = "email"; e.textContent = c.email || "(No email)";
+    text.appendChild(n); text.appendChild(e);
+
+    row.appendChild(cb); row.appendChild(av); row.appendChild(text);
+
+    if (reason) {
+      var r = document.createElement("span");
+      r.className = "reason";
+      r.textContent = reason;
+      row.appendChild(r);
+    } else if (c.enabled) {
+      var justGranted = lastResults && lastResults[c.id] && lastResults[c.id].status === "Granted";
+      var ok = document.createElement("span");
+      ok.className = "reason ok";
+      ok.textContent = justGranted ? "Access granted" : "Already enabled";
+      ok.title = justGranted ? "Portal access was granted just now" : "This contact already has portal access";
+      row.appendChild(ok);
+    } else {
+      var res = lastResults && lastResults[c.id];
+      if (res && res.status === "Failed") {
+        var fp = document.createElement("span");
+        fp.className = "reason fail";
+        fp.textContent = "Failed";
+        fp.title = (res.step ? stepName(res.step) + ": " : "") + (res.message || "Unknown error");
+        row.appendChild(fp);
+      }
+      var typeHost = document.createElement("span");
+      typeHost.className = "row-type";
+      typeHost.hidden = true;
+      row.appendChild(typeHost);
+      rowEls[c.id] = { row: row, typeHost: typeHost };
+    }
+    return row;
+  }
+
+  // ===== User types =====
+  function selectedCount() { return Object.keys(selected).length; }
+  function perContactMode() { return selectedCount() > 1; }
+
+  // Effective type: per-contact override (only when several are selected), else the default.
+  function typeFor(c) {
+    var def = $("userType").value;
+    return (perContactMode() && overrides[c.id]) || def || "";
+  }
+
+  function renderTypeChip(c) {
+    var el = rowEls[c.id];
+    if (!el) return;
+    var host = el.typeHost;
+    var show = perContactMode() && !!selected[c.id];
+    host.hidden = !show;
+    host.innerHTML = "";
+    host.title = "";
+    host.classList.remove("custom");
+    if (!show) return;
+
+    var def = $("userType").value;
+    var current = typeFor(c);
+
+    var sel = document.createElement("select");
+    sel.setAttribute("aria-label", "User type for " + (c.name || c.email));
+    var ph = document.createElement("option");
+    ph.value = ""; ph.textContent = "Select type";
+    sel.appendChild(ph);
+    USER_TYPES.forEach(function (t) {
+      var o = document.createElement("option");
+      o.value = t; o.textContent = t;
+      sel.appendChild(o);
+    });
+    sel.value = current;
+    if (!current && showTypeErrors) sel.classList.add("invalid");
+    host.appendChild(sel);
+
+    sel.addEventListener("change", function () {
+      if (sel.value && sel.value !== def) overrides[c.id] = sel.value;
+      else delete overrides[c.id];
+      renderTypeChip(c);
+      updateSummary();
+    });
+
+    Dropdown(sel, {
+      compact: true,
+      dotColor: typeDot,
+      tagFor: function (v) { return v === def ? "Default" : ""; },
+      // Only an override can be cleared on a row: it falls back to the default (or to empty if none)
+      clearable: function () {
+        return overrides[c.id] ? (def ? "Reset to default (" + def + ")" : "Clear user type") : "";
+      }
+    });
+
+    var isCustom = !!overrides[c.id] && overrides[c.id] !== def;
+    host.classList.toggle("custom", isCustom);
+    host.title = !current ? "Select a user type for this contact"
+      : isCustom ? "Custom type for this contact" : "Uses the default user type";
+  }
+
+  function updateState() {
+    var count = selectedCount();
+    var many = count > 1;
+    $("selectedCount").innerHTML = "<strong>" + count + "</strong> selected";
+
+    $("userTypeLabel").firstChild.nodeValue = many ? "Default user type " : "User type ";
+    $("accessHint").textContent = many
+      ? "Applies to all selected contacts. To give a contact a different type, change it on the contact's row."
+      : "The user type decides what the contacts can see and do in the portal.";
+
+    contacts.forEach(renderTypeChip);
+    updateSummary();
+  }
+
+  function updateSummary() {
+    var chosen = contacts.filter(function (c) { return selected[c.id]; });
+    var missing = chosen.filter(function (c) { return !typeFor(c); }).length;
+    if (!missing) showTypeErrors = false;
+    $("userType").classList.toggle("invalid", showTypeErrors && !$("userType").value);
+    if (userTypeDD) userTypeDD.sync();
+    $("submitBtn").disabled = !chosen.length;
+    updateSubmitLabel(chosen);
+
+    var summary;
+    if (!chosen.length) {
+      summary = "Select contacts and a user type";
+    } else if (missing) {
+      summary = missing + " contact" + (missing > 1 ? "s need" : " needs") + " a user type";
+    } else {
+      var counts = {};
+      chosen.forEach(function (c) { var t = typeFor(c); counts[t] = (counts[t] || 0) + 1; });
+      var parts = USER_TYPES.filter(function (t) { return counts[t]; }).map(function (t) {
+        return Object.keys(counts).length > 1 ? counts[t] + " " + t : t;
+      });
+      summary = chosen.length + " contact" + (chosen.length > 1 ? "s" : "") +
+        (Object.keys(counts).length > 1 ? " · " + parts.join(", ") : " as " + parts[0]);
+    }
+    $("footerSummary").textContent = summary;
+  }
+
+  function failedIds() {
+    return lastResults ? Object.keys(lastResults).filter(function (id) { return lastResults[id].status === "Failed"; }) : [];
+  }
+
+  function setBtnLabel(text) { $("submitBtn").firstChild.nodeValue = text + " "; }
+
+  function updateSubmitLabel(chosen) {
+    closeMode = allDone && !chosen.length;
+    if (closeMode) { setBtnLabel("Close"); $("submitBtn").disabled = false; return; }
+    if (!lastResults) { setBtnLabel("Grant access"); return; }
+    var failed = failedIds();
+    var onlyFailed = chosen.length && failed.length &&
+      chosen.every(function (c) { return failed.indexOf(c.id) > -1; });
+    if (onlyFailed) setBtnLabel("Retry failed (" + chosen.length + ")");
+    else if (!chosen.length && !failed.length) setBtnLabel("Done");
+    else setBtnLabel("Grant access");
+  }
+
+  function selectAllValid() {
+    contacts.forEach(function (c) { if (isEligible(c)) selected[c.id] = true; });
+    renderList();
+  }
+  function clearAll() { selected = {}; overrides = {}; renderList(); }
+
+  // ===== Create contact (account mode only) =====
+  function setupCreate() {
+    if (mode !== "account" || !accounts.length) return;
+    $("createZone").hidden = false;
+
+    var pick = $("newAccount");
+    pick.innerHTML = "";
+    if (accounts.length > 1) {
+      var ph = document.createElement("option");
+      ph.value = ""; ph.textContent = "Select an account";
+      pick.appendChild(ph);
+    }
+    accounts.forEach(function (a) {
+      var o = document.createElement("option");
+      o.value = a.id; o.textContent = a.name;
+      pick.appendChild(o);
+    });
+    $("accountPickWrap").hidden = accounts.length < 2;
+    if (accounts.length > 1) {
+      if (!accountDD) accountDD = Dropdown(pick, { placeholder: "Select an account" });
+      accountDD.sync();
+    }
+  }
+
+  function toggleCreate(show) {
+    $("createPanel").hidden = !show;
+    $("toggleCreate").hidden = show;
+    hideMsg($("createMsg"));
+    ["newName", "newEmail"].forEach(function (id) { $(id).classList.remove("invalid"); });
+    if (accountDD) accountDD.close();
+    if (show) { if (accountDD) accountDD.focus(); else $("newName").focus(); }
+    else {
+      $("newName").value = ""; $("newEmail").value = "";
+      if (accounts.length > 1) { $("newAccount").value = ""; if (accountDD) accountDD.sync(); }
+    }
+  }
+
+  function createContact() {
+    var name = $("newName").value.trim();
+    var email = $("newEmail").value.trim().toLowerCase();
+    var accountId = accounts.length > 1 ? $("newAccount").value : accounts[0].id;
+    var msg = $("createMsg");
+
+    $("newName").classList.toggle("invalid", !name);
+    $("newEmail").classList.toggle("invalid", !email);
+
+    $("newAccount").classList.toggle("invalid", !accountId);
+    if (accountDD) accountDD.sync();
+    if (!accountId) { showMsg(msg, "error", "Select an account."); return; }
+    if (!name && !email) { showMsg(msg, "error", "Name and email can't be blank."); return; }
+    if (!name) { showMsg(msg, "error", "Name can't be blank."); return; }
+    if (!email) { showMsg(msg, "error", "Email can't be blank."); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      $("newEmail").classList.add("invalid");
+      showMsg(msg, "error", "Enter a valid email address.");
+      return;
+    }
+
+    var parts = name.split(/\s+/);
+    var lastname = parts[parts.length - 1];
+    var firstname = parts.slice(0, -1).join(" ");
+
+    $("createBtn").disabled = true;
+    hideMsg(msg);
+
+    var dupQuery = "?$select=contactid,fullname&$top=1&$filter=emailaddress1 eq '" + email.replace(/'/g, "''") + "'";
+
+    Xrm.WebApi.retrieveMultipleRecords("contact", dupQuery).then(function (res) {
+      if (res.entities.length) {
+        throw new Error("A contact with this email already exists (" + (res.entities[0].fullname || "no name") + ").");
+      }
+      return Xrm.WebApi.createRecord("contact", {
+        firstname: firstname,
+        lastname: lastname,
+        emailaddress1: email,
+        "parentcustomerid_account@odata.bind": "/accounts(" + accountId + ")"
+      });
+    }).then(function (created) {
+      toggleCreate(false);
+      $("search").value = "";
+      return loadContacts(created.id, false);
+    }).catch(function (err) {
+      showMsg(msg, "error", err.message);
+    }).then(function () {
+      $("createBtn").disabled = false;
+    });
+  }
+
+  // ===== Flow URL (environment variable) =====
+  function getFlowUrl() {
+    if (flowUrlCache) return Promise.resolve(flowUrlCache);
+    var q = "?$select=schemaname,defaultvalue" +
+      "&$filter=schemaname eq '" + FLOW_URL_ENV_VAR + "'" +
+      "&$expand=environmentvariabledefinition_environmentvariablevalue($select=value)";
+    return Xrm.WebApi.retrieveMultipleRecords("environmentvariabledefinition", q).then(function (res) {
+      var def = res.entities[0];
+      var vals = def && def.environmentvariabledefinition_environmentvariablevalue;
+      var url = (vals && vals.length && vals[0].value) || (def && def.defaultvalue) || "";
+      if (!url) throw new Error("Environment variable '" + FLOW_URL_ENV_VAR + "' is missing or empty.");
+      flowUrlCache = url;
+      return url;
+    });
+  }
+
+  // ===== Duplicate email check =====
+  // Power Pages maps a signed-in user to a contact by email, which fails when several active contacts share one.
+  function escapeXml(v) {
+    return String(v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;").replace(/'/g, "&apos;");
+  }
+
+  function findDuplicateEmails(chosen) {
+    var issues = [];
+    var seen = {};
+    chosen.forEach(function (c) {
+      var key = c.email.toLowerCase();
+      if (seen[key]) issues.push(c.email + " (selected more than once)");
+      seen[key] = true;
+    });
+    if (issues.length) return Promise.resolve(issues);
+
+    var emails = Object.keys(seen);
+    var xml =
+      "<fetch><entity name='contact'><attribute name='contactid'/><attribute name='emailaddress1'/>" +
+      "<filter><condition attribute='statecode' operator='eq' value='0'/>" +
+      "<condition attribute='emailaddress1' operator='in'>" +
+      emails.map(function (e) { return "<value>" + escapeXml(e) + "</value>"; }).join("") +
+      "</condition></filter></entity></fetch>";
+
+    return Xrm.WebApi.retrieveMultipleRecords("contact", fetchQuery(xml)).then(function (res) {
+      var counts = {};
+      res.entities.forEach(function (r) {
+        var k = (r.emailaddress1 || "").toLowerCase();
+        counts[k] = (counts[k] || 0) + 1;
+      });
+      return emails.filter(function (e) { return counts[e] > 1; })
+                   .map(function (e) { return e + " (used by " + counts[e] + " active contacts)"; });
+    });
+  }
+
+  // ===== Submit to flow =====
+  function submit() {
+    var mainMsg = $("mainMsg");
+    var btn = $("submitBtn");
+    hideMsg(mainMsg);
+
+    var chosen = contacts.filter(function (c) { return selected[c.id] && !c.enabled; });
+    var invalid = chosen.filter(function (c) { return invalidReason(c); });
+
+    if (!chosen.length) { showMsg(mainMsg, "error", "Select at least one contact."); return; }
+    var untyped = chosen.filter(function (c) { return !typeFor(c); });
+    if (untyped.length) {
+      showTypeErrors = true;
+      updateState();
+      if (!$("userType").value && untyped.length === chosen.length && userTypeDD) userTypeDD.focus();
+      showMsg(mainMsg, "error", "Select a user type for: " +
+        untyped.map(function (c) { return c.name || c.email; }).join(", "));
+      return;
+    }
+    if (invalid.length) {
+      showMsg(mainMsg, "error", "Name and email can't be blank. Fix or untick: " +
+        invalid.map(function (c) { return c.name || c.email || c.id; }).join(", "));
+      return;
+    }
+
+    var payload = chosen.map(function (c) {
+      return {
+        email: c.email,
+        name: c.name,
+        contactID: c.id,
+        accountID: c.accountId || "",
+        userType: typeFor(c)
+      };
+    });
+
+    btn.disabled = true;
+    allDone = false;
+    hideToast();
+    setBtnLabel("Checking…");
+    showBusy("Checking contacts…");
+
+    findDuplicateEmails(chosen).then(function (dupes) {
+      if (dupes.length) {
+        var e = new Error("Each email must belong to exactly one active contact, otherwise portal sign-in can't match the contact. Fix: " + dupes.join(", "));
+        e.validation = true;
+        throw e;
+      }
+      setBtnLabel("Granting access…");
+      showBusy("Granting access to " + payload.length + " contact" + (payload.length > 1 ? "s" : "") + "…");
+      return getFlowUrl();
+    }).then(function (url) {
+      return callFlow(url, payload);
+    }).then(function (res) {
+      return applyResults(res.body && res.body.results, res.ok ? null : res.body, payload);
+    }).catch(function (err) {
+      if (err.timeout) {
+        showMsg(mainMsg, "info", "This is taking longer than expected and may still be processing. " +
+          "Check the contacts in a minute before retrying.");
+        return loadContacts(null, false);
+      }
+      showMsg(mainMsg, "error", (err.validation ? "" : "Couldn't grant access. ") + err.message);
+    }).then(function () {
+      hideBusy();
+      updateSummary();
+    });
+  }
+
+  // ===== Loader, toast and close =====
+  function showBusy(text) {
+    $("busyText").textContent = text;
+    $("busy").hidden = false;
+    if (openDropdown) openDropdown.close();
+  }
+  function hideBusy() { $("busy").hidden = true; }
+
+  function showToast(text) {
+    clearTimeout(toastTimer);
+    $("toastText").textContent = text;
+    $("toast").hidden = false;
+    toastTimer = setTimeout(hideToast, 6000);
+  }
+  function hideToast() { clearTimeout(toastTimer); $("toast").hidden = true; }
+
+  // There is no supported API to close a navigateTo dialog from inside it, so this clicks the dialog's own
+  // close button. If Microsoft changes that markup the dialog simply stays open and the user closes it.
+  function closeDialog() {
+    try {
+      var doc = window.parent && window.parent.document;
+      var btns = doc ? doc.querySelectorAll('button[data-id="dialogCloseIconButton"]') : [];
+      if (btns.length) { btns[btns.length - 1].click(); return true; }
+    } catch (e) { /* cross-origin or markup changed */ }
+    return false;
+  }
+
+  // Success is confirmed inside the dialog; the footer button becomes Close.
+  function finishSuccess(text) {
+    hideMsg($("mainMsg"));
+    showToast(text);
+  }
+
+  // Calls the flow and returns { ok, body }. Throws only for network errors or timeouts.
+  function callFlow(url, payload) {
+    var ctrl = window.AbortController ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, FLOW_TIMEOUT_MS) : null;
+
+    return fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: ctrl ? ctrl.signal : undefined
+    }).then(function (r) {
+      return r.text().then(function (t) {
+        var body = null;
+        try { body = t ? JSON.parse(t) : null; } catch (e) { body = null; }
+        if (!r.ok && !body) throw new Error("Flow returned " + r.status + (t ? ": " + t : ""));
+        return { ok: r.ok, body: body || {} };
+      });
+    }, function (err) {
+      if (err && err.name === "AbortError") { var t = new Error("Timed out"); t.timeout = true; throw t; }
+      throw err;
+    }).then(function (res) {
+      if (timer) clearTimeout(timer);
+      return res;
+    }, function (err) {
+      if (timer) clearTimeout(timer);
+      throw err;
+    });
+  }
+
+  // Stores per-contact results, reselects failed contacts, reloads data and shows the summary.
+  function applyResults(results, errorBody, payload) {
+    results = Array.isArray(results) ? results : [];
+    lastResults = {};
+    results.forEach(function (r) {
+      if (r && r.contactID) lastResults[String(r.contactID).toLowerCase()] = r;
+    });
+
+    // Contacts sent but missing from the results didn't get processed (e.g. the run failed early)
+    var missing = payload.filter(function (p) { return !lastResults[p.contactID.toLowerCase()]; });
+    if (errorBody) {
+      missing.forEach(function (p) {
+        lastResults[p.contactID.toLowerCase()] = { status: "Failed", message: "Not processed because the run failed." };
+      });
+    }
+
+    // Keep only failed contacts selected so they can be retried
+    selected = {};
+    failedIds().forEach(function (id) { selected[id] = true; });
+    Object.keys(overrides).forEach(function (id) { if (!selected[id]) delete overrides[id]; });
+
+    return loadContacts(null, false).then(function () {
+      showResultSummary(errorBody);
+    });
+  }
+
+  // Flow action names use underscores for spaces, e.g. "HTTP:_Invite_User"
+  function stepName(step) { return String(step).replace(/_/g, " "); }
+
+  function nameFor(id) {
+    var c = contacts.filter(function (x) { return x.id === id; })[0];
+    return c ? (c.name || c.email) : id;
+  }
+
+  function showResultSummary(errorBody) {
+    var ids = Object.keys(lastResults);
+    var count = { Granted: 0, Skipped: 0, Failed: 0 };
+    ids.forEach(function (id) { var st = lastResults[id].status; if (count[st] !== undefined) count[st]++; });
+
+    var parts = [];
+    if (count.Granted) parts.push(count.Granted + " granted");
+    if (count.Skipped) parts.push(count.Skipped + " skipped (already enabled)");
+    if (count.Failed) parts.push(count.Failed + " failed");
+
+    var type = !count.Failed ? "success" : (count.Granted || count.Skipped) ? "warn" : "error";
+
+    // Everything worked: confirm with a notification instead of a banner
+    if (type === "success" && !errorBody && ids.length) {
+      allDone = true;
+      var text = count.Granted
+        ? "Portal access granted for " + count.Granted + " contact" + (count.Granted > 1 ? "s" : "") +
+          (count.Skipped ? " (" + count.Skipped + " already enabled)" : "") + "."
+        : "No changes: " + count.Skipped + " contact" + (count.Skipped > 1 ? "s" : "") + " already had portal access.";
+      finishSuccess(text);
+      return;
+    }
+
+    var el = $("mainMsg");
+    el.className = "msg " + type;
+    el.innerHTML = "";
+
+    var title = document.createElement("div");
+    title.className = "msg-title";
+    title.textContent = errorBody
+      ? "Provisioning failed" + (parts.length ? ": " + parts.join(" · ") : "")
+      : parts.join(" · ") || "Nothing to process";
+    el.appendChild(title);
+
+    var failed = ids.filter(function (id) { return lastResults[id].status === "Failed"; });
+    if (failed.length) {
+      var ul = document.createElement("ul");
+      failed.forEach(function (id) {
+        var r = lastResults[id];
+        var li = document.createElement("li");
+        li.textContent = nameFor(id) + ": " + (r.message || "Unknown error") + (r.step ? " (" + stepName(r.step) + ")" : "");
+        ul.appendChild(li);
+      });
+      el.appendChild(ul);
+      var hint = document.createElement("div");
+      hint.className = "run-id";
+      hint.textContent = "Failed contacts are still selected. Use Retry to try them again.";
+      el.appendChild(hint);
+    }
+
+    var runId = errorBody && errorBody.runId;
+    if (runId) {
+      var rid = document.createElement("div");
+      rid.className = "run-id";
+      rid.appendChild(document.createTextNode("Run ID: "));
+      var code = document.createElement("code");
+      code.textContent = runId;
+      rid.appendChild(code);
+      el.appendChild(rid);
+    }
+    el.hidden = false;
+  }
+
+  // ===== Wire up =====
+  function fail(text) {
+    $("contactList").innerHTML = "";
+    $("contextTitle").textContent = "Grant portal access";
+    showMsg($("mainMsg"), "error", text);
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    var p = readParams();
+    if (!Xrm || !p || !p.ids.length || (p.mode !== "account" && p.mode !== "contact")) {
+      fail("Open this dialog from an account or contact record, or from a view with records selected.");
+      return;
+    }
+    if (p.ids.length > MAX_RECORDS) {
+      fail("Select up to " + MAX_RECORDS + " records at a time.");
+      return;
+    }
+    mode = p.mode;
+    ids = p.ids;
+
+    $("search").addEventListener("input", renderList);
+    $("userType").addEventListener("change", updateState);
+    userTypeDD = Dropdown($("userType"), {
+      dotColor: typeDot,
+      placeholder: "Select a user type",
+      clearable: function (v) { return v ? "Clear user type" : ""; }
+    });
+    $("newAccount").addEventListener("change", function () { $("newAccount").classList.remove("invalid"); });
+    $("selectAll").addEventListener("click", selectAllValid);
+    $("clearAll").addEventListener("click", clearAll);
+    $("toggleCreate").addEventListener("click", function () { toggleCreate(true); });
+    $("cancelCreate").addEventListener("click", function () { toggleCreate(false); });
+    $("createBtn").addEventListener("click", createContact);
+    $("submitBtn").addEventListener("click", function () {
+      if (closeMode) {
+        if (!closeDialog()) showToast("Use the × in the top-right corner to close this dialog.");
+        return;
+      }
+      submit();
+    });
+    $("toastClose").addEventListener("click", hideToast);
+
+    var start = mode === "account" ? loadAccounts() : Promise.resolve();
+    start.then(function () {
+      if (mode === "account" && !accounts.length) throw new Error("The selected accounts couldn't be found.");
+      setContext();
+      setupCreate();
+      return loadContacts(null, true);
+    }).catch(function (err) {
+      fail("Couldn't load data: " + err.message);
+    });
+  });
+})();
+</script>
+</body>
+</html>
